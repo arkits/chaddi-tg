@@ -3,7 +3,7 @@ http://t.me/ChaddiBot
 
 A tailor made (and mediocre) Telegram Bot written in Python 3.
 
-## Running Locally
+## Running
 
 * Clone the repo
 * Install from requirements.txt
@@ -23,3 +23,6 @@ true_chat_id = '-123456789'
 # Whether runnning as dev or not
 is_dev = True
 ```
+
+* Run with `python3 bot_chaddi.py`.
+* Can be deployed on any EC2-like VPS. Run with `./run_prod.sh`.
