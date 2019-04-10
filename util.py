@@ -12,6 +12,7 @@ import random
 from datetime import datetime
 import pickle
 import logging
+import os.path as path
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -69,6 +70,27 @@ def pretty_time_delta(seconds):
         return '%dm %ds' % (minutes, seconds)
     else:
         return '%ds' % (seconds,)
+
+def chat_export(message):
+
+    channel_id = str(message.chat["id"])
+    channel_id = str(channel_id[1:])
+    
+    pretty_message = "[" + str(message.from_user['username']) + "] " + str(message.text) + "\n"
+
+    export_path_str = "../../chaddi-irc/input/" + channel_id + ".txt"
+    export_path =  path.abspath(path.join(__file__ , export_path_str))
+
+    try:
+        f = open(export_path, "a")
+        f.write(pretty_message)
+        f.close()
+    except:
+        f = open(export_path, "w")
+        f.write(pretty_message)
+        f.close()
+
+    # logger.info("Appended to " + str(channel_id) + ".txt")
 
 """
 def random_user(group_name): # Retired
