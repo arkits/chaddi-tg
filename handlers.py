@@ -62,6 +62,11 @@ def all_sticker(bot, update):
     util.timesince_updater(update.message.from_user['username'])
     logger.info(update.message)
 
+def superpower(bot, update):
+    # Handle /timesince
+    logger.info('/superpower: Handling /superpower input')
+    response = "🇮🇳🙏 Time Until Super Power™️: " + util.superpower_countdown_calc() + " 🙏🇮🇳"
+    update.message.reply_text(response)
 
 def timesince(bot, update):
     # Handle /timesince

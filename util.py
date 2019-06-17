@@ -7,11 +7,11 @@
 ###################################################################
 
 
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 import random
-from datetime import datetime
 import pickle
 import logging
+import pytz
 import os.path as path
 
 # Enable logging
@@ -91,6 +91,21 @@ def chat_export(message):
         f.close()
 
     # logger.info("Appended to " + str(channel_id) + ".txt")
+
+def superpower_countdown_calc(): # Retired
+
+    # Current time in UTC
+    now = datetime.now(pytz.utc)
+
+    # Dec 31 in IST
+    ist = pytz.timezone("Asia/Kolkata")
+    superpower_day = datetime(year = 2019, month = 12, day = 31, hour = 23, minute = 59, second = 59, tzinfo = ist)
+    
+    # Get timedelta
+    td = superpower_day - now
+    pretty_td = pretty_time_delta(td.total_seconds())
+
+    return(pretty_td)
 
 """
 def random_user(group_name): # Retired
