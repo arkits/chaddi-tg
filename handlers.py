@@ -49,7 +49,7 @@ def all_text(bot, update):
 
     util.timesince_updater(update.message.from_user['username'])
 
-    util.chat_export(update.message)
+    # util.chat_export(update.message)
     
     # TODO: Handle this through custom filters
     if(message_text == 'hi' or message_text == 'Hi'):
