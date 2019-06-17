@@ -92,7 +92,8 @@ def chat_export(message):
 
     # logger.info("Appended to " + str(channel_id) + ".txt")
 
-def superpower_countdown_calc(): # Retired
+def superpower_countdown_calc():
+    # Calculates timedelta between current time and Dec 31st 2019 IST.
 
     # Current time in UTC
     now = datetime.now(pytz.utc)
