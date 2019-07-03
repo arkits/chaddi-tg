@@ -32,12 +32,12 @@ def error(bot, update, error):
     logger.warning('Update "%s" caused error "%s"', update, error)
 
 def hi(bot, update):
-    # Updated timesince
-    util.timesince_updater(update.message.from_user['username'])
 
-    # Handle /hi
-    logger.info('/hi: Handling /hi message')
-    update.message.reply_text(util.random_reply())
+    hi_response_whitelist = ["pahagwl", "arkits"]
+
+    if(update.message.from_user['username'] in hi_response_whitelist):
+        logger.info('/hi: Handling /hi message')
+        update.message.reply_text(util.random_reply())
 
 def all_text(bot, update):
     # Handle all text messages received
