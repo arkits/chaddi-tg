@@ -77,10 +77,10 @@ def superpower_countdown_calc():
     ist = pytz.timezone("Asia/Kolkata")
     
     # Current time in IST
-    now = ist.localize(datetime.now())
+    now = datetime.now(ist)
     
     # Dec 31 in IST
-    superpower_day = datetime(year = 2019, month = 12, day = 31, hour = 23, minute = 59, second = 59, tzinfo = ist)
+    superpower_day = datetime(year = 2020, month = 1, day = 1, hour = 0, minute = 0, second = 0, tzinfo = ist)
     
     # Get timedelta
     td = superpower_day - now
