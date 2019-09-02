@@ -74,11 +74,12 @@ def pretty_time_delta(seconds):
 def superpower_countdown_calc():
     # Calculates timedelta between current time and Dec 31st 2019 IST.
 
-    # Current time in UTC
-    now = datetime.now(pytz.utc)
-
-    # Dec 31 in IST
     ist = pytz.timezone("Asia/Kolkata")
+    
+    # Current time in IST
+    now = ist.localize(datetime.now())
+    
+    # Dec 31 in IST
     superpower_day = datetime(year = 2019, month = 12, day = 31, hour = 23, minute = 59, second = 59, tzinfo = ist)
     
     # Get timedelta
