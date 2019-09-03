@@ -12,6 +12,7 @@ import random
 import pickle
 import logging
 import pytz
+from gtts import gTTS
 import os.path as path
 
 # Enable logging
@@ -88,6 +89,12 @@ def superpower_countdown_calc():
 
     return(pretty_td)
 
+def tts_util(text_to_convert):
+    language = 'en'
+    converted = gTTS(text=text_to_convert, lang=language, slow=False) 
+    converted.save("bhaak.mp3") 
+    return("bhaak.mp3")
+    
 """
 def random_user(group_name): # Retired
     random.seed(datetime.now())

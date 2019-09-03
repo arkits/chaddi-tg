@@ -87,6 +87,7 @@ def main():
     dp.add_handler(CommandHandler("hi", handlers.hi))
     dp.add_handler(CommandHandler("timesince", handlers.timesince))
     dp.add_handler(CommandHandler("superpower", handlers.superpower))
+    dp.add_handler(CommandHandler("tts", handlers.tts))
 
     # regular messages
     dp.add_handler(MessageHandler(Filters.text, handlers.all_text))

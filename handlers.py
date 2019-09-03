@@ -93,3 +93,18 @@ def timesince(bot, update):
     
     # Updating timesince
     util.timesince_updater(update.message.from_user['username'])
+
+def tts(bot, update):
+    # Handle /timesince
+    logger.info('/tts: Handling /tts input')
+
+    query = update.message.text
+    query = query[5:]
+    logger.info('query: ' + query)
+
+    file_to_send = util.tts_util(query)
+
+    #response = "Haaat"
+    #update.message.reply_text(response)
+
+    update.message.reply_audio(audio=open(file_to_send, 'rb'), timeout=5000)
