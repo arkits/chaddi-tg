@@ -104,7 +104,4 @@ def tts(bot, update):
 
     file_to_send = util.tts_util(query)
 
-    #response = "Haaat"
-    #update.message.reply_text(response)
-
-    update.message.reply_audio(audio=open(file_to_send, 'rb'), timeout=5000)
+    update.message.reply_voice(voice=open(file_to_send, 'rb'), timeout=5000)
