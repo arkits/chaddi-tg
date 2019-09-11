@@ -25,6 +25,7 @@ def start(bot, update):
 
     # Handle /start
     logger.info('/start: Handling /start response')
+    logger.info("Request from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
     update.message.reply_text(util.random_reply())
 
 def error(bot, update, error):
@@ -37,6 +38,7 @@ def hi(bot, update):
 
     if(update.message.from_user['username'] in hi_response_whitelist):
         logger.info('/hi: Handling /hi message')
+        logger.info("Request from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
         update.message.reply_text(util.random_reply())
 
 def all_text(bot, update):
@@ -65,12 +67,15 @@ def all_sticker(bot, update):
 def superpower(bot, update):
     # Handle /timesince
     logger.info('/superpower: Handling /superpower input')
+    logger.info("Request from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
+
     response = "🇮🇳🙏 Time Until Super Power™️: " + util.superpower_countdown_calc() + " 🙏🇮🇳"
     update.message.reply_text(response)
 
 def timesince(bot, update):
     # Handle /timesince
     logger.info('/timesince: Handling /timesince input')
+    logger.info("Request from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
 
     query_username = update.message.text
     query_username = query_username[11:]
@@ -97,11 +102,14 @@ def timesince(bot, update):
 def tts(bot, update):
     # Handle /timesince
     logger.info('/tts: Handling /tts input')
+    logger.info("Request from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
 
     query = update.message.text
     query = query[5:]
-    logger.info('query: ' + query)
+    logger.info('/tts query: ' + query)
 
     file_to_send = util.tts_util(query)
 
-    update.message.reply_voice(voice=open(file_to_send, 'rb'), timeout=5000)
+    if file_to_send is not None:
+        update.message.reply_voice(voice=open(file_to_send, 'rb'), timeout=5000)
+    

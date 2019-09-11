@@ -6,15 +6,13 @@
 #                        Archit Khode                             #
 ###################################################################
 
-
-from datetime import datetime, date, timezone
+import os
 import random
 import pickle
 import logging
-import pytz
-import pyttsx3
-from pydub import AudioSegment
-import os.path as path
+import config
+from datetime import datetime, date, timezone
+from gtts import gTTS
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -91,55 +89,19 @@ def superpower_countdown_calc():
     return(pretty_td)
 
 def tts_util(text_to_convert):
-    converted = 'tts.mp3'
-    engine = pyttsx3.init()
-    engine.save_to_file(text_to_convert, 'raw_tts')
-    engine.runAndWait()
-    AudioSegment.from_file('raw_tts').export(converted, format="mp3")
-    return converted
-    
-"""
-def random_user(group_name): # Retired
-    random.seed(datetime.now())
 
-    if(group_name=='true'):
-        users = ['@Dhruva93', '@Urushibara', '@pahagwl', '@ChocoBuns', '@Grape_hunter', '@arkits', '@ArmoredKuruma']
-        random_int = random.randint(0,len(users)-1)
-        return(users[random_int])
+    outputFile = None
 
-    elif(group_name=='mains'):
-        users = ['@Dhruva93', '@pahagwl', '@Grape_hunter', '@arkits', '@ArmoredKuruma', '@Aurum2', '@Nathuram', '@bleachnchill', '@agentredux', '@vcidst', '@psydroid', '@themusketeer' ,'@vogonpoet', '@t0otSie', '@nitrobeer', '@Rrrik', '@woosteresque', '@QuizMasterAsh']
-        random_int = random.randint(0,len(users)-1)
-        return(users[random_int])
-"""
+    if config.tts_engine == "gTTS":
+        outputFile = 'output.mp3'
+        tts = gTTS(text_to_convert, lang='en')
+        tts.save(outputFile)
 
-"""
-def awk_timer(): # Retired
-    now = datetime.now()
-    rip_day = datetime(year = 2019, month = 2, day = 6, hour = 5, minute = 31, second = 00)
-    td = now - rip_day
-    pretty_td = pretty_time_delta(td.total_seconds())
-    return(pretty_td)
-"""
-"""
-def chat_export(message):
+    elif config.tts_engine == "festival":
+        outputFile = 'output.wav'
+        os.system('echo %s | text2wave -o output.wav' % text_to_convert)
 
-    channel_id = str(message.chat["id"])
-    channel_id = str(channel_id[1:])
-    
-    pretty_message = "[" + str(message.from_user['username']) + "] " + str(message.text) + "\n"
+    else:
+        logger.error("tts_engine was not set in config.py!")
 
-    export_path_str = "../../chaddi-irc/input/" + channel_id + ".txt"
-    export_path =  path.abspath(path.join(__file__ , export_path_str))
-
-    try:
-        f = open(export_path, "a")
-        f.write(pretty_message)
-        f.close()
-    except:
-        f = open(export_path, "w")
-        f.write(pretty_message)
-        f.close()
-
-    # logger.info("Appended to " + str(channel_id) + ".txt")
-"""
+    return outputFile

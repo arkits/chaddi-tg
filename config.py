@@ -10,3 +10,10 @@ true_chat_id = '-123456789'
 
 # Whether runnning as dev or not
 is_dev = True
+
+# Choose which Text to Speech Engine to use.
+# Available:
+# Google TTS (gTTS)
+# Festival TTS- Requires Festival TTS installed (sudo apt-get install festival)
+tts_engine = "gTTS"
+# tts_engine = "festival"
