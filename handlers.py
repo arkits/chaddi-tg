@@ -106,10 +106,15 @@ def tts(bot, update):
 
     query = update.message.text
     query = query[5:]
-    logger.info('/tts query: ' + query)
+    logger.info('/tts query size: %s. query text: %s', len(query), query)
 
-    file_to_send = util.tts_util(query)
+    if len(query) < 1000:
 
-    if file_to_send is not None:
-        update.message.reply_voice(voice=open(file_to_send, 'rb'), timeout=5000)
-    
+        file_to_send = util.tts_util(query)
+
+        if file_to_send is not None:
+            update.message.reply_voice(voice=open(file_to_send, 'rb'), timeout=5000)
+
+    else:
+        logger.warn('/tts: tts query is too long!')
+        update.message.reply_text("HAAAAAT! Your tts query is too long!")
