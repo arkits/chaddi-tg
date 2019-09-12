@@ -1,0 +1,1 @@
+ps -ef | grep bot_chaddi.py | grep -v grep | awk '{print $2}' | xargs kill
