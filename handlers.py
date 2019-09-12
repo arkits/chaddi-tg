@@ -44,6 +44,8 @@ def hi(bot, update):
 def all_text(bot, update):
     # Handle all text messages received
 
+    logger.info("all_text: Received text message from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
+   
     message_text = update.message.text
 
     util.timesince_updater(update.message.from_user['username'])
