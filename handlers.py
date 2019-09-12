@@ -37,8 +37,7 @@ def hi(bot, update):
     hi_response_whitelist = ["pahagwl", "arkits"]
 
     if(update.message.from_user['username'] in hi_response_whitelist):
-        logger.info('/hi: Handling /hi message')
-        logger.info("Request from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
+        logger.info("/hi: Handling /hi request from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
         update.message.reply_text(util.random_reply())
 
 def all_text(bot, update):
@@ -52,7 +51,6 @@ def all_text(bot, update):
     
     # TODO: Handle this through custom filters
     if(message_text == 'hi' or message_text == 'Hi'):
-        logger.info('all_text: Detected Hi msg')
         hi(bot, update)
 
 def all_sticker(bot, update):
