@@ -43,15 +43,10 @@ def hi(bot, update):
 
 def all_text(bot, update):
     # Handle all text messages received
-    # logger.info('Received Text Message:')
-    # logger.info(update.message)
-    # logger.info(' ')
 
     message_text = update.message.text
 
     util.timesince_updater(update.message.from_user['username'])
-
-    # util.chat_export(update.message)
     
     # TODO: Handle this through custom filters
     if(message_text == 'hi' or message_text == 'Hi'):
@@ -60,22 +55,18 @@ def all_text(bot, update):
 
 def all_sticker(bot, update):
     # Handle all text messages received
-    logger.info('all_sticker: Received Sticker Message:')
+    logger.info("all_sticker: Received Sticker Message from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
     util.timesince_updater(update.message.from_user['username'])
-    logger.info(update.message)
 
 def superpower(bot, update):
     # Handle /timesince
-    logger.info('/superpower: Handling /superpower input')
-    logger.info("Request from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
-
+    logger.info("/superpower: Handling /superpower request from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
     response = "🇮🇳🙏 Time Until Super Power™️: " + util.superpower_countdown_calc() + " 🙏🇮🇳"
     update.message.reply_text(response)
 
 def timesince(bot, update):
     # Handle /timesince
-    logger.info('/timesince: Handling /timesince input')
-    logger.info("Request from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
+    logger.info("/timesince: Handling /timesince request from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
 
     query_username = update.message.text
     query_username = query_username[11:]
@@ -101,8 +92,7 @@ def timesince(bot, update):
 
 def tts(bot, update):
     # Handle /timesince
-    logger.info('/tts: Handling /tts input')
-    logger.info("Request from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
+    logger.info("/tts: Handling /tts request from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
 
     query = update.message.text
     query = query[5:]
