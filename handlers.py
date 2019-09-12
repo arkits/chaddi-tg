@@ -98,7 +98,7 @@ def tts(bot, update):
     query = query[5:]
     logger.info('/tts query size: %s. query text: %s', len(query), query)
 
-    if len(query) = 0:
+    if len(query) == 0:
         query = ("Hey %s, I need an input!", update.message.from_user['username'])
 
     if len(query) < 1000:
