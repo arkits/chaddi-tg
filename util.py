@@ -31,13 +31,14 @@ except:
         logger.debug('Saved pickle')
 
 def timesince_updater(from_user):
-    from_user = "@" + from_user
-    logger.debug("Updating timesince for: " + from_user)
-    time_since_dict[from_user] = datetime.now()
+    if from_user is not None:
+        from_user = "@" + from_user
+        logger.debug("Updating timesince for: " + from_user)
+        time_since_dict[from_user] = datetime.now()
 
-    with open('timesince.pickle', 'wb') as handle:
-        pickle.dump(time_since_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
-        logger.debug('Saved pickle')
+        with open('timesince.pickle', 'wb') as handle:
+            pickle.dump(time_since_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
+            logger.debug('Saved pickle')
 
 def timesince_query(query_username):
     if query_username in time_since_dict:
