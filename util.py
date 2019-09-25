@@ -81,7 +81,8 @@ def superpower_countdown_calc():
     now = datetime.now(ist)
     
     # Dec 31 in IST
-    superpower_day = datetime(year = 2020, month = 1, day = 1, hour = 0, minute = 0, second = 0, tzinfo = ist)
+    superpower_day = datetime(year = 2020, month = 1, day = 1, hour = 0, minute = 0, second = 0)
+    superpower_day = ist.localize(superpower_day)
     
     # Get timedelta
     td = superpower_day - now
