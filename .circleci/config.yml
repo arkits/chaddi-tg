@@ -5,6 +5,8 @@
 version: 2
 jobs:
   deploy-job:
+    machine:
+      enabled: true
     steps:
       - add_ssh_keys:
           fingerprints:
