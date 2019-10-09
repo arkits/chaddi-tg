@@ -1,1 +1,3 @@
-nohup python3 bot_chaddi.py > chaddi.logs 2>&1 & 
+cd src
+echo "Running bot_chaddi!"
+nohup python3 bot_chaddi.py > ../chaddi.log 2>&1 & 

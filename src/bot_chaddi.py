@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-###################################################################
-#                         ChaddiBot                               #
-#                        Archit Khode                             #
-###################################################################
+"""
+ChaddiBot
+https://ghati.bitbucket.io/
+"""
 
 # Telegram bot library specific
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
@@ -22,7 +22,17 @@ from datetime import datetime
 
 # Helper utils 
 import config
-import handlers
+
+# New Handlers
+import handlers.default as default_handler
+import handlers.hi as hi_handler
+import handlers.bakchod as bakchod_handler
+import handlers.chutiya as chutiya_handler
+import handlers.tts as tts_handler
+import handlers.superpower as superpower_handler
+import handlers.jyotish as jyotish_handler
+import handlers.mom as mom_handler
+import handlers.webm_converter as webm_handler
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -67,34 +77,26 @@ def main():
     chaddiBot = ChaddiBot(token, request=request, mqueue=q)
     updater = telegram.ext.updater.Updater(bot=chaddiBot)
 
-    # Create the EventHandler and pass it your bot's token.
-    # updater = Updater(config.tg_bot_token)
-
-    # Uncomment the following block for job_spam
-    # jq = updater.job_queue
-    # if config.is_dev is False:
-    #    logger.info('is_dev is False')
-    #    jq.run_repeating(job_spam, 20*60)
-    # else:
-    #    logger.info('is_dev is True')
-    #    jq.run_repeating(job_spam, 1*60)
-
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
 
     # /commands
-    dp.add_handler(CommandHandler("start", handlers.start))
-    dp.add_handler(CommandHandler("hi", handlers.hi))
-    dp.add_handler(CommandHandler("timesince", handlers.timesince))
-    dp.add_handler(CommandHandler("superpower", handlers.superpower))
-    dp.add_handler(CommandHandler("tts", handlers.tts))
+    dp.add_handler(CommandHandler("hi", hi_handler.handle))
+    dp.add_handler(CommandHandler("superpower", superpower_handler.handle))
+    dp.add_handler(CommandHandler("tts", tts_handler.handle))
+    dp.add_handler(CommandHandler("chutiya", chutiya_handler.handle))
+    dp.add_handler(CommandHandler("timesince", bakchod_handler.timesince))
+    dp.add_handler(CommandHandler("rokda", bakchod_handler.lakshmi))
+    dp.add_handler(CommandHandler("jyotish", jyotish_handler.handle))
+    dp.add_handler(CommandHandler("mom", mom_handler.handle))
 
     # regular messages
-    dp.add_handler(MessageHandler(Filters.text, handlers.all_text))
-    dp.add_handler(MessageHandler(Filters.sticker, handlers.all_sticker))
+    dp.add_handler(MessageHandler(Filters.text, default_handler.all_text))
+    dp.add_handler(MessageHandler(Filters.sticker, default_handler.all_sticker))
+    dp.add_handler(MessageHandler(Filters.document.category("video"), webm_handler.handle))
 
     # log all errors
-    dp.add_error_handler(handlers.error)
+    dp.add_error_handler(default_handler.error)
 
     # Start the Bot
     updater.start_polling()
