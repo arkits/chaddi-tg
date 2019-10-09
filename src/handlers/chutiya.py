@@ -1,11 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""
-ChaddiBot
-https://ghati.bitbucket.io/
-"""
-
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import logging
 import util

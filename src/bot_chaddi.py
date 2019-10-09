@@ -1,11 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""
-ChaddiBot
-https://ghati.bitbucket.io/
-"""
-
 # Telegram bot library specific
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import ParseMode
