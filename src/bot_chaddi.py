@@ -81,7 +81,7 @@ def main():
     dp.add_handler(CommandHandler("tts", tts_handler.handle))
     dp.add_handler(CommandHandler("chutiya", chutiya_handler.handle))
     dp.add_handler(CommandHandler("timesince", bakchod_handler.timesince))
-    dp.add_handler(CommandHandler("rokda", bakchod_handler.lakshmi))
+    dp.add_handler(CommandHandler("rokda", bakchod_handler.rokda))
     dp.add_handler(CommandHandler("jyotish", jyotish_handler.handle))
     dp.add_handler(CommandHandler("mom", mom_handler.handle))
 

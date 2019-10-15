@@ -15,7 +15,8 @@ logger = logging.getLogger(__name__)
 # Handler hi
 def handle(bot, update):
 
-    bakchod_util.bakchod_updater(update.message.from_user['username'])
+    # Update Bakchod pickle
+    bakchod_util.bakchod_updater(update.message.from_user)
     
     hi_response_whitelist = ["pahagwl", "arkits"]
 

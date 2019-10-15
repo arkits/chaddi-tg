@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 # Handle /start
 def start(bot, update):
     # Updated timesince
-    bakchod_util.bakchod_updater(update.message.from_user['username'])
+    bakchod_util.bakchod_updater(update.message.from_user)
 
     logger.info('/start: Handling /start response')
     logger.info("Request from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
@@ -33,7 +33,7 @@ def all_text(bot, update):
 
     message_text = update.message.text
 
-    bakchod_util.bakchod_updater(update.message.from_user['username'])
+    bakchod_util.bakchod_updater(update.message.from_user)
 
     # TODO: Handle this through custom filters
     if(message_text == 'hi' or message_text == 'Hi'):
@@ -44,4 +44,4 @@ def all_sticker(bot, update):
 
     # logger.info("all_sticker: Received Sticker Message from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
     
-    bakchod_util.bakchod_updater(update.message.from_user['username'])
+    bakchod_util.bakchod_updater(update.message.from_user)

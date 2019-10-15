@@ -21,7 +21,8 @@ soundboard_dict = {
  # Handle /tts
 def handle(bot, update):
 
-    bakchod_util.bakchod_updater(update.message.from_user['username'])
+    # Update Bakchod pickle
+    bakchod_util.bakchod_updater(update.message.from_user)
 
     logger.info("/tts: Handling /tts request from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
 

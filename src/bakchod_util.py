@@ -13,12 +13,15 @@ from datetime import datetime, date, timezone
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Encapsulate data representing a Bakchod
 class Bakchod:
-  def __init__(self, username):
+  def __init__(self, id, username):
+    self.id = None
     self.username = username
-    self.lastseen = 0
-    self.lakshmi = 0
+    self.lastseen = None
+    self.rokda = 500
 
+# Using Python pickling for data persistence
 try:
     with open('resources/bakchod.pickle', 'rb') as handle:
         bakchod_dict = pickle.load(handle)
@@ -29,52 +32,74 @@ except:
     with open('resources/bakchod.pickle', 'wb') as handle:
         pickle.dump(bakchod_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
+# Get a Bakchod based on tg_id
+def get_bakchod(tg_id):
+
+    if tg_id in bakchod_dict:
+        a_bakchod = bakchod_dict[tg_id]
+    else:
+        a_bakchod = None
+
+    return a_bakchod
+
+# Update Bakchod and commit to pickle
+def set_bakchod(a_bakchod):
+
+    if a_bakchod.id in bakchod_dict:
+        bakchod_dict[a_bakchod.id] = a_bakchod
+
+    with open('resources/bakchod.pickle', 'wb') as handle:
+        pickle.dump(bakchod_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+# Update data of a Bakchod... lastseen and rokda
 def bakchod_updater(from_user):
 
     if from_user is not None:
-        from_user = "@" + from_user
 
-        if from_user in bakchod_dict:
-            a_bakchod = bakchod_dict[from_user]
+        if from_user['username'] is not None:
+            username = "@" + from_user['username']
         else:
-            a_bakchod = Bakchod(from_user)
+            username = from_user['first_name']
+
+        tg_id = from_user['id']
+
+        if tg_id in bakchod_dict:
+            a_bakchod = bakchod_dict[tg_id]
+        else:
+            a_bakchod = Bakchod(tg_id, username)
 
         a_bakchod.lastseen = datetime.now()
-        a_bakchod.lakshmi = a_bakchod.lakshmi + 1
+        a_bakchod.rokda = a_bakchod.rokda + 1
 
-        logger.info("Updating Bakchod for username=" + from_user + " rokda=" + str(a_bakchod.lakshmi))
+        logger.info("Updating Bakchod for username=" + username + " rokda=" + str(a_bakchod.rokda))
 
-        bakchod_dict[from_user] = a_bakchod
+        bakchod_dict[tg_id] = a_bakchod
 
         with open('resources/bakchod.pickle', 'wb') as handle:
             pickle.dump(bakchod_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
         
 def timesince_query(query_username):
 
-    if query_username[0] != "@":
-        query_username = "@" + query_username
-
-    if query_username in bakchod_dict:
-        found_bakchod = bakchod_dict[query_username]
-        response = timesince_calculator(found_bakchod.lastseen)
-        return(query_username + ' last posted ' + response + ' ago')
+    for bakchod in bakchod_dict.values():
+        if bakchod.username == query_username:
+            response = timesince_calculator(bakchod.lastseen)
+            return(query_username + ' last posted ' + response + ' ago')
     else: 
         return("404")
 
 def timesince_calculator(lastseen):
+
     now = datetime.now()
     td = now - lastseen
     pretty_td = util.pretty_time_delta(td.total_seconds())
     return(pretty_td)
 
-def lakshmi_query(query_username):
+def rokda_query(query_id):
 
-    if query_username[0] != "@":
-        query_username = "@" + query_username
-
-    if query_username in bakchod_dict:
-        found_bakchod = bakchod_dict[query_username]
-        response = found_bakchod.lakshmi
-        return("💰" + query_username + ' has ' + str(response) + ' ₹okda!')
+    if query_id in bakchod_dict:
+        found_bakchod = bakchod_dict[query_id]
+        return("💰" + found_bakchod.username + ' has ' + str(found_bakchod.rokda) + ' ₹okda!')
     else: 
         return("404")
+
+

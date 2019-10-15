@@ -24,36 +24,50 @@ mom_response_blacklist = [config.bot_username, "Hirop84", "arkits"]
 # Make it past tense and add to "v(p) your dad last night"
 def handle(bot, update):
 
-    bakchod_util.bakchod_updater(update.message.from_user['username'])
+    # Update Bakchod pickle
+    bakchod_util.bakchod_updater(update.message.from_user)
+    
     logger.info("/mom: Handling /mom request from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
 
-    og_sender = update.message.from_user
-    if(og_sender['username']):
-        og_sender = "@" + og_sender['username']
-    elif(og_sender['firstname']):
-        og_sender = og_sender['firstname']
+    # Get Telegram user id
+    og_sender_id = update.message.from_user['id']
 
-    if update.message.reply_to_message:
-        riposte = jokeMom(update.message.reply_to_message.text, og_sender)
-        respond_to = update.message.reply_to_message.from_user
-    else:
-        riposte = jokeMom(update.message.text, og_sender)
-    
-    if(respond_to['username']):
-        respond_to = respond_to['username']
-    elif(respond_to['firstname']):
-        respond_to = respond_to['firstname']
+    # Check if Bakchod has enough rokda to do a /mom...
+    if checkIfUserCanRiposte(og_sender_id):
 
-    if respond_to not in mom_response_blacklist:
+        # Get sender's name
+        og_sender_name = update.message.from_user
+        if(og_sender_name['username']):
+            og_sender_name = "@" + og_sender_name['username']
+        elif(og_sender_name['firstname']):
+            og_sender_name = og_sender_name['firstname']
+
+        # Get recipient's name
         if update.message.reply_to_message:
-            update.message.reply_to_message.reply_text(riposte)
+            riposte = jokeMom(update.message.reply_to_message.text, og_sender_name)
+            respond_to = update.message.reply_to_message.from_user        
+            if(respond_to['username']):
+                respond_to = respond_to['username']
+            elif(respond_to['firstname']):
+                respond_to = respond_to['firstname']
         else:
-            update.message.reply_text(riposte)
-    elif respond_to == config.bot_username:
-        sticker_to_send = 'CAADAQADrAEAAp6M4Ahtgp9JaiLJPxYE'
-        update.message.reply_sticker(sticker=sticker_to_send)
+            riposte = jokeMom(update.message.text, og_sender_name)
+            respond_to = og_sender_name
+
+        if respond_to not in mom_response_blacklist:
+            if update.message.reply_to_message:
+                update.message.reply_to_message.reply_text(riposte)
+            else:
+                update.message.reply_text(riposte)
+        elif respond_to == config.bot_username:
+            sticker_to_send = 'CAADAQADrAEAAp6M4Ahtgp9JaiLJPxYE'
+            update.message.reply_sticker(sticker=sticker_to_send)
+        else:
+            update.message.reply_text("@" + respond_to + " is protected by a 👁️ Nazar Raksha Kavach")
+    
     else:
-        update.message.reply_text("@" + respond_to + " is protected by a 👁️ Nazar Raksha Kavach")
+        # Bakchod doesn't have enough rokda :(
+        update.message.reply_text("Sorry! You don't have enough ₹okda! Each /mom costs 50 ₹okda.")
 
 # !! SEXISM !!
 # make a bad joke about it
@@ -117,3 +131,17 @@ def getVerbPast(verb):
             else:
                 verbPast = verb + 'ed'
     return verbPast
+
+# Check whether a user can initate a /mom. 
+# Also subtracts 50 rokda.
+def checkIfUserCanRiposte(tg_id):
+
+    a_bakchod = bakchod_util.get_bakchod(tg_id)
+
+    if a_bakchod.rokda <= 50:
+        return False
+    else:
+        a_bakchod.rokda = a_bakchod.rokda - 50
+        bakchod_util.set_bakchod(a_bakchod)
+        return True
+

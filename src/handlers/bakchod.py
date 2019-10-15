@@ -15,9 +15,12 @@ logger = logging.getLogger(__name__)
 # Handle /timesince
 def timesince(bot, update):
     
-    logger.info("/timesince: Handling /timesince request from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
+    if update.message.reply_to_message:
+        query_username = "@" + update.message.reply_to_message.from_user['username']
+    else:
+        query_username = update.message.text[11:]
 
-    query_username = update.message.from_user['username']
+    logger.info("/timesince: Handling /timesince request from user '%s' for '%s' in group '%s'", update.message.from_user['username'], query_username, update.message.chat.title)
 
     if len(query_username) == 0:
         logger.info('/timesince: Input format was wrong.')
@@ -35,28 +38,28 @@ def timesince(bot, update):
             update.message.reply_text(response)
     
     # Updating Bakchod Pickle
-    bakchod_util.bakchod_updater(update.message.from_user['username'])
+    bakchod_util.bakchod_updater(update.message.from_user)
 
-# Handle /timesince
-def lakshmi(bot, update):
+# Handle /rokda
+def rokda(bot, update):
 
     if(update.message.reply_to_message):
-        query_username = update.message.reply_to_message.from_user['username']
-        response = bakchod_util.lakshmi_query(query_username)
+        query_id = update.message.reply_to_message.from_user['id']
+        response = bakchod_util.rokda_query(query_id)
     else:
-        query_username = update.message.from_user['username']
-        response = bakchod_util.lakshmi_query(query_username)
+        query_id = update.message.from_user['id']
+        response = bakchod_util.rokda_query(query_id)
 
-    logger.info("/lakshmi: Handling /lakshmi request from user '%s' initiated by '%s' in group '%s'", update.message.from_user['username'], query_username, update.message.chat.title)
+    logger.info("/rokda: Handling /rokda request from user '%s' for '%s' in group '%s'", update.message.from_user['username'], query_id, update.message.chat.title)
 
     if response == "404":
-        logger.info("/lakshmi: Couldn't find user")
+        logger.info("/rokda: Couldn't find user")
         file_id = 'CAADAwADrQADnozgCI_qxocBgD_OFgQ'
         sticker_to_send = file_id
         update.message.reply_sticker(sticker=sticker_to_send)
     else:
-        logger.info("/lakshmi: Sending response " + response)
+        logger.info("/rokda: Sending response " + response)
         update.message.reply_text(response)
 
     # Updating Bakchod Pickle
-    bakchod_util.bakchod_updater(update.message.from_user['username'])
+    bakchod_util.bakchod_updater(update.message.from_user)
