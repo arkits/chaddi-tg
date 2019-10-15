@@ -25,7 +25,7 @@ mom_response_blacklist = [config.bot_username, "Hirop84", "arkits"]
 def handle(bot, update):
 
     # Update Bakchod pickle
-    bakchod_util.bakchod_updater(update.message.from_user)
+    # bakchod_util.bakchod_updater(update.message.from_user)
     
     logger.info("/mom: Handling /mom request from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
 

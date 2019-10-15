@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 
 # Handle /start
 def start(bot, update):
-    # Updated timesince
-    bakchod_util.bakchod_updater(update.message.from_user)
+
+    # bakchod_util.bakchod_updater(update.message.from_user)
 
     logger.info('/start: Handling /start response')
     logger.info("Request from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
@@ -31,9 +31,9 @@ def all_text(bot, update):
 
     # logger.info("all_text: Received text message from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
 
-    message_text = update.message.text
-
     bakchod_util.bakchod_updater(update.message.from_user)
+    
+    message_text = update.message.text
 
     # TODO: Handle this through custom filters
     if(message_text == 'hi' or message_text == 'Hi'):

@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 def handle(bot, update):
     
     # Update Bakchod pickle
-    bakchod_util.bakchod_updater(update.message.from_user)
+    # bakchod_util.bakchod_updater(update.message.from_user)
 
     logger.info("/superpower: Handling /superpower request from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
     response = "🇮🇳🙏 Time Until Super Power™️: " + superpower_countdown_calc() + " 🙏🇮🇳"

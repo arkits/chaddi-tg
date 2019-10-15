@@ -38,7 +38,7 @@ def timesince(bot, update):
             update.message.reply_text(response)
     
     # Updating Bakchod Pickle
-    bakchod_util.bakchod_updater(update.message.from_user)
+    # bakchod_util.bakchod_updater(update.message.from_user)
 
 # Handle /rokda
 def rokda(bot, update):
@@ -62,4 +62,4 @@ def rokda(bot, update):
         update.message.reply_text(response)
 
     # Updating Bakchod Pickle
-    bakchod_util.bakchod_updater(update.message.from_user)
+    # bakchod_util.bakchod_updater(update.message.from_user)
