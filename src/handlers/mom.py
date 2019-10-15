@@ -17,6 +17,8 @@ logger = logging.getLogger(__name__)
 # Load Spacy
 nlp = spacy.load('en_core_web_sm')
 
+mom_response_blacklist = [config.bot_username, "Hirop84", "arkits"]
+
 # Handler /mom
 # Identify the verb in the sentence
 # Make it past tense and add to "v(p) your dad last night"
@@ -42,16 +44,16 @@ def handle(bot, update):
     elif(respond_to['firstname']):
         respond_to = respond_to['firstname']
 
-    mom_response_blacklist = [config.bot_username, "Hirop84"]
-
     if respond_to not in mom_response_blacklist:
         if update.message.reply_to_message:
             update.message.reply_to_message.reply_text(riposte)
         else:
             update.message.reply_text(riposte)
-    else:
+    elif respond_to == config.bot_username:
         sticker_to_send = 'CAADAQADrAEAAp6M4Ahtgp9JaiLJPxYE'
         update.message.reply_sticker(sticker=sticker_to_send)
+    else:
+        update.message.reply_text("@" + respond_to + " is protected by a 👁️ Nazar Raksha Kavach")
 
 # !! SEXISM !!
 # make a bad joke about it
