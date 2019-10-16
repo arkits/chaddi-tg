@@ -28,6 +28,7 @@ import handlers.superpower as superpower_handler
 import handlers.jyotish as jyotish_handler
 import handlers.mom as mom_handler
 import handlers.webm_converter as webm_handler
+import handlers.bestie as bestie_handler
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -84,6 +85,7 @@ def main():
     dp.add_handler(CommandHandler("rokda", bakchod_handler.rokda))
     dp.add_handler(CommandHandler("jyotish", jyotish_handler.handle))
     dp.add_handler(CommandHandler("mom", mom_handler.handle))
+    dp.add_handler(CommandHandler("bestie", bestie_handler.handle))
 
     # regular messages
     dp.add_handler(MessageHandler(Filters.text, default_handler.all_text))
