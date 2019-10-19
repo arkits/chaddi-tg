@@ -13,6 +13,7 @@ import util
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 # Handle /timesince
 def handle(bot, update):
     
@@ -22,6 +23,7 @@ def handle(bot, update):
     logger.info("/superpower: Handling /superpower request from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
     response = "🇮🇳🙏 Time Until Super Power™️: " + superpower_countdown_calc() + " 🙏🇮🇳"
     update.message.reply_text(response)
+
 
 # Calculates timedelta between current time and Dec 31st 2019 IST.
 def superpower_countdown_calc():

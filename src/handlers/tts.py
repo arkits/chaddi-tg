@@ -22,8 +22,10 @@ soundboard_dict = {
 def english_tts(bot, update):
     handle(bot, update, "en")
 
+
 def hindi_tts(bot, update):
     handle(bot, update, "hi")
+
 
  # Handle /tts
 def handle(bot, update, language):
@@ -88,6 +90,7 @@ def handle(bot, update, language):
         else:
             logger.warn('/tts: tts query is too long!')
             update.message.reply_text("HAAAAAT! Your tts query is too long!")
+
 
 def tts_util(text_to_convert, language):
 

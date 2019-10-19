@@ -13,6 +13,7 @@ from datetime import datetime, date, timezone
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 # Encapsulate data representing a Bakchod
 class Bakchod:
   def __init__(self, id, username):
@@ -20,6 +21,7 @@ class Bakchod:
     self.username = username
     self.lastseen = None
     self.rokda = 500
+
 
 # Using Python pickling for data persistence
 try:
@@ -32,6 +34,7 @@ except:
     with open('resources/bakchod.pickle', 'wb') as handle:
         pickle.dump(bakchod_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
+
 # Get a Bakchod based on tg_id
 def get_bakchod(tg_id):
 
@@ -42,6 +45,7 @@ def get_bakchod(tg_id):
 
     return a_bakchod
 
+
 # Update Bakchod and commit to pickle
 def set_bakchod(a_bakchod):
 
@@ -50,6 +54,7 @@ def set_bakchod(a_bakchod):
 
     with open('resources/bakchod.pickle', 'wb') as handle:
         pickle.dump(bakchod_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
 
 # Update data of a Bakchod... lastseen and rokda
 def bakchod_updater(from_user):
@@ -77,7 +82,8 @@ def bakchod_updater(from_user):
 
         with open('resources/bakchod.pickle', 'wb') as handle:
             pickle.dump(bakchod_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
-        
+
+
 def timesince_query(query_username):
 
     for bakchod in bakchod_dict.values():
@@ -87,12 +93,14 @@ def timesince_query(query_username):
     else: 
         return("404")
 
+
 def timesince_calculator(lastseen):
 
     now = datetime.now()
     td = now - lastseen
     pretty_td = util.pretty_time_delta(td.total_seconds())
     return(pretty_td)
+
 
 def rokda_query(query_id):
 
@@ -101,5 +109,3 @@ def rokda_query(query_id):
         return("💰" + found_bakchod.username + ' has ' + str(found_bakchod.rokda) + ' ₹okda!')
     else: 
         return("404")
-
-

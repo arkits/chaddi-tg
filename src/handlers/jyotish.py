@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 url = "https://8ball.delegator.com/magic/JSON/"
 
+
 # Handle /jyotish
 def handle(bot, update):
 

@@ -12,6 +12,7 @@ import bakchod_util
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 # Handle /timesince
 def timesince(bot, update):
     
@@ -39,6 +40,7 @@ def timesince(bot, update):
     
     # Updating Bakchod Pickle
     # bakchod_util.bakchod_updater(update.message.from_user)
+
 
 # Handle /rokda
 def rokda(bot, update):

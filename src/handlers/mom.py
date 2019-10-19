@@ -19,6 +19,7 @@ nlp = spacy.load('en_core_web_sm')
 
 mom_response_blacklist = [config.bot_username, "Hirop84", "arkits"]
 
+
 # Handler /mom
 # Identify the verb in the sentence
 # Make it past tense and add to "v(p) your dad last night"
@@ -69,6 +70,7 @@ def handle(bot, update):
         # Bakchod doesn't have enough rokda :(
         update.message.reply_text("Sorry! You don't have enough ₹okda! Each /mom costs 50 ₹okda.")
 
+
 # !! SEXISM !!
 # make a bad joke about it
 def jokeMom(sentence, victim):
@@ -96,6 +98,7 @@ def jokeMom(sentence, victim):
     else:
         return "{}, please link your aadhaar".format(victim)
 
+
 # return the first relevant part of speech tag
 def getThisPOS(sentence, POS):
     doc = nlp(sentence)
@@ -103,6 +106,7 @@ def getThisPOS(sentence, POS):
         if token.pos_ == POS:
             return token.text
     return 0
+
 
 # return a random verb from the sentence
 def getVerb(sentence):
@@ -115,6 +119,7 @@ def getVerb(sentence):
         verbPast = getVerbPast(random.choice(verbs))
         return verbPast
     return 0
+
 
 # return simple past form of verb
 def getVerbPast(verb):
@@ -132,6 +137,7 @@ def getVerbPast(verb):
                 verbPast = verb + 'ed'
     return verbPast
 
+
 # Check whether a user can initate a /mom. 
 # Also subtracts 50 rokda.
 def checkIfUserCanRiposte(tg_id):
@@ -144,4 +150,3 @@ def checkIfUserCanRiposte(tg_id):
         a_bakchod.rokda = a_bakchod.rokda - 50
         bakchod_util.set_bakchod(a_bakchod)
         return True
-
