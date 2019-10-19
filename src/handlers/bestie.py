@@ -23,7 +23,7 @@ def handle(bot, update):
 # Shoot a reply
 def random_reply():
     
-    replies = ['gussa aa ri', 'nahi ho ra hai']
+    replies = ['gussa aa ri', 'nhi ho ra']
 
     random.seed(datetime.now())
     random_int = random.randint(0,len(replies)-1)
