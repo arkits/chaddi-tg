@@ -17,10 +17,13 @@ source .env/bin/activate
 
 * Install from requirements.txt
 ```bash
+cd chaddi-tg
 pip install -r requirements.txt
 ```
-* Update `src/config.py` with relevant information
- 
+* Create `config.py` in `src/`
+* Add `src/config.py` with relevant information
+
+
 ```python
 
 # Bot Username
@@ -46,6 +49,10 @@ is_dev = True
 tts_engine = "gTTS" # Google TTS
 
 ```
+* Get your TeleGram Bot API Token
+* How to get Telegram bot API token: https://www.siteguarding.com/en/how-to-get-telegram-bot-api-token
+* Paste your Telegram token id in `tg_bot_token` in `config.py`
+
 
 * Run locally with `python bot_chaddi.py`.
 * Run in prod with `./run_prod.sh`.
