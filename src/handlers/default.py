@@ -14,6 +14,7 @@ import bakchod_util
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 # Handle /start
 def start(bot, update):
 
@@ -23,9 +24,11 @@ def start(bot, update):
     logger.info("Request from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
     update.message.reply_text(util.random_reply())
 
+
 # Handle erros
 def error(bot, update, error):
     logger.warning('Update "%s" caused error "%s"', update, error)
+
 
 # Handle all text messages received
 def all_text(bot, update):
@@ -43,7 +46,8 @@ def all_text(bot, update):
     # Handle bestie messages
     if "bestie" in message_text:
         bestie_handler.handle(bot, update)
-    
+
+
 # Handle all text messages received
 def all_sticker(bot, update):
 
