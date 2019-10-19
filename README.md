@@ -21,7 +21,7 @@ cd chaddi-tg
 pip install -r requirements.txt
 ```
 * Create `config.py` in `src/`
-* Update `src/config.py` with relevant information
+* Add `src/config.py` with relevant information
 
 
 ```python
