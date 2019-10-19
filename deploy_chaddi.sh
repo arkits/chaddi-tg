@@ -1,6 +1,9 @@
 #!/bin/bash
 # deploy_chaddi.sh
 
+# cd to chaddi home
+cd ~/chaddi-tg
+
 # Stop if there is an error
 set -e
 
