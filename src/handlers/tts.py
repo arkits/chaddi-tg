@@ -35,7 +35,6 @@ def handle(bot, update, language):
 
     query = update.message.text
     query = query[5:]
-    query = query.lower()
     query = query.strip()
 
     if(update.message.reply_to_message):
