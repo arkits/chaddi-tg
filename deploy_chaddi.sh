@@ -15,6 +15,7 @@ source src/.env/bin/activate
 
 # Update libs
 pip install -r requirements.txt
+apt get-update
 
 # Run the tests
 pytest
