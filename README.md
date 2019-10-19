@@ -1,6 +1,8 @@
 # ChaddiBot
 http://t.me/ChaddiBot
 
+[![CircleCI](https://circleci.com/gh/arkits/chaddi-tg/tree/master.svg?style=svg)](https://circleci.com/gh/arkits/chaddi-tg/tree/master)
+
 A tailor made (and mediocre) Telegram Bot written in Python 3.
 
 ## Running
