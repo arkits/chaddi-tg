@@ -22,6 +22,7 @@ import config
 import handlers.default as default_handler
 import handlers.hi as hi_handler
 import handlers.bakchod as bakchod_handler
+import handlers.choose as choose_handler
 import handlers.chutiya as chutiya_handler
 import handlers.tts as tts_handler
 import handlers.superpower as superpower_handler
@@ -64,7 +65,6 @@ class ChaddiBot(telegram.bot.Bot):
 
 
 def main():
-
     q = mq.MessageQueue(all_burst_limit=3, all_time_limit_ms=3000)
 
     token = config.tg_bot_token
@@ -87,6 +87,7 @@ def main():
     dp.add_handler(CommandHandler("jyotish", jyotish_handler.handle))
     dp.add_handler(CommandHandler("mom", mom_handler.handle))
     dp.add_handler(CommandHandler("quotes", quotes_handler.handle))
+    dp.add_handler(CommandHandler("choose", choose_handler.handle))
 
     # regular messages
     dp.add_handler(MessageHandler(Filters.text, default_handler.all_text))
@@ -106,7 +107,7 @@ def main():
 
     logger.info("Running...")
     logger.info("~~~~ ~~~~ ~~~~ ~~~~")
-    
+
     updater.idle()
 
 if __name__ == '__main__':
