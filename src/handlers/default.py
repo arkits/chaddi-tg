@@ -7,6 +7,7 @@ from telegram import ParseMode
 
 import util
 import handlers.hi as hi_handler
+import handlers.bestie as bestie_handler
 import bakchod_util
 
 # Enable logging
@@ -39,6 +40,10 @@ def all_text(bot, update):
     if(message_text == 'hi' or message_text == 'Hi'):
         hi_handler.handle(bot, update)
 
+    # Handle bestie messages
+    if "bestie" in message_text:
+        bestie_handler.handle(bot, update)
+    
 # Handle all text messages received
 def all_sticker(bot, update):
 
