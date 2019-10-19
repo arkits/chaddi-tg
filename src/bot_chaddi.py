@@ -24,6 +24,7 @@ import handlers.hi as hi_handler
 import handlers.bakchod as bakchod_handler
 import handlers.choose as choose_handler
 import handlers.chutiya as chutiya_handler
+import handlers.help as help_handler
 import handlers.tts as tts_handler
 import handlers.superpower as superpower_handler
 import handlers.jyotish as jyotish_handler
@@ -87,8 +88,9 @@ def main():
     dp.add_handler(CommandHandler("jyotish", jyotish_handler.handle))
     dp.add_handler(CommandHandler("mom", mom_handler.handle))
     dp.add_handler(CommandHandler("quotes", quotes_handler.handle))
+    dp.add_handler(CommandHandler("help", help_handler.handle))
     dp.add_handler(CommandHandler("choose", choose_handler.handle))
-
+    
     # regular messages
     dp.add_handler(MessageHandler(Filters.text, default_handler.all_text))
     dp.add_handler(MessageHandler(Filters.sticker, default_handler.all_sticker))
