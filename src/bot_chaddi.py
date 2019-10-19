@@ -78,7 +78,8 @@ def main():
     # /commands
     dp.add_handler(CommandHandler("hi", hi_handler.handle))
     dp.add_handler(CommandHandler("superpower", superpower_handler.handle))
-    dp.add_handler(CommandHandler("tts", tts_handler.handle))
+    dp.add_handler(CommandHandler("tts", tts_handler.english_tts))
+    dp.add_handler(CommandHandler("ghati", tts_handler.hindi_tts))
     dp.add_handler(CommandHandler("chutiya", chutiya_handler.handle))
     dp.add_handler(CommandHandler("timesince", bakchod_handler.timesince))
     dp.add_handler(CommandHandler("rokda", bakchod_handler.rokda))

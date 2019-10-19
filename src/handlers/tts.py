@@ -18,8 +18,15 @@ soundboard_dict = {
     "saale main teri gaand maar dunga" : "resources/saale.mp3"
 }
 
+
+def english_tts(bot, update):
+    handle(bot, update, "en")
+
+def hindi_tts(bot, update):
+    handle(bot, update, "hi")
+
  # Handle /tts
-def handle(bot, update):
+def handle(bot, update, language):
 
     # Update Bakchod pickle
     # bakchod_util.bakchod_updater(update.message.from_user)
@@ -32,8 +39,9 @@ def handle(bot, update):
     query = query.strip()
 
     if(update.message.reply_to_message):
+
+        # Handle quoted message...
         query = update.message.reply_to_message.text
-        query = query.lower()
         query = query.strip()
 
         logger.info('/tts query size: %s. query text: %s', len(query), query)
@@ -41,20 +49,27 @@ def handle(bot, update):
         if len(query) < 1000:
 
             if query in soundboard_dict.keys():
-                logger.info("Found query in soundboard_dict")
+                logger.debug("Found query in soundboard_dict")
                 file_to_send = soundboard_dict[query]
             else:
-                logger.info("Not found query in soundboard_dict")
-                file_to_send = tts_util(query)
+                logger.debug("Not found query in soundboard_dict")
+                file_to_send = tts_util(query, language)
 
             if file_to_send is not None:
                 update.message.reply_to_message.reply_voice(voice=open(file_to_send, 'rb'), timeout=5000)
                 
     else:
 
+        # Handle original user's message...
         query = update.message.text
-        query = query[5:]
-        query = query.lower()
+
+        if query.startswith('/tts'):
+            # Strip out '/tts'
+            query = query[5:]
+        else:
+            # Strip out '/ghati'
+            query = query[6:]
+
         query = query.strip()
 
         logger.info('/tts query size: %s. query text: %s', len(query), query)
@@ -62,11 +77,11 @@ def handle(bot, update):
         if len(query) < 1000:
 
             if query in soundboard_dict.keys():
-                logger.info("Found query in soundboard_dict")
+                logger.debug("Found query in soundboard_dict")
                 file_to_send = soundboard_dict[query]
             else:
-                logger.info("Not found query in soundboard_dict")
-                file_to_send = tts_util(query)
+                logger.debug("Not found query in soundboard_dict")
+                file_to_send = tts_util(query, language)
 
             if file_to_send is not None:
                 update.message.reply_voice(voice=open(file_to_send, 'rb'), timeout=5000)
@@ -75,18 +90,15 @@ def handle(bot, update):
             logger.warn('/tts: tts query is too long!')
             update.message.reply_text("HAAAAAT! Your tts query is too long!")
 
-def tts_util(text_to_convert):
+def tts_util(text_to_convert, language):
 
     outputFile = None
 
     if config.tts_engine == "gTTS":
-        outputFile = 'output.mp3'
-        tts = gTTS(text_to_convert, lang='en')
+        
+        outputFile = 'resources/gtts_output.mp3'
+        tts = gTTS(text_to_convert, lang=language)
         tts.save(outputFile)
-
-    elif config.tts_engine == "festival":
-        outputFile = 'output.wav'
-        os.system('echo %s | text2wave -o output.wav' % text_to_convert)
 
     else:
         logger.error("tts_engine was not set in config.py!")

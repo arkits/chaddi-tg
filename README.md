@@ -43,9 +43,8 @@ true_chat_id = '-123456789'
 is_dev = True
 
 # Choose which Text to Speech Engine to use.
-# Available:
 tts_engine = "gTTS" # Google TTS
-# tts_engine = "festival" # Festival TTS - Requires Festival TTS installed.
+
 ```
 
 * Run locally with `python bot_chaddi.py`.
