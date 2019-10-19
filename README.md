@@ -27,6 +27,9 @@ bot_username = "ChaddiBot"
 # Telegram Bot API Token
 tg_bot_token = "YOUR-TG-BOT-API-TOKEN-HERE"
 
+# Telegram Webhook URL
+tg_webhook_url = "https://chaddibot.com/"
+
 # Chat ID of your testing group
 test_chat_id = '-0123456789'
 
@@ -39,14 +42,14 @@ is_dev = True
 
 # Choose which Text to Speech Engine to use.
 # Available:
-tts_engine = "gTTS" # [gTTS] Google TTS
-# tts_engine = "festival" # [festival] Festival TTS- Requires Festival TTS installed.
+tts_engine = "gTTS" # Google TTS
+# tts_engine = "festival" # Festival TTS - Requires Festival TTS installed.
 ```
 
-* Run with `python bot_chaddi.py`.
-* Can be deployed on any EC2-like VPS. Run with `./run_prod.sh`.
+* Run locally with `python bot_chaddi.py`.
+* Run in prod with `./run_prod.sh`.
 
-### Additional setup for /mom handler
+### Setup for /mom handler
 
 The `/mom` handler uses spaCy library. It needs to be installed with the English language model.
 
@@ -54,6 +57,14 @@ The `/mom` handler uses spaCy library. It needs to be installed with the English
 python -m spacy download en_core_web_sm
 ```
 
-### Additional setup for WebM converter
+### Setup for WebM converter
 
-WebM files are converted into mp4 by `handlers/webm_converter.py` using ffmpeg. Make sure to install that. 
+WebM files are converted into mp4 by `src/handlers/webm_converter.py` using ffmpeg. Make sure to install that. 
+
+### Setup for Webhook
+
+Refer to python-telegram-bot's official documentation - https://github.com/python-telegram-bot/python-telegram-bot/wiki/Webhooks
+
+To check if your setup is correct, do a GET at ` https://api.telegram.org/bot{my_bot_token}/getWebhookInfo `.
+
+

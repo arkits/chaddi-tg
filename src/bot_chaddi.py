@@ -96,8 +96,14 @@ def main():
     dp.add_error_handler(default_handler.error)
 
     # Start the Bot
-    updater.start_polling()
-    logger.info("Started Polling...")
+
+    if config.is_dev:
+        updater.start_polling()
+    else:
+        updater.start_webhook(listen='127.0.0.1', port=5000, url_path='TOKEN1')
+        updater.bot.set_webhook(url=config.tg_webhook_url)
+
+    logger.info("Running...")
     logger.info("~~~~ ~~~~ ~~~~ ~~~~")
     
     updater.idle()
