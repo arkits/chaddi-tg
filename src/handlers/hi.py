@@ -12,6 +12,7 @@ import bakchod_util
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 # Handler hi
 def handle(bot, update):
 
@@ -23,6 +24,7 @@ def handle(bot, update):
     if(update.message.from_user['username'] in hi_response_whitelist):
         logger.info("/hi: Handling /hi request from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
         update.message.reply_text(random_reply())
+
 
 def random_reply():
 
