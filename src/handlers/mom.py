@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 # Load Spacy
 nlp = spacy.load('en_core_web_sm')
 
-mom_response_blacklist = [config.bot_username, "Hirop84", "arkits"]
+mom_response_blacklist = [config.bot_username, "Hirop84"]
 
 
 # Handler /mom
@@ -56,10 +56,13 @@ def handle(bot, update):
             respond_to = og_sender_name
 
         if respond_to not in mom_response_blacklist:
-            if update.message.reply_to_message:
-                update.message.reply_to_message.reply_text(riposte)
+            if random.random() > 0.05:
+                if update.message.reply_to_message:
+                    update.message.reply_to_message.reply_text(riposte)
+                else:
+                    update.message.reply_text(riposte)
             else:
-                update.message.reply_text(riposte)
+                update.message.reply_text("@" + respond_to + " is protected by a 👁️ Nazar Raksha Kavach")
         elif respond_to == config.bot_username:
             sticker_to_send = 'CAADAQADrAEAAp6M4Ahtgp9JaiLJPxYE'
             update.message.reply_sticker(sticker=sticker_to_send)
