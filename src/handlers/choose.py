@@ -13,9 +13,9 @@ logger = logging.getLogger(__name__)
 # Handler choose
 def handle(bot, update):
     logger.info("/choose: Handling /choose request")
-    update.message.reply_text(random_reply(update.message))
+    update.message.reply_text(random_choice(update.message))
 
 
-def random_reply(message):
-    message = message['text'].split(' ')
+def random_choice(message):
+    message = message['text'].split(',')
     return random.choice(message[1:])
