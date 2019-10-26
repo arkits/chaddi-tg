@@ -5,6 +5,18 @@ http://t.me/ChaddiBot
 
 A tailor made (and mediocre) Telegram Bot written in Python 3.
 
+## Features
+
+ChaddiBot has a variety of features to make your Telegram experience a whole lot more fun! Some of them are -
+
+- WebM Converter
+- `/tts`
+- `/superpower`
+- `/jyotish`
+- `/mom`
+- `/quotes`
+- `/hi`
+
 ## Setup and Deployment
 
 * Register your bot with @botfather. [Refer to Telegram's documentation](https://core.telegram.org/bots#3-how-do-i-create-a-bot).
