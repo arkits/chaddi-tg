@@ -93,6 +93,7 @@ def main():
     dp.add_handler(CommandHandler("choose", choose_handler.handle))
     dp.add_handler(CommandHandler("about", bakchod_handler.about))
     dp.add_handler(CommandHandler("birthday", birthday_handler.handle))
+    dp.add_handler(CommandHandler("birthdays", birthday_handler.handle))
     dp.add_handler(CommandHandler("set", setter_handler.handle))
     
     # regular messages
