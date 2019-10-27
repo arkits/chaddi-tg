@@ -17,6 +17,7 @@ from datetime import datetime
 
 # Helper utils 
 import config
+import util.logger
 
 # New Handlers
 import handlers.default as default_handler
@@ -34,9 +35,7 @@ import handlers.quotes as quotes_handler
 import handlers.setter as setter_handler
 import handlers.birthday as birthday_handler
 
-# Enable logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = util.logger.get_logger(__name__)
 
 # Test logging
 logger.info("~~~~ ~~~~ ~~~~ ~~~~")

@@ -11,7 +11,6 @@ from datetime import datetime, date, timezone
 from gtts import gTTS
 
 # Enable logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def pretty_time_delta(seconds):

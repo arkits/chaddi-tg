@@ -11,7 +11,6 @@ import random
 from datetime import datetime
 
 # Enable logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Using Python pickling for data persistence
