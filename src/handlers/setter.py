@@ -44,7 +44,7 @@ def parse_request(request, for_bakchod, og_bakchod):
     if set_type.lower() == "birthday":
 
         try:
-            birthday = request[2]
+            birthday = ' '.join(request[2:])
         except IndexError:
             response = "Please include your birthday - `/set birthday 4/20/1969`"
             return response
