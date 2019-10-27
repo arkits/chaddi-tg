@@ -36,13 +36,14 @@ def generate_birthday_response():
 
         bakchod = bakchod_dict[bakchod_id]
 
-        bakchod_birthday = bakchod.birthday
-
-        if bakchod_birthday is not None:
+        try:
+            bakchod_birthday = bakchod.birthday
             
             if bakchod_birthday.day == today.day and bakchod_birthday.month == today.month:
-
                 birthday_bakchods.append(bakchod)
+        
+        except:
+            logger.debug("/birthday: Birthday wasn't set for %s ", bakchod.username)
 
     if len(birthday_bakchods) == 0:
         response = "Looks like it's no ones birthday today :("
