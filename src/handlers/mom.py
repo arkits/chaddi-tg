@@ -16,16 +16,15 @@ logger = logging.getLogger(__name__)
 # Load Spacy
 nlp = spacy.load('en_core_web_sm')
 
-mom_response_blacklist = [config.bot_username, "Hirop84"]
+bot_username = "@" + config.bot_username
+
+mom_response_blacklist = [bot_username, "@Hirop84"]
 
 
 # Handler /mom
 # Identify the verb in the sentence
 # Make it past tense and add to "v(p) your dad last night"
 def handle(bot, update):
-
-    # Update Bakchod pickle
-    # bakchod_util.bakchod_updater(update.message.from_user)
     
     logger.info("/mom: Handling /mom request from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
 
@@ -33,45 +32,49 @@ def handle(bot, update):
     og_sender_id = update.message.from_user['id']
 
     # Check if Bakchod has enough rokda to do a /mom...
-    if checkIfUserCanRiposte(og_sender_id):
+    if check_if_user_can_riposte(og_sender_id):
 
         # Get sender's name
-        og_sender_name = update.message.from_user
-        if(og_sender_name['username']):
-            og_sender_name = "@" + og_sender_name['username']
-        elif(og_sender_name['firstname']):
-            og_sender_name = og_sender_name['firstname']
+        og_sender_name = extract_pretty_name(update.message.from_user)
 
         # Get recipient's name
         if update.message.reply_to_message:
             riposte = jokeMom(update.message.reply_to_message.text, og_sender_name)
-            respond_to = update.message.reply_to_message.from_user        
-            if(respond_to['username']):
-                respond_to = respond_to['username']
-            elif(respond_to['firstname']):
-                respond_to = respond_to['firstname']
+            respond_to = extract_pretty_name(update.message.reply_to_message.from_user)
         else:
             riposte = jokeMom(update.message.text, og_sender_name)
             respond_to = og_sender_name
 
         if respond_to not in mom_response_blacklist:
-            if random.random() > 0.05:
+            if random.random() > 0.10:
                 if update.message.reply_to_message:
                     update.message.reply_to_message.reply_text(riposte)
                 else:
                     update.message.reply_text(riposte)
             else:
-                update.message.reply_text("@" + respond_to + " is protected by a 👁️ Nazar Raksha Kavach")
-        elif respond_to == config.bot_username:
-            sticker_to_send = 'CAADAQADrAEAAp6M4Ahtgp9JaiLJPxYE'
-            update.message.reply_sticker(sticker=sticker_to_send)
+                # User has chance to get protected
+                update.message.reply_text(respond_to + " is protected by a 👁️ Nazar Raksha Kavach")
         else:
-            update.message.reply_text("@" + respond_to + " is protected by a 👁️ Nazar Raksha Kavach")
+            if respond_to == bot_username:
+                # Don't insult Chaddi!
+                sticker_to_send = 'CAADAQADrAEAAp6M4Ahtgp9JaiLJPxYE'
+                update.message.reply_sticker(sticker=sticker_to_send)
+            else:
+                # Protect the users in the blacklist
+                update.message.reply_text(respond_to + " is protected by a 👁️ Nazar Raksha Kavach")
     
     else:
         # Bakchod doesn't have enough rokda :(
         update.message.reply_text("Sorry! You don't have enough ₹okda! Each /mom costs 50 ₹okda.")
 
+def extract_pretty_name(from_user):
+
+    if(from_user['username']):
+        from_user = "@" + from_user['username']
+    elif(from_user['firstname']):
+        from_user = from_user['firstname']
+
+    return from_user
 
 # !! SEXISM !!
 # make a bad joke about it
@@ -90,7 +93,7 @@ def jokeMom(sentence, victim):
         else:
             adjective = getThisPOS(sentence, 'ADJ')
             if adjective != 0:
-                return "{} {} is nice but ur {}".format(victim, protagonist, adjective)
+                return "{} is nice but you are {}".format(victim, adjective)
             else:
                 propn = getThisPOS(sentence, 'PROPN')
                 if propn != 0:
@@ -142,8 +145,7 @@ def getVerbPast(verb):
 
 # Check whether a user can initate a /mom. 
 # Also subtracts 50 rokda.
-def checkIfUserCanRiposte(tg_id):
-
+def check_if_user_can_riposte(tg_id):
     a_bakchod = bakchod_util.get_bakchod(tg_id)
 
     if a_bakchod.rokda <= 50:
