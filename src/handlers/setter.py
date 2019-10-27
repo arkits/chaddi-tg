@@ -44,8 +44,11 @@ def parse_request(request, for_bakchod, og_bakchod):
     if set_type.lower() == "birthday":
 
         try:
-            birthday = ' '.join(request[2:])
-        except IndexError:
+            birthday = ''.join(request[2:])
+            birthday = dateparser.parse(birthday)
+            if birthday is None:
+                raise ValueError
+        except:
             response = "Please include your birthday - `/set birthday 4/20/1969`"
             return response
 
@@ -53,9 +56,9 @@ def parse_request(request, for_bakchod, og_bakchod):
             bday_reponse = set_bakchod_birthday(birthday, for_bakchod)
             response = bday_reponse
         else:
-            response = "❌ Not allowed to set that." 
+            response = "❌ Not allowed to set birthday." 
 
-    if set_type.lower() == "rokda":
+    elif set_type.lower() == "rokda":
 
         try:
             rokda_to_set = int(request[2])
@@ -67,7 +70,7 @@ def parse_request(request, for_bakchod, og_bakchod):
             set_reponse = set_bakchod_rokda(rokda_to_set, for_bakchod)
             response = set_reponse
         else:
-            response = "❌ Not allowed to set that." 
+            response = "❌ Not allowed to set rokda." 
         
     else:
 
@@ -79,8 +82,6 @@ def parse_request(request, for_bakchod, og_bakchod):
 def set_bakchod_birthday(birthday, bakchod_id):
 
     bakchod = bakchod_util.get_bakchod(bakchod_id)
-
-    birthday = dateparser.parse(birthday)
 
     bakchod.birthday = birthday
 
