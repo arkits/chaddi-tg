@@ -14,6 +14,7 @@ from telegram.utils.request import Request
 import logging
 import random
 from datetime import datetime
+from datetime import time
 
 # Helper utils 
 import config
@@ -74,6 +75,12 @@ def main():
     request = Request(con_pool_size=8)
     chaddiBot = ChaddiBot(token, request=request, mqueue=q)
     updater = telegram.ext.updater.Updater(bot=chaddiBot)
+
+    jq = updater.job_queue
+
+    birthday_job_time = time(hour=10, minute=0, second=0, microsecond=0, tzinfo=None)
+    # jq.run_repeating(birthday_handler.daily_job, 5)
+    jq.run_daily(birthday_handler.daily_job, birthday_job_time)
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher

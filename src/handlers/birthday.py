@@ -7,6 +7,7 @@ from telegram import ParseMode
 import random
 from datetime import datetime
 import bakchod_util
+import config
 
 # Enable logging
 logger = logging.getLogger(__name__)
@@ -20,6 +21,10 @@ def handle(bot, update):
     reponse = generate_birthday_response()
 
     update.message.reply_text(reponse)
+
+def daily_job(bot, job):
+    logger.info('birthday.daily_job: Running birthday.daily_job')
+    bot.send_message(chat_id=config.mains_chat_id, text=generate_birthday_response())
 
 
 def generate_birthday_response():
