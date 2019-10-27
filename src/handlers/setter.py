@@ -54,6 +54,20 @@ def parse_request(request, for_bakchod, og_bakchod):
             response = bday_reponse
         else:
             response = "❌ Not allowed to set that." 
+
+    if set_type.lower() == "rokda":
+
+        try:
+            rokda_to_set = int(request[2])
+        except IndexError:
+            response = "Please include rokda to set - `/set rokda 1337`"
+            return response
+
+        if admin_can_set(for_bakchod, og_bakchod):
+            set_reponse = set_bakchod_rokda(rokda_to_set, for_bakchod)
+            response = set_reponse
+        else:
+            response = "❌ Not allowed to set that." 
         
     else:
 
@@ -81,12 +95,34 @@ def set_bakchod_birthday(birthday, bakchod_id):
 
     return reponse
 
+def set_bakchod_rokda(rokda_to_set, bakchod_id):
+
+    bakchod = bakchod_util.get_bakchod(bakchod_id)
+
+    bakchod.rokda = rokda_to_set
+
+    bakchod_util.set_bakchod(bakchod)
+
+    reponse = "✅ Set {}'s ₹okda to {}!".format(
+        bakchod.username, 
+        bakchod.rokda
+    )
+
+    return reponse
+
 
 def can_set(for_bakchod, og_bakchod):
     if og_bakchod == for_bakchod:
         logger.info("can_set: og_bakchod == for_bakchod")
         return True
     elif str(og_bakchod) in config.allowed_setters:
+        logger.info("can_set: og_bakchod in config.allowed_setters")
+        return True
+    else:
+        return False
+
+def admin_can_set(for_bakchod, og_bakchod):
+    if str(og_bakchod) in config.allowed_setters:
         logger.info("can_set: og_bakchod in config.allowed_setters")
         return True
     else:
