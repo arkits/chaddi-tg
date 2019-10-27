@@ -33,41 +33,46 @@ def gamble(bakchod_id):
         response = "I don't know you yet... come back later!"
         return response
 
-    roll = random.random()
-    logger.info("roll=%s", roll)
+    if rokda > 50:
 
-    if roll > 0.99:
-        response = "HOLY CRAP! You won! +200 ₹okda"
-        rokda = rokda + 200
-    elif roll > 0.95:
-        response = "OMG! You won! +100 ₹okda"
-        rokda = rokda + 100
-    elif roll > 0.90:
-        response = "You ballin now fam. just won 50 ₹okda"
-        rokda = rokda + 50
-    elif roll > 0.70:
-        response = "You won +20 ₹okda... this is pretty good tbh!"
-        rokda = rokda + 20
-    elif roll > 0.50:
-        response = "Boond boond se sagar banta... You won! +10 ₹okda"
-        rokda = rokda + 10
-    elif roll > 0.25:
-        response = "Cr brought you chai and you tipped him 10 ₹okda"
-        rokda = rokda - 10
-    elif roll > 0.20:
-        response = "You got drunk bar and drove back home... and also got a chalan of 30 ₹okda"
-        rokda = rokda - 30
-    elif roll > 0.15:
-        response = "No win / no loss... but you still paid entry fee of 50 ₹okda!"
-        rokda = rokda - 50
-    elif roll > 0.07:
-        response = "You actually won... but while leaving the casio you got mugged by cr and lost 70 ₹okda!"
-        rokda = rokda - 70
+        roll = random.random()
+        logger.info("roll=%s", roll)
+
+        if roll > 0.99:
+            response = "HOLY CRAP! You won! +200 ₹okda"
+            rokda = rokda + 200
+        elif roll > 0.95:
+            response = "OMG! You won! +100 ₹okda"
+            rokda = rokda + 100
+        elif roll > 0.90:
+            response = "You ballin now fam. just won 50 ₹okda"
+            rokda = rokda + 50
+        elif roll > 0.70:
+            response = "You won +20 ₹okda... this is pretty good tbh!"
+            rokda = rokda + 20
+        elif roll > 0.50:
+            response = "Boond boond se sagar banta... You won! +10 ₹okda"
+            rokda = rokda + 10
+        elif roll > 0.25:
+            response = "Cr brought you chai and you tipped him 10 ₹okda"
+            rokda = rokda - 10
+        elif roll > 0.20:
+            response = "You got drunk at the bar and drove back home... and also got a chalan of 30 ₹okda"
+            rokda = rokda - 30
+        elif roll > 0.15:
+            response = "No win / no loss... but you still paid entry fee of 50 ₹okda!"
+            rokda = rokda - 50
+        elif roll > 0.07:
+            response = "You actually won... but while leaving the casio you got mugged by cr and lost 70 ₹okda!"
+            rokda = rokda - 70
+        else:
+            response = "CBI Raided ChaddiInc... That 150 you just won was derokdatized!"
+            rokda = rokda - 150
+
+        bakchod.rokda = rokda
+        bakchod_util.set_bakchod(bakchod)
+    
     else:
-        response = "CBI Raided ChaddiInc... That 150 you just was derokdatized!"
-        rokda = rokda - 150
-
-    bakchod.rokda = rokda
-    bakchod_util.set_bakchod(bakchod)
+        response = "Sorry you need atleast 50 ₹okda to gamble! Come back later..."
 
     return(response)
