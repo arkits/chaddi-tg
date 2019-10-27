@@ -53,7 +53,7 @@ def parse_request(request, for_bakchod, og_bakchod):
             bday_reponse = set_bakchod_birthday(birthday, for_bakchod)
             response = bday_reponse
         else:
-            response = "❌ Can't set that." 
+            response = "❌ Not allowed to set that." 
         
     else:
 
