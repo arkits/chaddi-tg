@@ -121,14 +121,14 @@ def about_query(query_id):
         about_response = about_response + '~ ID: `{}` \n'.format(found_bakchod.id)
         about_response = about_response + '~ ₹okda: `{}` \n'.format(found_bakchod.rokda)
 
-        if found_bakchod.birthday is not None:
+        try:
             about_response = about_response + '~ Birthday: `{} {} {}` \n'.format(
-                found_bakchod.birthday.day,
-                found_bakchod.birthday.strftime('%b'),
-                found_bakchod.birthday.year
-            )
-        else: 
-            about_response = about_response + '~ Birthday: `Not set`'
+                            found_bakchod.birthday.day,
+                            found_bakchod.birthday.strftime('%b'),
+                            found_bakchod.birthday.year
+                        )
+        except:
+            about_response = about_response + '~ Birthday: `Not set. Please set with /set birthday.`'
         
         return(about_response)
     else: 
