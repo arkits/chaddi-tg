@@ -1,3 +1,4 @@
+wheel==0.33.6
 python-telegram-bot==11.1.0
 pytz==2018.9
 gTTS==2.0.4
@@ -6,3 +7,4 @@ spacy==2.2.1
 ffmpeg==1.4
 ffmpeg-python==0.2.0
 pytest==5.2.1
+dateparser==0.7.2

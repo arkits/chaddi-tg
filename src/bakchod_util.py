@@ -16,11 +16,12 @@ logger = logging.getLogger(__name__)
 
 # Encapsulate data representing a Bakchod
 class Bakchod:
-  def __init__(self, id, username):
-    self.id = None
+  def __init__(self, tg_id, username):
+    self.id = tg_id
     self.username = username
     self.lastseen = None
     self.rokda = 500
+    self.birthday = None
 
 
 # Using Python pickling for data persistence
@@ -107,5 +108,28 @@ def rokda_query(query_id):
     if query_id in bakchod_dict:
         found_bakchod = bakchod_dict[query_id]
         return("💰" + found_bakchod.username + ' has ' + str(found_bakchod.rokda) + ' ₹okda!')
+    else: 
+        return("404")
+
+
+def about_query(query_id):
+
+    if query_id in bakchod_dict:
+        found_bakchod = bakchod_dict[query_id]
+
+        about_response = '*About ' + found_bakchod.username + ':* \n'
+        about_response = about_response + '~ ID: `{}` \n'.format(found_bakchod.id)
+        about_response = about_response + '~ ₹okda: `{}` \n'.format(found_bakchod.rokda)
+
+        if found_bakchod.birthday is not None:
+            about_response = about_response + '~ Birthday: `{} {} {}` \n'.format(
+                found_bakchod.birthday.day,
+                found_bakchod.birthday.strftime('%b'),
+                found_bakchod.birthday.year
+            )
+        else: 
+            about_response = about_response + '~ Birthday: `Not set`'
+        
+        return(about_response)
     else: 
         return("404")

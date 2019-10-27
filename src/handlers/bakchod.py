@@ -37,9 +37,6 @@ def timesince(bot, update):
         else:
             logger.info("/timesince: Sending response " + response)
             update.message.reply_text(response)
-    
-    # Updating Bakchod Pickle
-    # bakchod_util.bakchod_updater(update.message.from_user)
 
 
 # Handle /rokda
@@ -63,5 +60,28 @@ def rokda(bot, update):
         logger.info("/rokda: Sending response " + response)
         update.message.reply_text(response)
 
-    # Updating Bakchod Pickle
-    # bakchod_util.bakchod_updater(update.message.from_user)
+# Handle /about
+def about(bot, update):
+
+    if(update.message.reply_to_message):
+        query_id = update.message.reply_to_message.from_user['id']
+        response = bakchod_util.about_query(query_id)
+    else:
+        query_id = update.message.from_user['id']
+        response = bakchod_util.about_query(query_id)
+
+    logger.info("/about: Handling /about request from user '%s' for '%s' in group '%s'", update.message.from_user['username'], query_id, update.message.chat.title)
+
+    if response == "404":
+        logger.info("/about: Couldn't find user")
+        file_id = 'CAADAwADrQADnozgCI_qxocBgD_OFgQ'
+        sticker_to_send = file_id
+        update.message.reply_sticker(sticker=sticker_to_send)
+    else:
+        logger.info("/about: Sending response " + response)
+
+        update.message.reply_text(
+            text=response, 
+            parse_mode=ParseMode.MARKDOWN
+        )
+
