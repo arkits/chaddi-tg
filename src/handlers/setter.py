@@ -86,7 +86,7 @@ def can_set(for_bakchod, og_bakchod):
     if og_bakchod == for_bakchod:
         logger.info("can_set: og_bakchod == for_bakchod")
         return True
-    elif og_bakchod in config.allowed_setters:
+    elif str(og_bakchod) in config.allowed_setters:
         logger.info("can_set: og_bakchod in config.allowed_setters")
         return True
     else:
