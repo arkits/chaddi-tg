@@ -6,7 +6,7 @@ from telegram import ParseMode
 
 import logging
 import pickle
-import util
+from util import util
 from datetime import datetime, date, timezone
 
 # Enable logging

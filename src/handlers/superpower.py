@@ -7,7 +7,7 @@ from telegram import ParseMode
 import pytz
 from datetime import datetime, date, timezone
 import bakchod_util
-import util
+from util import util
 
 # Enable logging
 logger = logging.getLogger(__name__)
