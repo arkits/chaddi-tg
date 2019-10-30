@@ -107,6 +107,7 @@ def main():
     
     # regular messages
     dp.add_handler(MessageHandler(Filters.text, default_handler.all_text))
+    dp.add_handler(MessageHandler(Filters.command, default_handler.all_commands))
     dp.add_handler(MessageHandler(Filters.sticker, default_handler.all_sticker))
     dp.add_handler(MessageHandler(Filters.document.category("video"), webm_handler.handle))
 
