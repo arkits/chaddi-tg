@@ -38,7 +38,7 @@ def gamble(bakchod_id):
         roll = random.random()
         logger.info("roll=%s", roll)
 
-        if roll > 0.99:
+        if roll > 0.98:
             response = "HOLY CRAP! You won! +200 ₹okda"
             rokda = rokda + 200
         elif roll > 0.95:
@@ -62,7 +62,7 @@ def gamble(bakchod_id):
         elif roll > 0.15:
             response = "No win / no loss... but you still paid entry fee of 50 ₹okda!"
             rokda = rokda - 50
-        elif roll > 0.07:
+        elif roll > 0.03:
             response = "You actually won... but while leaving the casio you got mugged by cr and lost 70 ₹okda!"
             rokda = rokda - 70
         else:
