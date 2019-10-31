@@ -10,12 +10,18 @@ A tailor made (and mediocre) Telegram Bot written in Python 3.
 ChaddiBot has a variety of features to make your Telegram experience a whole lot more fun! Some of them are -
 
 - WebM Converter
-- `/tts`
-- `/superpower`
-- `/jyotish`
-- `/mom`
-- `/quotes`
-- `/hi`
+- `/tts` performs Text-To-Speech with an english voice.
+- `/ghati` performs Text-To-Speech with a hindi voice.
+- `/superpower` is a countown to 1st January when India will become a superpower.
+- `/jyotish` tries to solve your problems of life and fails everytime.
+- `/mom` insults your mom.
+- `/quotes` fetches a random quote
+- `/hi` performs an unenthusiastic greeting
+- `/rokda` displays your message count in the chat as a currency.
+- `/gamble` lets you win or lose some of your internet points.
+- `/chutiya` calls someone a chutiya
+- `/birthday` announces birthdays today
+- `/choose` makes a random selection if you're confused about two or more things.
 
 ## Setup and Deployment
 

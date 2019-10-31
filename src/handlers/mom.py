@@ -15,9 +15,7 @@ logger = logging.getLogger(__name__)
 
 # Load Spacy
 nlp = spacy.load('en_core_web_sm')
-
 bot_username = "@" + config.bot_username
-
 mom_response_blacklist = [bot_username, "@Hirop84"]
 
 
@@ -39,10 +37,10 @@ def handle(bot, update):
 
         # Get recipient's name
         if update.message.reply_to_message:
-            riposte = jokeMom(update.message.reply_to_message.text, og_sender_name)
+            riposte = joke_mom(update.message.reply_to_message.text, og_sender_name)
             respond_to = extract_pretty_name(update.message.reply_to_message.from_user)
         else:
-            riposte = jokeMom(update.message.text, og_sender_name)
+            riposte = joke_mom(update.message.text, og_sender_name)
             respond_to = og_sender_name
 
         if respond_to not in mom_response_blacklist:
@@ -78,7 +76,7 @@ def extract_pretty_name(from_user):
 
 # !! SEXISM !!
 # make a bad joke about it
-def jokeMom(sentence, victim):
+def joke_mom(sentence, victim):
     protagonist = "ur mom"
 
     # flip the joke 20% of times
@@ -87,25 +85,25 @@ def jokeMom(sentence, victim):
     
     # extract parts of speech and generate insults
     if sentence is not None:
-        verb = getVerb(sentence)
+        verb = get_verb(sentence)
         if verb != 0:
             return "{} {} {} last night ".format(victim, verb, protagonist)
         else:
-            adjective = getThisPOS(sentence, 'ADJ')
+            adjective = get_POS(sentence, 'ADJ')
             if adjective != 0:
                 return "{} is nice but you are {}".format(victim, adjective)
             else:
-                propn = getThisPOS(sentence, 'PROPN')
+                propn = get_POS(sentence, 'PROPN')
                 if propn != 0:
                     return "{} {} {}".format(victim, protagonist, propn)
                 else:
                     return "{} should get a life".format(victim)
     else:
-        return "{}, please link your aadhaar".format(victim)
+        return "{}, please link your aadhaar to continue".format(victim)
 
 
 # return the first relevant part of speech tag
-def getThisPOS(sentence, POS):
+def get_POS(sentence, POS):
     doc = nlp(sentence)
     for token in doc:
         if token.pos_ == POS:
@@ -114,20 +112,20 @@ def getThisPOS(sentence, POS):
 
 
 # return a random verb from the sentence
-def getVerb(sentence):
+def get_verb(sentence):
     doc = nlp(sentence)
     verbs = []
     for token in doc:
         if token.pos_ == 'VERB':
             verbs.append(str(token.lemma_))
     if verbs:
-        verbPast = getVerbPast(random.choice(verbs))
+        verbPast = get_verb_past(random.choice(verbs))
         return verbPast
     return 0
 
 
 # return simple past form of verb
-def getVerbPast(verb):
+def get_verb_past(verb):
     verbLookupTable = "resources/verbPastLookup.json"
     with open(verbLookupTable) as fp:
         data = json.load(fp)
