@@ -79,7 +79,7 @@ def bakchod_updater(from_user):
         # Poor users get more incrment than richer users
         if (a_bakchod.rokda == -10):
             a_bakchod.rokda = -9
-        a_bakchod.rokda += (100/(a_bakchod.rokda + 10) + 1)
+        a_bakchod.rokda += round((100/(a_bakchod.rokda + 10) + 1), 2)
 
         # Backwards compat
         a_bakchod.id = tg_id
@@ -114,7 +114,7 @@ def rokda_query(query_id):
 
     if query_id in bakchod_dict:
         found_bakchod = bakchod_dict[query_id]
-        return("💰" + found_bakchod.username + ' has ' + str(found_bakchod.rokda) + ' ₹okda!')
+        return("💰" + found_bakchod.username + ' has ' + str(round(found_bakchod.rokda), 2) + ' ₹okda!')
     else: 
         return("404")
 
@@ -126,7 +126,7 @@ def about_query(query_id):
 
         about_response = '*About ' + found_bakchod.username + ':* \n'
         about_response = about_response + '~ ID: `{}` \n'.format(found_bakchod.id)
-        about_response = about_response + '~ ₹okda: `{}` \n'.format(found_bakchod.rokda)
+        about_response = about_response + '~ ₹okda: `{}` \n'.format(round(found_bakchod.rokda, 2))
 
         try:
             about_response = about_response + '~ Birthday: `{} {} {}` \n'.format(
