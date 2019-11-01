@@ -89,7 +89,10 @@ def bakchod_updater(from_user):
         # Backwards compat
         a_bakchod.id = tg_id
 
-        logger.info("Updating Bakchod for username=" + username + " rokda=" + str(a_bakchod.rokda))
+        logger.info("Updating Bakchod for username={} rokda={}".format(
+            username, 
+            a_bakchod.rokda
+            ))
 
         bakchod_dict[tg_id] = a_bakchod
 
