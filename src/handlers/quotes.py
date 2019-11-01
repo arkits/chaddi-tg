@@ -61,6 +61,11 @@ def handle(bot, update):
             with open('resources/quotes.pickle', 'wb') as handle:
                 pickle.dump(quotes_list, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
+        update.message.reply_text(
+            text="Rote memorization successful", 
+            parse_mode=ParseMode.MARKDOWN
+            )
+
     else:
 
         # Return a random quote
