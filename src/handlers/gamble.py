@@ -48,6 +48,10 @@ def gamble(bakchod_id):
         elif roll > 0.90:
             response = "You ballin now fam. just won 50 ₹okda"
             rokda = rokda + 50
+        elif roll > 0.85:
+            response = "You won 50 ₹okda and gifted 15 to {}".format(random_bakchod.username)
+            rokda = rokda + 35
+            random_bakchod.rokda += 15
         elif roll > 0.70:
             response = "You won +20 ₹okda... this is pretty good tbh!"
             rokda = rokda + 20
@@ -68,6 +72,10 @@ def gamble(bakchod_id):
             response = "You actually won... but while leaving the casio you got mugged by {} and lost 70 ₹okda!".format(random_bakchod.username)
             rokda = rokda - 70
             random_bakchod.rokda += 70
+        elif roll > 0.01:
+            response = "You lost your entire fortune (and Paul's Kwid) to {}. Gambling can suck".format(random_bakchod.username)
+            random_bakchod += rokda
+            rokda = 5
         else:
             response = "CBI Raided ChaddiInc... That 150 you just won was derokdatized!"
             rokda = rokda - 150
