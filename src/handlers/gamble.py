@@ -69,6 +69,11 @@ def gamble(bakchod_id):
             response = "CBI Raided ChaddiInc... That 150 you just won was derokdatized!"
             rokda = rokda - 150
 
+        # Close their accounts at 0 if they're in negatives
+        if (rokda < 0):
+            rokda = 0
+            response = "You're bankrupt with 0 ₹okda, enroll into ChaddiInc Narega!"
+
         bakchod.rokda = rokda
         bakchod_util.set_bakchod(bakchod)
     
