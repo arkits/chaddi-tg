@@ -8,6 +8,7 @@ import logging
 import pickle
 from util import util
 from datetime import datetime, date, timezone
+import random
 
 # Enable logging
 logger = logging.getLogger(__name__)
@@ -44,6 +45,10 @@ def get_bakchod(tg_id):
         a_bakchod = None
 
     return a_bakchod
+
+# Get a random Bakchod
+def get_bakchod_random():
+    return random.choice(list(bakchod_dict.values()))
 
 
 # Update Bakchod and commit to pickle
