@@ -74,7 +74,12 @@ def bakchod_updater(from_user):
             a_bakchod = Bakchod(tg_id, username)
 
         a_bakchod.lastseen = datetime.now()
-        a_bakchod.rokda = a_bakchod.rokda + 1
+
+        # Egalitarian policy
+        # Poor users get more incrment than richer users
+        if (a_bakchod.rokda = -10):
+            a_bakchod.rokda = -9
+        a_bakchod.rokda += (100/(a_bakchod.rokda + 10) + 1)
 
         # Backwards compat
         a_bakchod.id = tg_id
