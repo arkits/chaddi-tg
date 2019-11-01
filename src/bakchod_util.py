@@ -114,7 +114,7 @@ def rokda_query(query_id):
 
     if query_id in bakchod_dict:
         found_bakchod = bakchod_dict[query_id]
-        return("💰" + found_bakchod.username + ' has ' + str(round(found_bakchod.rokda), 2) + ' ₹okda!')
+        return("💰" + found_bakchod.username + ' has ' + str(round(found_bakchod.rokda, 2)) + ' ₹okda!')
     else: 
         return("404")
 
