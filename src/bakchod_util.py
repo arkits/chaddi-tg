@@ -77,7 +77,7 @@ def bakchod_updater(from_user):
 
         # Egalitarian policy
         # Poor users get more incrment than richer users
-        if (a_bakchod.rokda = -10):
+        if (a_bakchod.rokda == -10):
             a_bakchod.rokda = -9
         a_bakchod.rokda += (100/(a_bakchod.rokda + 10) + 1)
 
