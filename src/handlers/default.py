@@ -61,7 +61,5 @@ def all_commands(bot, update):
 def all_sticker(bot, update):
 
     # logger.info("all_sticker: Received Sticker Message from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
-
-    logger.info(update)
     
     bakchod_util.bakchod_updater(update.message.from_user)
