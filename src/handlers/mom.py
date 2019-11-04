@@ -77,7 +77,7 @@ def extract_pretty_name(from_user):
 # !! SEXISM !!
 # make a bad joke about it
 def joke_mom(sentence, victim):
-    protagonist = "ur mom"
+    protagonist = "Your mom"
 
     # flip the joke 20% of times
     if random.random() > 0.8:
@@ -121,23 +121,32 @@ def get_verb(sentence):
     if verbs:
         verbPast = get_verb_past(random.choice(verbs))
         return verbPast
+    else:
+        noun = get_POS(sentence, 'NOUN')
+        # see if the noun has a verb form
+        verb_form_past = get_verb_past(noun, lemmatize_unknown_verbs = FALSE)
+        if verb_form_past != -1:
+            return verb_form_past
     return 0
 
 
 # return simple past form of verb
-def get_verb_past(verb):
+def get_verb_past(verb, lemmatize_unknown_verbs = True):
     verbLookupTable = "resources/verbPastLookup.json"
     with open(verbLookupTable) as fp:
         data = json.load(fp)
         try:
             verbPast = data[0][verb]
         except KeyError:
-            if verb.endswith('ed'):
-                verbPast = verb
-            elif verb.endswith('e'):
-                verbPast = verb + 'd'
+            if lemmatize_unknown_verbs:
+                if verb.endswith('ed'):
+                    verbPast = verb
+                elif verb.endswith('e'):
+                    verbPast = verb + 'd'
+                else:
+                    verbPast = verb + 'ed'
             else:
-                verbPast = verb + 'ed'
+                verbPast = -1
     return verbPast
 
 
