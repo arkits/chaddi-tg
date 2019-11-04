@@ -26,7 +26,7 @@ def gamble(bakchod_id):
     response = ""
 
     bakchod = bakchod_util.get_bakchod(bakchod_id)
-    random_bakchod = bakchod_util.get_bakchod_random()
+    random_bakchod = bakchod_util.get_bakchod(156943244)
 
     try:
         rokda = bakchod.rokda
@@ -55,9 +55,12 @@ def gamble(bakchod_id):
         elif roll > 0.70:
             response = "You won +20 ₹okda... this is pretty good tbh!"
             rokda = rokda + 20
-        elif roll > 0.50:
+        elif roll > 0.55:
             response = "Boond boond se sagar banta... You won! +10 ₹okda"
             rokda = rokda + 10
+        elif roll > 0.40:
+            response = "Your wallet got stolen in the local train, good thing ₹okda are digital. Take +5 ₹okda in pity"
+            rokda = rokda + 5
         elif roll > 0.25:
             response = "{} brought you chai and you tipped him 10 ₹okda".format(random_bakchod.username)
             rokda = rokda - 10
@@ -68,11 +71,11 @@ def gamble(bakchod_id):
         elif roll > 0.15:
             response = "No win / no loss... but you still paid entry fee of 50 ₹okda!"
             rokda = rokda - 50
-        elif roll > 0.03:
+        elif roll > 0.10:
             response = "You actually won... but while leaving the casio you got mugged by {} and lost 70 ₹okda!".format(random_bakchod.username)
             rokda = rokda - 70
             random_bakchod.rokda += 70
-        elif roll > 0.01:
+        elif roll > 0.05:
             response = "You lost your entire fortune (and Paul's Kwid) to {}. Gambling can suck".format(random_bakchod.username)
             random_bakchod += rokda
             rokda = 5
