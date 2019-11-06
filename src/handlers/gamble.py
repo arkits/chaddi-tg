@@ -72,7 +72,7 @@ def gamble(bakchod_id):
             response = "No win / no loss... but you still paid entry fee of 50 ₹okda!"
             rokda = rokda - 50
         elif roll > 0.10:
-            response = "You actually won... but while leaving the casio you got mugged by {} and lost 70 ₹okda!".format(random_bakchod.username)
+            response = "You actually won... but while leaving the casino you got mugged by {} and lost 70 ₹okda!".format(random_bakchod.username)
             rokda = rokda - 70
             random_bakchod.rokda += 70
         elif roll > 0.05:

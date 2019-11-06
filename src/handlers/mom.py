@@ -77,7 +77,7 @@ def extract_pretty_name(from_user):
 # !! SEXISM !!
 # make a bad joke about it
 def joke_mom(sentence, victim):
-    protagonist = "Your mom"
+    protagonist = "your mom"
 
     # flip the joke 20% of times
     if random.random() > 0.8:
