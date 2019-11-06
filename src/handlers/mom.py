@@ -124,7 +124,7 @@ def get_verb(sentence):
     else:
         noun = get_POS(sentence, 'NOUN')
         # see if the noun has a verb form
-        verb_form_past = get_verb_past(noun, lemmatize_unknown_verbs = FALSE)
+        verb_form_past = get_verb_past(noun, lemmatize_unknown_verbs = False)
         if verb_form_past != -1:
             return verb_form_past
     return 0
