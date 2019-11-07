@@ -90,6 +90,7 @@ def gamble(bakchod_id):
 
         bakchod.rokda = rokda
         bakchod_util.set_bakchod(bakchod)
+        bakchod_util.set_bakchod(random_bakchod)
     
     else:
         response = "Sorry you need atleast 50 ₹okda to gamble! Come back later..."
