@@ -52,26 +52,26 @@ def gamble(bakchod_id):
             response = "You won 200 ₹okda and gifted 15 to {}".format(random_bakchod.username)
             rokda = rokda + 200
             random_bakchod.rokda += 15
-        elif roll > 0.70:
+        elif roll > 0.75:
             response = "You won +100 ₹okda... this is pretty good tbh!"
             rokda = rokda + 100
-        elif roll > 0.55:
+        elif roll > 0.65:
             response = "Boond boond se sagar banta... You won! +50 ₹okda"
             rokda = rokda + 50
-        elif roll > 0.40:
+        elif roll > 0.55:
             response = "Your wallet got stolen in the local train, good thing ₹okda are digital. Take +1 ₹okda in pity"
             rokda = rokda + 1
-        elif roll > 0.25:
+        elif roll > 0.45:
             response = "{} brought you chai and you tipped him 100 ₹okda".format(random_bakchod.username)
             rokda = rokda - 100
             random_bakchod.rokda += 100
-        elif roll > 0.20:
+        elif roll > 0.35:
             response = "You got drunk at the bar and drove back home... and also got a chalan of 300 ₹okda"
             rokda = rokda - 300
-        elif roll > 0.15:
+        elif roll > 0.25:
             response = "No win / no loss... but you still paid entry fee of 400 ₹okda!"
             rokda = rokda - 400
-        elif roll > 0.10:
+        elif roll > 0.15:
             response = "You actually won... but while leaving the casino you got mugged by {} and lost 500 ₹okda!".format(random_bakchod.username)
             rokda = rokda - 500
             random_bakchod.rokda += 500
