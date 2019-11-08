@@ -78,6 +78,11 @@ def bakchod_updater(from_user):
         # Backwards compat
         a_bakchod.id = tg_id
 
+        try:
+            history = a_bakchod.history
+        except:
+            a_bakchod.history = {}
+
         logger.info("Updating Bakchod for username={} rokda={}".format(
             username, 
             a_bakchod.rokda
