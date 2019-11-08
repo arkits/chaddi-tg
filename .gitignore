@@ -2,6 +2,7 @@
 config.py*
 .vscode
 src/resources/gtts_output.mp3
+.idea
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

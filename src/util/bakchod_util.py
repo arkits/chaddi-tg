@@ -6,23 +6,14 @@ from telegram import ParseMode
 
 import logging
 import pickle
-from util import util
-from datetime import datetime, date, timezone
 import random
+from datetime import datetime, date, timezone
+
+from util import util
+from models import bakchod
 
 # Enable logging
 logger = logging.getLogger(__name__)
-
-
-# Encapsulate data representing a Bakchod
-class Bakchod:
-  def __init__(self, tg_id, username):
-    self.id = tg_id
-    self.username = username
-    self.lastseen = None
-    self.rokda = 500
-    self.birthday = None
-
 
 # Using Python pickling for data persistence
 try:
@@ -76,7 +67,7 @@ def bakchod_updater(from_user):
         if tg_id in bakchod_dict:
             a_bakchod = bakchod_dict[tg_id]
         else:
-            a_bakchod = Bakchod(tg_id, username)
+            a_bakchod = bakchod.Bakchod(tg_id, username)
 
         a_bakchod.lastseen = datetime.now()
 

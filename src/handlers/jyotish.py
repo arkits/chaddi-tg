@@ -6,7 +6,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import ParseMode
 
 import util
-import bakchod_util
+from util import bakchod_util
 import requests
 import json
 

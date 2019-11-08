@@ -6,7 +6,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import ParseMode
 import random
 from datetime import datetime
-import bakchod_util
+from util import bakchod_util
 
 # Enable logging
 logger = logging.getLogger(__name__)

@@ -5,7 +5,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import logging
 import util
 import config
-import bakchod_util
+from util import bakchod_util
 import spacy
 import json
 import random

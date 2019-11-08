@@ -6,7 +6,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import ParseMode
 import pytz
 from datetime import datetime, date, timezone
-import bakchod_util
+from util import bakchod_util
 from util import util
 
 # Enable logging

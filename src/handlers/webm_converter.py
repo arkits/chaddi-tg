@@ -4,7 +4,7 @@
 import logging
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import ParseMode
-import bakchod_util
+from util import bakchod_util
 import ffmpeg
 
 # Enable logging

@@ -8,7 +8,7 @@ from telegram import ParseMode
 import os
 import config
 from gtts import gTTS
-import bakchod_util
+from util import bakchod_util
 
 # Enable logging
 logger = logging.getLogger(__name__)

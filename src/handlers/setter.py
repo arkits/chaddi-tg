@@ -3,7 +3,7 @@
 
 import logging
 import random
-import bakchod_util
+from util import bakchod_util
 import dateparser
 from telegram import ParseMode
 import config

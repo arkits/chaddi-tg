@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import logging
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import ParseMode
+
+import logging
 import random
 from datetime import datetime
-import bakchod_util
+from util import bakchod_util
 import config
 
 # Enable logging

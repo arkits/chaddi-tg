@@ -9,7 +9,7 @@ import util
 import handlers.hi as hi_handler
 import handlers.bestie as bestie_handler
 import handlers.macro as macro_handler
-import bakchod_util
+from util import bakchod_util
 
 # Enable logging
 logger = logging.getLogger(__name__)
