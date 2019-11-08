@@ -69,19 +69,11 @@ def bakchod_updater(from_user):
         else:
             a_bakchod = bakchod.Bakchod(tg_id, username)
 
+        # Update last seen
         a_bakchod.lastseen = datetime.now()
 
         # Reward rokda
-        r = a_bakchod.rokda
-
-        if (r < 0) or r is None:
-            r = 0
-
-        # Egalitarian policy - Poor users get more increment than richer users
-        r += (100/(r + 10) + 1)
-        r = round(r, 2)
-
-        a_bakchod.rokda = r
+        a_bakchod.rokda = rewardRokda(a_bakchod.rokda)
 
         # Backwards compat
         a_bakchod.id = tg_id
@@ -95,6 +87,18 @@ def bakchod_updater(from_user):
 
         with open('resources/bakchod.pickle', 'wb') as handle:
             pickle.dump(bakchod_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+def rewardRokda(r):
+
+        if (r < 0) or r is None:
+            r = 0
+
+        # Egalitarian policy - Poor users get more increment than richer users
+        r += (100/(r + 10) + 1)
+        r = round(r, 2)
+
+        return r
 
 
 def timesince_query(query_username):
