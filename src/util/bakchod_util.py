@@ -4,16 +4,16 @@
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import ParseMode
 
-import logging
 import pickle
 import random
 from datetime import datetime, date, timezone
 
-from util import util
+import util.logger
+from util import chaddi_util
 from models import bakchod
 
 # Enable logging
-logger = logging.getLogger(__name__)
+logger = util.logger.get_logger(__name__)
 
 # Using Python pickling for data persistence
 try:
@@ -115,7 +115,7 @@ def timesince_calculator(lastseen):
 
     now = datetime.now()
     td = now - lastseen
-    pretty_td = util.pretty_time_delta(td.total_seconds())
+    pretty_td = chaddi_util.pretty_time_delta(td.total_seconds())
     return(pretty_td)
 
 

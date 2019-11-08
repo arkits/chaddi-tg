@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import logging
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import ParseMode
 import pickle
+import util.logger
 
 # Enable logging
-logger = logging.getLogger(__name__)
+logger = util.logger.get_logger(__name__)
 
 # Using Python pickling for data persistence
 try:

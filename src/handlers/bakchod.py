@@ -10,7 +10,6 @@ from util import bakchod_util
 # Enable logging
 logger = logging.getLogger(__name__)
 
-
 # Handle /timesince
 def timesince(bot, update):
     

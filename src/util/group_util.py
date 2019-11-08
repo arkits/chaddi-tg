@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import logging
 import pickle
 import random
 from datetime import datetime, date, timezone
 
-from util import util
+import util.logger
 from models import group
 
 # Enable logging
-logger = logging.getLogger(__name__)
+logger = util.logger.get_logger(__name__)
 
 # Using Python pickling for data persistence
 try:

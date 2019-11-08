@@ -7,7 +7,7 @@ from telegram import ParseMode
 import pytz
 from datetime import datetime, date, timezone
 from util import bakchod_util
-from util import util
+from util import chaddi_util
 
 # Enable logging
 logger = logging.getLogger(__name__)
@@ -38,6 +38,6 @@ def superpower_countdown_calc():
     
     # Get timedelta
     td = superpower_day - now
-    pretty_td = util.pretty_time_delta(td.total_seconds())
+    pretty_td = chaddi_util.pretty_time_delta(td.total_seconds())
 
     return(pretty_td)
