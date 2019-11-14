@@ -38,11 +38,14 @@ def handle(bot, update):
                 parse_mode=ParseMode.HTML
             )
 
-    # clean up waste
-    bot.delete_message(
-        chat_id=update.message.chat_id,
-        message_id=update.message.message_id
-    )
+    try:
+        # clean up waste
+        bot.delete_message(
+            chat_id=update.message.chat_id,
+            message_id=update.message.message_id
+        )
+    except:
+        logger.warn("Unable to delete - %s", update.message.chat.title)
 
 
 # generate a response to /me
