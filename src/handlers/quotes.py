@@ -40,6 +40,8 @@ def handle(bot, update):
         # Add the quoted message to quotes_list
         if update.message.reply_to_message.text:
 
+            quote_id = len(quotes_list)
+
             quoted_message = update.message.reply_to_message.text
 
             if update.message.reply_to_message.from_user['username']:
@@ -52,7 +54,8 @@ def handle(bot, update):
             quote = {
                 'message' : quoted_message,
                 'user' : quoted_user,
-                'date' : quoted_date
+                'date' : quoted_date,
+                'id' : quote_id
             }
 
             quotes_list.append(quote)
@@ -62,7 +65,7 @@ def handle(bot, update):
                 pickle.dump(quotes_list, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
         update.message.reply_text(
-            text="Rote memorization successful", 
+            text="✏️ Rote memorization successful!", 
             parse_mode=ParseMode.MARKDOWN
             )
 
@@ -73,7 +76,11 @@ def handle(bot, update):
 
         logger.info("/quotes: Returning a random quote '%s'", random_quote)
 
-        pretty_quote = "`" + random_quote['message'] + "` \n - @" + random_quote['user']
+        pretty_quote = "#{} \n `{}` \n ** - @{} **".format(
+            random_quote['id'],
+            random_quote['message'],
+            random_quote['user'],
+        )
 
         update.message.reply_text(
             text=pretty_quote, 
