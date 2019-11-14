@@ -10,13 +10,13 @@ from datetime import datetime
 # Enable logging
 logger = logging.getLogger(__name__)
 
-bestie_response_whitelist = ['ArmoredKuruma']
+bestie_response_whitelist = [222021705, 148933790]
 
 
 # Handler bestie
 def handle(bot, update):
 
-    if(update.message.from_user['username'] in bestie_response_whitelist):
+    if(update.message.from_user['id'] in bestie_response_whitelist):
         logger.info("/bestie: Handling /bestie request from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
         update.message.reply_text(random_reply())
 
