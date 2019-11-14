@@ -115,7 +115,7 @@ def gamble_engine(bakchod, random_bakchod):
     # Close their accounts at 0 if they're in negatives
     if (bakchod.rokda < 0):
         bakchod.rokda = 0
-        response = "You're bankrupt with 0 ₹okda, enroll into ChaddiInc Narega!"
+        response = response + " You're bankrupt with 0 ₹okda, enroll into ChaddiInc Narega!"
 
     return response, bakchod, random_bakchod
 
@@ -139,7 +139,7 @@ def can_bakchod_gamble(bakchod):
     try:
         if bakchod.rokda < 50:
             can_gamble = False
-            response = "Rokda too low"
+            response = "Sorry you need atleast 50 ₹okda to gamble! Come back later..."
             logger.info("/gamble: rokda too low")
             return can_gamble, response 
     except:
