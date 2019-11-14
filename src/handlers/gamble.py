@@ -109,7 +109,7 @@ def gamble_engine(bakchod, random_bakchod):
     elif roll > 0.001:
         response = "You lost your entire fortune (and Paul's Kwid) to {}. Gambling can suck!".format(
             random_bakchod.username)
-        random_bakchod.rokda += rokda
+        random_bakchod.rokda += bakchod.rokda
         bakchod.rokda = 1
 
     # Close their accounts at 0 if they're in negatives
