@@ -97,6 +97,7 @@ def main():
     dp.add_handler(CommandHandler("jyotish", jyotish_handler.handle))
     dp.add_handler(CommandHandler("mom", mom_handler.handle))
     dp.add_handler(CommandHandler("quotes", quotes_handler.handle))
+    dp.add_handler(CommandHandler("quote", quotes_handler.handle))
     dp.add_handler(CommandHandler("help", help_handler.handle))
     dp.add_handler(CommandHandler("choose", choose_handler.handle))
     dp.add_handler(CommandHandler("about", bakchod_handler.about))
