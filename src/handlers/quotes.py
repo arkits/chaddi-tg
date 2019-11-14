@@ -3,13 +3,12 @@
 
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import ParseMode
-
+from datetime import datetime
 import logging
 import pickle
-import util
 import random
-from datetime import datetime
 import uuid 
+import config
 
 # Enable logging
 logger = logging.getLogger(__name__)
@@ -51,16 +50,22 @@ def handle(bot, update):
 
     elif command == "remove":
 
-        try:
-            id_to_remove = query[2]
-        except:
-            update.message.reply_text(
-                text="Please include the Quote ID you want to remove!", 
-                parse_mode=ParseMode.MARKDOWN
-            )
-            return
-        
-        response = remove_quote(id_to_remove)
+        if is_admin(update.message.from_user['id']):
+
+            try:
+                id_to_remove = query[2]
+            except:
+                update.message.reply_text(
+                    text="Please include the Quote ID you want to remove!", 
+                    parse_mode=ParseMode.MARKDOWN
+                )
+                return
+            
+            response = remove_quote(id_to_remove)
+
+        else:
+
+            response = "Chal kat re bsdk!"
 
         update.message.reply_text(
             text=response, 
@@ -124,6 +129,7 @@ def get_random_quote():
 
     return(random.choice(list(quotes_dict.values())))
 
+
 # Removes quote based on it's ID
 def remove_quote(id_to_remove):
 
@@ -148,4 +154,9 @@ def remove_quote(id_to_remove):
     return response
 
 
-
+def is_admin(og_bakchod):
+    if str(og_bakchod) in config.allowed_setters:
+        logger.info("is_admin: og_bakchod in config.allowed_setters")
+        return True
+    else:
+        return False
