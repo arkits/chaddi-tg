@@ -21,7 +21,6 @@ def handle(bot, update):
         logger.info("/me: response='%s'", response)
 
         if update.message.reply_to_message:
-
             # if original command was a reply to someone
             update.message.reply_to_message.reply_text(
                 text=response,
@@ -29,23 +28,11 @@ def handle(bot, update):
             )
 
         else:
-
             # if original command was by itself
-            bot.send_message(
-                chat_id=update.message.chat_id,
-                message_id=update.message.message_id,
+            update.message.reply_text(
                 text=response,
                 parse_mode=ParseMode.HTML
             )
-
-    try:
-        # clean up waste
-        bot.delete_message(
-            chat_id=update.message.chat_id,
-            message_id=update.message.message_id
-        )
-    except:
-        logger.warn("Unable to delete - %s", update.message.chat.title)
 
 
 # generate a response to /me
