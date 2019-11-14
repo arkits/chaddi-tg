@@ -62,7 +62,7 @@ def parse_request(request, for_bakchod, og_bakchod, tg_update):
     elif set_type.lower() == "rokda":
 
         try:
-            rokda_to_set = int(request[2])
+            rokda_to_set = float(request[2])
         except IndexError:
             response = "Please include rokda to set - `/set rokda 1337`"
             return response
