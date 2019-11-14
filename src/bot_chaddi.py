@@ -36,6 +36,7 @@ import handlers.quotes as quotes_handler
 import handlers.setter as setter_handler
 import handlers.birthday as birthday_handler
 import handlers.gamble as gamble_handler
+import handlers.me as me_handler
 
 logger = util.logger.get_logger(__name__)
 
@@ -105,6 +106,7 @@ def main():
     dp.add_handler(CommandHandler("birthdays", birthday_handler.handle))
     dp.add_handler(CommandHandler("set", setter_handler.handle))
     dp.add_handler(CommandHandler("gamble", gamble_handler.handle))
+    dp.add_handler(CommandHandler("me", me_handler.handle))
     
     # regular messages
     dp.add_handler(MessageHandler(Filters.text, default_handler.all_text))
