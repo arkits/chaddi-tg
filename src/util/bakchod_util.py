@@ -45,6 +45,9 @@ def get_bakchod_random():
 # Update Bakchod and commit to pickle
 def set_bakchod(a_bakchod):
 
+    # Make sure that rokda is always rounded to 2 decimals
+    a_bakchod.rokda = round(a_bakchod.rokda, 2)
+
     if a_bakchod.id in bakchod_dict:
         bakchod_dict[a_bakchod.id] = a_bakchod
 
