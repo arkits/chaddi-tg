@@ -45,7 +45,7 @@ def all_text(bot, update):
         hi_handler.handle(bot, update)
 
     # Handle bestie messages
-    if "bestie" in message_text:
+    if "bestie" in message_text.lower():
         bestie_handler.handle(bot, update)
 
 def all_commands(bot, update):
