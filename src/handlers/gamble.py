@@ -93,11 +93,11 @@ def gamble_engine(bakchod, random_bakchod):
         bakchod.rokda = bakchod.rokda - 100
         random_bakchod.rokda += 100
     elif roll > 0.35:
-        response = "You got drunk at the bar and drove back home... and also got a chalan of 300 ₹okda"
-        bakchod.rokda = bakchod.rokda - 300
+        response = "No win / no loss... but you still paid entry fee of 250 ₹okda!"
+        bakchod.rokda = bakchod.rokda - 250
     elif roll > 0.25:
-        response = "No win / no loss... but you still paid entry fee of 400 ₹okda!"
-        bakchod.rokda = bakchod.rokda - 400
+        response = "You got drunk at the bar and drove back home... and also got a chalan of 375 ₹okda"
+        bakchod.rokda = bakchod.rokda - 375
     elif roll > 0.15:
         response = "You actually won... but while leaving the casino you got mugged by {} and lost 500 ₹okda!".format(
             random_bakchod.username)
