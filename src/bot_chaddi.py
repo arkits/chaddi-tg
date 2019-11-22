@@ -38,6 +38,7 @@ import handlers.birthday as birthday_handler
 import handlers.gamble as gamble_handler
 import handlers.me as me_handler
 import handlers.calc as calc_handler
+import handlers.censor as censor_handler
 
 logger = util.logger.get_logger(__name__)
 
@@ -109,8 +110,9 @@ def main():
     dp.add_handler(CommandHandler("gamble", gamble_handler.handle))
     dp.add_handler(CommandHandler("me", me_handler.handle))
     dp.add_handler(CommandHandler("calc", calc_handler.handle))
+    dp.add_handler(CommandHandler("censor", censor_handler.handle_censor))
+    dp.add_handler(CommandHandler("uncensor", censor_handler.handle_uncensor))
 
-    
     # regular messages
     dp.add_handler(MessageHandler(Filters.text, default_handler.all_text))
     dp.add_handler(MessageHandler(Filters.command, default_handler.all_commands))

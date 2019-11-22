@@ -146,14 +146,21 @@ def about_query(query_id):
         about_response = about_response + '~ ₹okda: `{}` \n'.format(found_bakchod.rokda)
 
         try:
+            about_response = about_response + '~ Censored: `{}` \n'.format(
+                            found_bakchod.censored
+                        )
+        except:
+            about_response = about_response + '~ Censored: `Nope` \n'
+
+        try:
             about_response = about_response + '~ Birthday: `{} {} {}` \n'.format(
                             found_bakchod.birthday.day,
                             found_bakchod.birthday.strftime('%b'),
                             found_bakchod.birthday.year
                         )
         except:
-            about_response = about_response + '~ Birthday: `Not set. Please set with /set birthday.`'
-        
+            about_response = about_response + '~ Birthday: `Not set. Please set with /set birthday <your_birthday>` \n'
+
         return(about_response)
     else: 
         return("404")

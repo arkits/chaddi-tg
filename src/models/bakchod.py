@@ -24,3 +24,5 @@ class Bakchod:
     # History Dictionary
     # key="history_type", value=Date
     self.history = {}
+
+    self.censored = False

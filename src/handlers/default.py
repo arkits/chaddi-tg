@@ -35,6 +35,19 @@ def all_text(bot, update):
 
     # logger.info("all_text: Received text message from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
 
+    bakchod = bakchod_util.get_bakchod(update.message.from_user['id'])
+    if bakchod is not None:
+        try:
+            if bakchod.censored:
+                logger.info("censoring id='%s' message='%s'",update.message.text, update.message.from_user['id'])
+                bot.delete_message(
+                    chat_id=update.message.chat_id,
+                    message_id=update.message.message_id
+                )
+                return
+        except Exception as e:
+            logger.debug(e)
+
     bakchod_util.bakchod_updater(update.message.from_user)
     group_util.group_updater(update.message.chat, update.message.from_user)
     
