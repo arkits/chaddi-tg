@@ -20,16 +20,25 @@ def handle(bot, update):
     if response is not None:
         logger.info("/me: response='%s'", response)
 
+        try:
+            bot.delete_message(
+                chat_id=update.message.chat_id,
+                message_id=update.message.message_id
+            )
+        except:
+            logger.warn("/me: caught error when trying to delete")
+
         if update.message.reply_to_message:
             # if original command was a reply to someone
             update.message.reply_to_message.reply_text(
                 text=response,
                 parse_mode=ParseMode.HTML
             )
-
+            
         else:
             # if original command was by itself
-            update.message.reply_text(
+            bot.send_message(
+                chat_id=update.message.chat_id,
                 text=response,
                 parse_mode=ParseMode.HTML
             )
@@ -49,11 +58,11 @@ def generate_me(update):
 
     action = query[1:]
 
-    if len(action) == 1:
+    if len(action) >= 1:
 
         action = ' '.join(action)
 
-        response = "@{} {}".format(
+        response = "<pre>@{} {}</pre>".format(
             from_user,
             action
         )
