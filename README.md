@@ -25,7 +25,14 @@ ChaddiBot has a variety of features to make your Telegram experience a whole lot
 
 ## Setup and Deployment
 
-* Register your bot with @botfather. [Refer to Telegram's documentation](https://core.telegram.org/bots#3-how-do-i-create-a-bot).
+### Setup your Telegram Bot
+* Create your bot with [@BotFather](https://telegram.me/botfather).   
+    * Refer to Telegram's [documentation](https://core.telegram.org/bots#3-how-do-i-create-a-bot) for more help on creating bots.
+    * Important settings in @BotFather -
+        * Enable `Allow Groups`.
+        * Disbale `Privacy Mode`.
+
+### Setup chaddi-tg code
 * Clone the repo.
 * Setup virtualenv.
 
@@ -39,32 +46,16 @@ source .env/bin/activate
 cd chaddi-tg
 pip install -r requirements.txt
 ```
-* Create `config.py` in `src/`
-* Add `src/config.py` with relevant information
+* Create `src/config.py` based on `src/config.py.sample`
 
+### Running 
 
-```python
-
-# Bot Username
-bot_username = "ChaddiBot"
-
-# Telegram Bot API Token
-tg_bot_token = "YOUR-TG-BOT-API-TOKEN-HERE"
-
-# Telegram Webhook URL
-tg_webhook_url = "https://chaddibot.com/"
-
-# Whether runnning as dev or not
-is_dev = True
-
-# Choose which Text to Speech Engine to use.
-tts_engine = "gTTS" # Google TTS
-
-```
 * Run locally with `python bot_chaddi.py`.
 * Run in prod with `./run_prod.sh`.
 
-### `/mom` handler
+### Additional Setup for Special Handlers
+
+#### `/mom` handler
 
 The `/mom` handler uses spaCy library. It needs to be installed with the English language model.
 
@@ -72,11 +63,11 @@ The `/mom` handler uses spaCy library. It needs to be installed with the English
 python -m spacy download en_core_web_sm
 ```
 
-### WebM converter
+#### WebM converter
 
 WebM files are converted into mp4 by `src/handlers/webm_converter.py` using ffmpeg. Make sure to install that. 
 
-### Webhook conectivity
+#### Webhook Conectivity
 
 [Refer to python-telegram-bot's official documentation](https://github.com/python-telegram-bot/python-telegram-bot/wiki/Webhooks)
 
