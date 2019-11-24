@@ -9,6 +9,7 @@ import util
 import handlers.hi as hi_handler
 import handlers.bestie as bestie_handler
 import handlers.macro as macro_handler
+import handlers.webm_converter as webm_handler
 from util import bakchod_util
 from util import group_util
 
@@ -18,7 +19,7 @@ logger = logging.getLogger(__name__)
 # Handle /start
 def start(bot, update):
 
-    # bakchod_util.bakchod_updater(update.message.from_user)
+    bakchod_util.bakchod_updater(update.message.from_user)
 
     logger.info('/start: Handling /start response')
     logger.info("Request from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
@@ -33,27 +34,15 @@ def error(bot, update, error):
 # Handle all text messages received
 def all_text(bot, update):
 
-    # logger.info("all_text: Received text message from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
-
-    bakchod = bakchod_util.get_bakchod(update.message.from_user['id'])
-    if bakchod is not None:
-        try:
-            if bakchod.censored:
-                logger.info("censoring id='%s' message='%s'",update.message.text, update.message.from_user['id'])
-                bot.delete_message(
-                    chat_id=update.message.chat_id,
-                    message_id=update.message.message_id
-                )
-                return
-        except Exception as e:
-            logger.debug(e)
+    if censor_check(bot, update):
+        return
 
     bakchod_util.bakchod_updater(update.message.from_user)
     group_util.group_updater(update.message.chat, update.message.from_user)
     
     message_text = update.message.text
 
-    # TODO: Handle this through custom filters
+    # Handle 'hi' messages
     if(message_text == 'hi' or message_text == 'Hi'):
         hi_handler.handle(bot, update)
 
@@ -61,7 +50,12 @@ def all_text(bot, update):
     if "bestie" in message_text.lower():
         bestie_handler.handle(bot, update)
 
+
+# Handle all /commands received
 def all_commands(bot, update):
+
+    if censor_check(bot, update):
+        return
 
     command_list = macro_handler.get_macros_keys()
 
@@ -69,12 +63,56 @@ def all_commands(bot, update):
 
     for command in command_list:
         if message_text.startswith(command):
-            logger.info("We In - %s", command)
             macro_handler.handle(bot, update, command)
 
-# Handle all text messages received
-def all_sticker(bot, update):
 
-    # logger.info("all_sticker: Received Sticker Message from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
-    
+# Handle all_videos received
+def all_videos(bot, update):
+
+    if censor_check(bot, update):
+        return
+
     bakchod_util.bakchod_updater(update.message.from_user)
+
+    webm_handler.handler(bot, update)
+
+
+# Handle all_stickers received
+def all_stickers(bot, update):
+    
+    if censor_check(bot, update):
+        return
+
+    bakchod_util.bakchod_updater(update.message.from_user)
+
+
+# Handle all_other_messages received
+def all_other_messages(bot, update):
+
+    if censor_check(bot, update):
+        return
+
+    bakchod_util.bakchod_updater(update.message.from_user)
+
+
+# Checks whether the Bakchod is set to be censored.
+# If censored, delete the message and return True.
+def censor_check(bot, update):
+
+    censored = False
+    
+    bakchod = bakchod_util.get_bakchod(update.message.from_user['id'])
+
+    if bakchod is not None:
+        try:
+            if bakchod.censored:
+                logger.info("censoring id='%s' message='%s'",update.message.from_user['id'], update.message.text)
+                bot.delete_message(
+                    chat_id=update.message.chat_id,
+                    message_id=update.message.message_id
+                )
+                censored = True
+        except Exception as e:
+            logger.debug(e)
+
+    return censored

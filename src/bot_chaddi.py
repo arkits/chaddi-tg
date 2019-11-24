@@ -31,7 +31,6 @@ import handlers.tts as tts_handler
 import handlers.superpower as superpower_handler
 import handlers.jyotish as jyotish_handler
 import handlers.mom as mom_handler
-import handlers.webm_converter as webm_handler
 import handlers.quotes as quotes_handler
 import handlers.setter as setter_handler
 import handlers.birthday as birthday_handler
@@ -116,8 +115,9 @@ def main():
     # regular messages
     dp.add_handler(MessageHandler(Filters.text, default_handler.all_text))
     dp.add_handler(MessageHandler(Filters.command, default_handler.all_commands))
-    dp.add_handler(MessageHandler(Filters.sticker, default_handler.all_sticker))
-    dp.add_handler(MessageHandler(Filters.document.category("video"), webm_handler.handle))
+    dp.add_handler(MessageHandler(Filters.sticker, default_handler.all_stickers))
+    dp.add_handler(MessageHandler(Filters.document.category("video"), default_handler.all_videos))
+    dp.add_handler(MessageHandler(Filters.all, default_handler.all_other_messages))
 
     # log all errors
     dp.add_error_handler(default_handler.error)
