@@ -4,7 +4,7 @@
 import logging
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import ParseMode
-import parser
+import numexpr
 
 # Enable logging
 logger = logging.getLogger(__name__)
@@ -20,7 +20,6 @@ def handle(bot, update):
 
     try:
         calc_str = ' '.join(query[1:])
-        # calc_code = parser.expr(calc_str).compile()
         response = calc_engine(calc_str)
     except Exception as e:
         response = str(e)
@@ -30,10 +29,8 @@ def handle(bot, update):
     update.message.reply_text(response)
 
 
-# Warning: Using eval() is a terrible approach. 
-# You should use this at your own risk!
-def calc_engine(calc_code):
+def calc_engine(calc_str):
 
-    # result = eval(calc_code, {'__builtins__': None})
+    result = numexpr.evaluate(calc_str)
 
-    return(calc_code)
+    return(str(result))
