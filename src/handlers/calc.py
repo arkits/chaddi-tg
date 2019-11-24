@@ -20,8 +20,8 @@ def handle(bot, update):
 
     try:
         calc_str = ' '.join(query[1:])
-        calc_code = parser.expr(calc_str).compile()
-        response = calc_engine(calc_code)
+        # calc_code = parser.expr(calc_str).compile()
+        response = calc_engine(calc_str)
     except Exception as e:
         response = str(e)
     finally:
@@ -34,6 +34,6 @@ def handle(bot, update):
 # You should use this at your own risk!
 def calc_engine(calc_code):
 
-    result = eval(calc_code, {'__builtins__': None})
+    # result = eval(calc_code, {'__builtins__': None})
 
-    return(result)
+    return(calc_code)
