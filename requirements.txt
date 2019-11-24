@@ -9,4 +9,3 @@ ffmpeg-python==0.2.0
 pytest==5.2.1
 dateparser==0.7.2
 coloredlogs==10.0
-numexpr==2.7.0

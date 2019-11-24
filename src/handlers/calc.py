@@ -4,11 +4,14 @@
 import logging
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import ParseMode
-import numexpr
+import requests
+import json
 
 # Enable logging
 logger = logging.getLogger(__name__)
 
+# Using math.js web service for expression eval
+url = "http://api.mathjs.org/v4/?expr="
 
 # Handler calc
 def handle(bot, update):
@@ -31,6 +34,10 @@ def handle(bot, update):
 
 def calc_engine(calc_str):
 
-    result = numexpr.evaluate(calc_str)
+    query_url = url + requests.utils.quote(calc_str)
+    logger.info(query_url)
 
-    return(str(result))
+    response = requests.request("GET", query_url)
+    response = json.loads(response.text)
+
+    return(str(response))
