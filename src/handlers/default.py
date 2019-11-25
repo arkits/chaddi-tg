@@ -74,7 +74,7 @@ def all_videos(bot, update):
 
     bakchod_util.bakchod_updater(update.message.from_user)
 
-    webm_handler.handler(bot, update)
+    webm_handler.handle(bot, update)
 
 
 # Handle all_stickers received
