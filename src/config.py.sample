@@ -12,3 +12,6 @@ is_dev = True
 
 # Choose which Text to Speech Engine to use.
 tts_engine = "gTTS" # Google TTS
+
+# ID of users who are allowed to acts admins.
+allowed_setters = []
