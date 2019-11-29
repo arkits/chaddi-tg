@@ -20,10 +20,17 @@ def handle_censor(bot, update):
                 parse_mode=ParseMode.HTML
             )
     else:
-        update.message.reply_to_message.reply_text(
-            text="❌ Not allowed censor",
-            parse_mode=ParseMode.HTML
-        )
+        if update.message.reply_to_message:
+            update.message.reply_to_message.reply_text(
+                text="❌ Not allowed censor",
+                parse_mode=ParseMode.HTML
+            )
+        else:
+            logger.info("censoring id='%s' message='%s'",update.message.from_user['id'], update.message.text)
+            bot.delete_message(
+                chat_id=update.message.chat_id,
+                message_id=update.message.message_id
+            )
 
 # Handler uncensor
 def handle_uncensor(bot, update):
@@ -45,7 +52,7 @@ def process_user(update, to_censor):
 
     user_id = update.message.reply_to_message.from_user['id']
     if update.message.reply_to_message.from_user['username']:
-        username = update.message.reply_to_message.from_user['username']
+        username = "@" + update.message.reply_to_message.from_user['username']
     else:
         username = update.message.reply_to_message.from_user['first_name']
 
