@@ -4,6 +4,9 @@
 # Stop if there is an error
 set -e
 
+# Go to chaddi home
+cd /opt/software/chaddi-tg
+
 # Pull latest from Git
 git pull
 
