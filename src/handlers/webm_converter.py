@@ -6,6 +6,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import ParseMode
 from util import bakchod_util
 import ffmpeg
+import datetime
 
 # Enable logging
 logger = logging.getLogger(__name__)
@@ -22,16 +23,25 @@ def handle(bot, update):
 
         logger.info("Got a webm - " + str(document.file_id))
 
+        time_before = datetime.datetime.now()
         webm_file = bot.get_file(document.file_id)
         webm_file.download('resources/to_convert.webm')
         logger.info("Downloaded webm - " + str(document.file_id))
 
         stream = ffmpeg.input('resources/to_convert.webm')
-        stream = ffmpeg.output(stream, 'resources/converted.mp4')
-        stream = ffmpeg.overwrite_output(stream)
-        ffmpeg.run(stream)
+        video = stream.video.filter('crop', 'iw-mod(iw,2)', 'ih-mod(ih,2)')
+        audio = stream.audio
+        joined = ffmpeg.concat(video, audio, v=1, a=1).node
+        output = ffmpeg.output(joined[0], joined[1], 'resources/converted.mp4',vcodec='libx265', crf=28, acodec='libvorbis')
+        output = ffmpeg.overwrite_output(output)
+        ffmpeg.run(output)
+
         logger.info("Finished converting webm - " + str(document.file_id))
 
+        time_after = datetime.datetime.now()
+        difference = time_after - time_before
+        minutes = int(difference.seconds/60)
+        seconds = difference.seconds%60
         og_from = update.message.from_user
 
         if(og_from['username']):
@@ -39,6 +49,6 @@ def handle(bot, update):
         elif(og_from['firstname']):
             og_sender = og_from['firstname']
 
-        caption = "madarchod " + og_sender + " kal se webm cancel!"
+        caption = document.file_name + " uploaded by " + og_sender + " has been converted to MP4 in " + str(minutes) + " minutes " + str(seconds) + " seconds"
 
         update.message.reply_video(video=open('resources/converted.mp4', 'rb'), timeout=5000, caption=caption)
