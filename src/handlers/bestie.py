@@ -24,7 +24,7 @@ def handle(bot, update):
 # Shoot a reply
 def random_reply():
     
-    replies = ['gussa aa ri', 'nhi ho ra']
+    replies = ['gussa aa ri', 'nhi ho ra', 'chid chid ho ra', 'mere friend ban jao fir se', 'pukish hora', 'headache ho ra']
 
     random.seed(datetime.now())
     random_int = random.randint(0,len(replies)-1)
