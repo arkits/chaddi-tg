@@ -20,7 +20,8 @@ def handle(bot, update):
     # bakchod_util.bakchod_updater(update.message.from_user)
 
     logger.info("/superpower: Handling /superpower request from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
-    response = "🇮🇳🙏 Time Until Super Power™️: " + superpower_countdown_calc() + " 🙏🇮🇳"
+    response = superpower_countdown_calc()
+    logger.info("/superpower: Returing response=%s", response)
     update.message.reply_text(response)
 
 
@@ -28,7 +29,7 @@ def handle(bot, update):
 def superpower_countdown_calc():
 
     ist = pytz.timezone("Asia/Kolkata")
-    
+
     # Current time in IST
     now = datetime.now(ist)
     
@@ -38,6 +39,11 @@ def superpower_countdown_calc():
     
     # Get timedelta
     td = superpower_day - now
-    pretty_td = chaddi_util.pretty_time_delta(td.total_seconds())
 
-    return(pretty_td)
+    if td.total_seconds() > 0:
+        response = "🇮🇳🙏 Time Until Super Power™️: " + chaddi_util.pretty_time_delta(td.total_seconds()) + " 🙏🇮🇳"
+    else:
+        td = now - superpower_day
+        response = "🇮🇳🙏 WE INVANT SUPER POWER 🙏🇮🇳 \n Time Since: " + chaddi_util.pretty_time_delta(td.total_seconds())
+
+    return(response)
