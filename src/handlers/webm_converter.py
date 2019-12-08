@@ -24,6 +24,9 @@ def handle(bot, update):
 
         logger.info("webm: Got a webm - " + str(document.file_id))
 
+        conversion_inform_message = update.message.reply_text(text="ヾ(＾-＾)ノ starting webm conversion!")
+        conversion_inform_message = conversion_inform_message.result()
+
         time_before = datetime.datetime.now()
 
         try:
@@ -64,15 +67,7 @@ def handle(bot, update):
             elif(og_from['firstname']):
                 og_sender = og_from['firstname']
 
-            caption = document.file_name + " uploaded by " + og_sender + " has been converted to MP4 in " + str(pretty_time_delta)
-
-            try:
-                bot.delete_message(
-                    chat_id=update.message.chat_id,
-                    message_id=update.message.message_id
-                )
-            except:
-                logger.warn("webm: caught error when trying to delete")
+            caption = og_sender + " converted your WebM to MP4 in " + str(pretty_time_delta) + " \n (＾－＾)"
 
             bot.send_video(
                 chat_id=update.message.chat_id,
@@ -80,10 +75,30 @@ def handle(bot, update):
                 timeout=5000,
                 caption=caption
             )
-            
+
+            try:
+                bot.delete_message(
+                    chat_id=update.message.chat_id,
+                    message_id=conversion_inform_message.message_id
+                )
+                bot.delete_message(
+                    chat_id=update.message.chat_id,
+                    message_id=update.message.message_id
+                )
+            except:
+                logger.warn("webm: caught error when trying to delete")
+
         except Exception as e:
             
             logger.error("webm: Caught error in webm_converter - %s", e)
+
+            try:
+                bot.delete_message(
+                    chat_id=update.message.chat_id,
+                    message_id=conversion_inform_message.message_id
+                )
+            except Exception as e:
+                logger.warn("webm: caught error when trying to delete")
 
             response = "Error occured during WebM conversion - `" + str(e) + "`"
             update.message.reply_text(
