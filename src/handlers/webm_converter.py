@@ -66,7 +66,19 @@ def handle(bot, update):
 
             caption = document.file_name + " uploaded by " + og_sender + " has been converted to MP4 in " + str(pretty_time_delta)
 
-            update.message.reply_video(video=open('resources/converted.mp4', 'rb'), timeout=5000, caption=caption)
+            try:
+                bot.delete_message(
+                    chat_id=update.message.chat_id,
+                    message_id=update.message.message_id
+                )
+            except:
+                logger.warn("webm: caught error when trying to delete")
+
+            bot.send_video(
+                video=open('resources/converted.mp4', 'rb'),
+                timeout=5000,
+                caption=caption
+            )
             
         except Exception as e:
             
