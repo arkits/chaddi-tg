@@ -75,6 +75,7 @@ def handle(bot, update):
                 logger.warn("webm: caught error when trying to delete")
 
             bot.send_video(
+                chat_id=update.message.chat_id,
                 video=open('resources/converted.mp4', 'rb'),
                 timeout=5000,
                 caption=caption
