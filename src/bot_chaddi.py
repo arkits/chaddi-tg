@@ -123,12 +123,14 @@ def main():
     dp.add_error_handler(default_handler.error)
 
     # Start the Bot
-
-    if config.is_dev:
-        updater.start_polling()
-    else:
+    try:
+        webhook_url = config.tg_webhook_url
+        logger.info("config: tg_webhook_url is set to '%s'... using webhook for connectivity", webhook_url)
         updater.start_webhook(listen='127.0.0.1', port=5000, url_path='TOKEN1')
-        updater.bot.set_webhook(url=config.tg_webhook_url)
+        updater.bot.set_webhook(url=webhook_url)
+    except:
+        logger.info("config: tg_webhook_url is not set... using polling for connectivity")
+        updater.start_polling()
 
     logger.info("Running...")
     logger.info("~~~~ ~~~~ ~~~~ ~~~~")

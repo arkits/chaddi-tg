@@ -4,11 +4,9 @@ bot_username = "ChaddiBot"
 # Telegram Bot API Token
 tg_bot_token = "YOUR-TG-BOT-API-TOKEN-HERE"
 
-# Telegram Webhook URL
+# Connectivity to Telegram via Webhook.
+# Delete if webhooks are not setup.
 tg_webhook_url = "https://chaddibot.com/"
-
-# Whether runnning as dev or not
-is_dev = True
 
 # Choose which Text to Speech Engine to use.
 tts_engine = "gTTS" # Google TTS
