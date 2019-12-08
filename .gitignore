@@ -119,3 +119,5 @@ dmypy.json
 # Pyre type checker
 .pyre/
 *.pickle
+src/resources/converted.mp4
+src/resources/to_convert.webm
