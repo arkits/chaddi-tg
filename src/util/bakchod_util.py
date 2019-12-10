@@ -76,7 +76,7 @@ def bakchod_updater(from_user):
         a_bakchod.lastseen = datetime.now()
 
         # Reward rokda
-        a_bakchod.rokda = rewardRokda(a_bakchod.rokda)
+        a_bakchod.rokda = reward_rokda(a_bakchod.rokda)
 
         # Backwards compat
         a_bakchod.id = tg_id
@@ -97,7 +97,7 @@ def bakchod_updater(from_user):
             pickle.dump(bakchod_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-def rewardRokda(r):
+def reward_rokda(r):
 
         if (r < 0) or r is None:
             r = 0
