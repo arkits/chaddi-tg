@@ -8,6 +8,7 @@ from util import bakchod_util
 from util import chaddi_util
 import ffmpeg
 import datetime
+import os
 
 # Enable logging
 logger = logging.getLogger(__name__)
@@ -32,26 +33,26 @@ def handle(bot, update):
         try:
             # Download the webm file
             webm_file = bot.get_file(document.file_id)
-            webm_file.download('resources/to_convert.webm')
-            logger.info("Downloaded webm - " + str(document.file_id))
+            webm_file.download('resources/' + str(document.file_id) + '.webm')
+            logger.info("Downloaded webm - " + str(document.file_id) + '.webm')
 
             # Conversion via ffmpeg
-            probe = ffmpeg.probe('resources/to_convert.webm')
+            probe = ffmpeg.probe('resources/' + str(document.file_id) + '.webm')
             audio_probe = next((stream for stream in probe['streams'] if stream['codec_type'] == 'audio'), None)
 
-            stream = ffmpeg.input('resources/to_convert.webm')
+            stream = ffmpeg.input('resources/' + str(document.file_id) + '.webm')
             video = stream.video.filter('crop', 'iw-mod(iw,2)', 'ih-mod(ih,2)')
 
             if audio_probe is None:
                 logger.info("webm: audio_stream is none!")
-                output = ffmpeg.output(video, 'resources/converted.mp4', vcodec='libx265', crf=28, acodec='libvorbis')
+                output = ffmpeg.output(video, 'resources/' + str(document.file_id) + '.mp4', vcodec='libx265', crf=28, acodec='libvorbis')
                 output = ffmpeg.overwrite_output(output)
                 ffmpeg.run(output)
             else:
                 logger.info("webm: audio_stream is not none!")
                 audio = stream.audio
                 joined = ffmpeg.concat(video, audio, v=1, a=1).node
-                output = ffmpeg.output(joined[0], joined[1], 'resources/converted.mp4', vcodec='libx265', crf=28, acodec='libvorbis')
+                output = ffmpeg.output(joined[0], joined[1], 'resources/' + str(document.file_id) + '.mp4', vcodec='libx265', crf=28, acodec='libvorbis')
                 output = ffmpeg.overwrite_output(output)
                 ffmpeg.run(output)
 
@@ -71,7 +72,7 @@ def handle(bot, update):
 
             bot.send_video(
                 chat_id=update.message.chat_id,
-                video=open('resources/converted.mp4', 'rb'),
+                video=open('resources/' + str(document.file_id) + '.mp4', 'rb'),
                 timeout=5000,
                 caption=caption
             )
@@ -105,3 +106,14 @@ def handle(bot, update):
                 text=response, 
                 parse_mode=ParseMode.MARKDOWN
             )
+
+        clean_up('resources/' + str(document.file_id) + '.webm')
+        clean_up('resources/' + str(document.file_id) + '.mp4')
+
+
+def clean_up(file):
+    if os.path.exists(file):
+        os.remove(file)
+        logger.info("webm: cleaned up - %s", file)
+    else:
+        logger.warn("webm: file does not exist - %s", file)

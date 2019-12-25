@@ -121,3 +121,4 @@ dmypy.json
 *.pickle
 src/resources/converted.mp4
 src/resources/to_convert.webm
+.DS_Store
