@@ -1,18 +1,15 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-s
 
-import os
-import random
-import pickle
 import logging
 import config
-import pytz
 from datetime import datetime, date, timezone
-from gtts import gTTS
 
 # Enable logging
 logger = logging.getLogger(__name__)
 
+
+# Generates a human readable time_delta
 def pretty_time_delta(seconds):
     seconds = int(seconds)
     days, seconds = divmod(seconds, 86400)
@@ -27,3 +24,11 @@ def pretty_time_delta(seconds):
     else:
         return '%ds' % (seconds,)
 
+
+# Returns whether the specified bakchod_id is a Chaddi Admin.
+def is_admin(bakchod_id):
+    if str(bakchod_id) in config.allowed_setters:
+        logger.info("is_admin: og_bakchod in config.allowed_setters")
+        return True
+    else:
+        return False
