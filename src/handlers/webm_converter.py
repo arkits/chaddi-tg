@@ -34,25 +34,24 @@ def handle(bot, update):
             # Download the webm file
             webm_file = bot.get_file(document.file_id)
             webm_file.download('resources/' + str(document.file_id) + '.webm')
-            logger.info("Downloaded webm - " + str(document.file_id) + '.webm')
-
-            # Conversion via ffmpeg
-            probe = ffmpeg.probe('resources/' + str(document.file_id) + '.webm')
-            audio_probe = next((stream for stream in probe['streams'] if stream['codec_type'] == 'audio'), None)
+            logger.info("webm: Downloaded webm - " + str(document.file_id) + '.webm')
 
             stream = ffmpeg.input('resources/' + str(document.file_id) + '.webm')
             video = stream.video.filter('crop', 'iw-mod(iw,2)', 'ih-mod(ih,2)')
 
-            if audio_probe is None:
-                logger.info("webm: audio_stream is none!")
-                output = ffmpeg.output(video, 'resources/' + str(document.file_id) + '.mp4', vcodec='libx265', crf=28, acodec='libvorbis')
-                output = ffmpeg.overwrite_output(output)
-                ffmpeg.run(output)
-            else:
-                logger.info("webm: audio_stream is not none!")
+            # Check if webm file has audio
+            probe = ffmpeg.probe('resources/' + str(document.file_id) + '.webm')
+            has_audio = check_for_audio(probe)
+            logger.info("webm: has_audio=%s", has_audio)
+
+            if has_audio:
                 audio = stream.audio
                 joined = ffmpeg.concat(video, audio, v=1, a=1).node
                 output = ffmpeg.output(joined[0], joined[1], 'resources/' + str(document.file_id) + '.mp4', vcodec='libx265', crf=28, acodec='libvorbis')
+                output = ffmpeg.overwrite_output(output)
+                ffmpeg.run(output)
+            else:
+                output = ffmpeg.output(video, 'resources/' + str(document.file_id) + '.mp4', vcodec='libx265', crf=28, acodec='libvorbis')
                 output = ffmpeg.overwrite_output(output)
                 ffmpeg.run(output)
 
@@ -117,3 +116,14 @@ def clean_up(file):
         logger.info("webm: cleaned up - %s", file)
     else:
         logger.warn("webm: file does not exist - %s", file)
+
+
+def check_for_audio(probe):
+
+    has_audio = False
+
+    for stream in probe['streams']:
+        if stream['codec_type'] == 'audio':
+            has_audio = True
+
+    return has_audio
