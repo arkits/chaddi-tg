@@ -37,9 +37,20 @@ def get_bakchod(tg_id):
 
     return a_bakchod
 
+
 # Get a random Bakchod
 def get_bakchod_random():
     return random.choice(list(bakchod_dict.values()))
+
+
+# Get a Bakchod based on Telegram Username
+def get_bakchod_with_username(tg_username):
+
+    for bakchod in bakchod_dict.values():
+        if bakchod.username == tg_username:
+            return bakchod
+
+    return None
 
 
 # Update Bakchod and commit to pickle
