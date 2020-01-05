@@ -20,13 +20,17 @@ def main():
         logger.info('Bakchod pickle not found...')
         return
     
-    for bakchod in bakchod_dict.values():
+    for bakchod_key in bakchod_dict.keys():
+
+        bakchod = bakchod_dict[bakchod_key]
 
         old_rokda = bakchod.rokda
 
         new_rokda = int(old_rokda + 1000)
 
         bakchod.rokda = new_rokda
+
+        bakchod_dict[bakchod_key] = bakchod
 
         logger.info("Rewarded {}. old_rokda={}, new_rokda={}", bakchod.username, old_rokda, new_rokda)
 
