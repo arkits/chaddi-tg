@@ -4,9 +4,7 @@
 import pickle
 import util.logger
 import json
-
-# Enable logging
-logger = util.logger.get_logger(__name__)
+from loguru import logger
 
 def main():
 
