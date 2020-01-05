@@ -34,5 +34,12 @@ def main():
 
         logger.info("Rewarded {}. old_rokda={}, new_rokda={}", bakchod.username, old_rokda, new_rokda)
 
+    try:
+        with open('resources/bakchod.pickle', 'wb') as handle:
+            pickle.dump(bakchod_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    except:
+        logger.info('Pickle not found...')
+        return
+
 if __name__ == "__main__":
     main()
