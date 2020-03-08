@@ -10,11 +10,11 @@ jobs:
     steps:
       - add_ssh_keys:
           fingerprints:
-            - "67:9a:a1:f2:12:e2:83:36:8f:bb:8b:0d:0a:b4:4a:cb"
+            - "db:5d:11:c3:72:9f:ca:b9:58:a6:9d:f9:c7:23:42:dc"
       - run:
           name: Deploy Over SSH
           command: |
-            ssh $SSH_USER@$SSH_HOST -p 23 "/opt/software/chaddi-tg/deploy_chaddi.sh"
+            ssh $SSH_USER@$SSH_HOST "chaddi-tg/deploy_chaddi.sh"
 workflows:
   version: 2
   build-and-deploy:

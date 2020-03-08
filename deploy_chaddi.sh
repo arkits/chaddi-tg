@@ -5,13 +5,13 @@
 set -e
 
 # Go to chaddi home
-cd /opt/software/chaddi-tg
+cd ~/chaddi-tg
 
 # Pull latest from Git
 git pull
 
 # Enable Virtualenv
-source .env/bin/activate
+source src/.env/bin/activate
 
 # Update libs
 pip install -r requirements.txt
