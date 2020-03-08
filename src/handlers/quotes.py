@@ -7,7 +7,7 @@ from datetime import datetime
 import logging
 import pickle
 import random
-import uuid 
+import shortuuid
 import config
 
 # Enable logging
@@ -24,9 +24,11 @@ except:
     with open('resources/quotes.pickle', 'wb') as handle:
         pickle.dump(quotes_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
+
 def handle(bot, update):
 
-    logger.info("/quotes: Handling /quotes request from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
+    logger.info("/quotes: Handling /quotes request from user '%s' in group '%s'",
+                update.message.from_user['username'], update.message.chat.title)
 
     # Extract query...
     query = update.message.text
@@ -38,15 +40,15 @@ def handle(bot, update):
         command = "random"
 
     if command == "add":
-        
+
         if update.message.reply_to_message.text:
 
             response = add_quote(update)
 
             update.message.reply_text(
-                text=response, 
+                text=response,
                 parse_mode=ParseMode.MARKDOWN
-                )
+            )
 
     elif command == "remove":
 
@@ -56,11 +58,11 @@ def handle(bot, update):
                 id_to_remove = query[2]
             except:
                 update.message.reply_text(
-                    text="Please include the Quote ID you want to remove!", 
+                    text="Please include the Quote ID you want to remove!",
                     parse_mode=ParseMode.MARKDOWN
                 )
                 return
-            
+
             response = remove_quote(id_to_remove)
 
         else:
@@ -68,7 +70,7 @@ def handle(bot, update):
             response = "Chal kat re bsdk!"
 
         update.message.reply_text(
-            text=response, 
+            text=response,
             parse_mode=ParseMode.MARKDOWN
         )
 
@@ -85,7 +87,7 @@ def handle(bot, update):
         )
 
         update.message.reply_text(
-            text=pretty_quote, 
+            text=pretty_quote,
             parse_mode=ParseMode.MARKDOWN
         )
 
@@ -93,7 +95,7 @@ def handle(bot, update):
 # Add the quoted message to quotes_dict
 def add_quote(update):
 
-    quote_id = uuid.uuid1().int
+    quote_id = shortuuid.uuid()
 
     quoted_message = update.message.reply_to_message.text
 
@@ -103,22 +105,23 @@ def add_quote(update):
         quoted_user = update.message.reply_to_message.from_user['first_name']
 
     quoted_date = update.message.reply_to_message.date
-    
+
     quote = {
-        'message' : quoted_message,
-        'user' : quoted_user,
-        'date' : quoted_date,
-        'id' : quote_id
+        'message': quoted_message,
+        'user': quoted_user,
+        'date': quoted_date,
+        'id': quote_id
     }
 
     quotes_dict[quote_id] = quote
-    logger.info("/quotes: Added Quoted Message to quotes_dict[%s] - %s", quote_id, quoted_message)
+    logger.info(
+        "/quotes: Added Quoted Message to quotes_dict[%s] - %s", quote_id, quoted_message)
 
     with open('resources/quotes.pickle', 'wb') as handle:
         pickle.dump(quotes_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     response = "✏️ Rote memorization successful! ({})".format(quote_id)
-    
+
     return response
 
 
