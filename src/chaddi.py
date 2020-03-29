@@ -26,6 +26,7 @@ def main():
 
     dp.add_handler(CommandHandler("hi", handlers.hi.handle))
     dp.add_handler(CommandHandler("about", handlers.about.handle))
+    dp.add_handler(CommandHandler("calc", handlers.calc.handle))
 
     dp.add_handler(MessageHandler(Filters.status_update, handlers.default.status_update))
     dp.add_handler(MessageHandler(Filters.all, handlers.default.all))
