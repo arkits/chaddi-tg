@@ -1,6 +1,7 @@
 from loguru import logger
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from util import config, util, dao
+from datetime import time
 
 import handlers
 
@@ -20,6 +21,14 @@ def main():
 
     # Create the Updater and pass it your bot's token.
     updater = Updater(chaddi_config['tg_bot_token'], use_context=True)
+
+    job_queue = updater.job_queue
+
+    # Run good_morning job once 1 sec after startup
+    job_queue.run_once(handlers.good_morning.handle, 1)
+
+    # Run good_morning everyday at 10am IST
+    job_queue.run_daily(handlers.good_morning.handle, time.fromisoformat('10:00:00+05:30'))
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
