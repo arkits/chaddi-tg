@@ -1,10 +1,6 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 # Encapsulate data representing a Bakchod
 class Bakchod:
-
-    def __init__(self, id, username, contact_name):
+    def __init__(self, id, username, first_name):
 
         # Telegram ID
         self.id = id
@@ -13,7 +9,7 @@ class Bakchod:
         self.username = username
 
         # Telegram Username
-        self.contact_name = contact_name
+        self.first_name = first_name
 
         # Last seen on Telegram as a Date
         self.lastseen = None
@@ -35,6 +31,6 @@ class Bakchod:
 
         id = update.message.from_user.id
         username = update.message.from_user.username
-        contact_name = update.message.from_user.first_name
+        first_name = update.message.from_user.first_name
 
-        return cls(id, username, contact_name)
+        return cls(id, username, first_name)
