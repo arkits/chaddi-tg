@@ -1,4 +1,5 @@
 config.json
+prod_config.json
 logs
 src/resources/db/*
 
