@@ -5,6 +5,7 @@ from models.group import Group
 from domain import bakchod as bakchod_domain
 import time
 import datetime
+from handlers import bestie, hi
 
 
 def all(update, context):
@@ -31,6 +32,18 @@ def all(update, context):
         bakchod.rokda,
         group.title,
     )
+
+    message_text = update.message.text
+
+    if message_text is not None:
+
+        # Handle 'hi' messages
+        if "hi" == message_text.lower():
+            hi.handle(update, context)
+
+        # Handle bestie messages
+        if "bestie" in message_text.lower():
+            bestie.handle(update, context)
 
 
 def status_update(update, context):
