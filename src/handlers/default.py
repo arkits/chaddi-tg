@@ -23,9 +23,61 @@ def all(update, context):
         group = Group.fromUpdate(update)
         logger.info("Looks like we have a new Group! - {}", group.__dict__)
 
-    update_group(group, bakchod)
+    update_group(group, bakchod, update)
 
-    logger.info(group.__dict__)
+    logger.info(
+        "[default.all] b.username='{}' b.rokda={} g.title='{}'",
+        bakchod.username,
+        bakchod.rokda,
+        group.title,
+    )
+
+
+def status_update(update, context):
+
+    group = dao.get_group(update.message.chat.id)
+
+    if group is None:
+        group = Group.fromUpdate(update)
+
+    # Handle new_chat_title
+    new_chat_title = update.message.new_chat_title
+
+    if new_chat_title is not None:
+        group.title = new_chat_title
+        logger.info("[status_update] new_chat_title g.title={}", group.title)
+        dao.update_group(group)
+
+    # Handle new_chat_member
+    new_chat_members = update.message.new_chat_members
+
+    if new_chat_members is not None:
+        for new_member in new_chat_members:
+            bakchod = Bakchod(new_member.id, new_member.username, new_member.first_name)
+            dao.update_bakchod(bakchod)
+
+            if bakchod.id not in group.members:
+                group.members.append(bakchod.id)
+                dao.update_group(group)
+
+                logger.info(
+                    "[status_update] new_chat_member g.title={} b.username={}",
+                    group.title,
+                    bakchod.username,
+                )
+
+    # Handle left_chat_member
+    left_chat_member = update.message.left_chat_member
+
+    if left_chat_member is not None:
+        group.members.remove(left_chat_member.id)
+        dao.update_group(group)
+
+        logger.info(
+            "[status_update] left_chat_member g.title={} b.username={}",
+            group.title,
+            left_chat_member.username,
+        )
 
 
 def update_bakchod(bakchod, update):
@@ -46,7 +98,10 @@ def update_bakchod(bakchod, update):
     return bakchod
 
 
-def update_group(group, bakchod):
+def update_group(group, bakchod, update):
+
+    # group title is mutable... have to keep in sync
+    group.title = update.message.chat.title
 
     # Add Bakchod to Group
     if bakchod.id not in group.members:
