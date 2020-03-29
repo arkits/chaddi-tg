@@ -38,6 +38,7 @@ def main():
     dp.add_handler(CommandHandler("calc", handlers.calc.handle))
     dp.add_handler(CommandHandler("choose", handlers.choose.handle))
     dp.add_handler(CommandHandler("mom", handlers.mom.handle))
+    dp.add_handler(CommandHandler("gamble", handlers.gamble.handle))
 
     dp.add_handler(MessageHandler(Filters.status_update, handlers.default.status_update))
     dp.add_handler(MessageHandler(Filters.all, handlers.default.all))
