@@ -96,5 +96,35 @@ def get_group(group_id):
     return group_to_return
 
 
+def get_quotes():
+
+    quotes = None
+
+    try:
+        with shelve.open("resources/db/quotes", "r") as shelf:
+            quotes = shelf.get("quotes")
+            shelf.close()
+    except Exception as e:
+        logger.error(
+            "Caught Error in dao.get_quotes - {} \n {}", e, traceback.format_exc()
+        )
+
+    return quotes
+
+
+def update_quotes(updated_quotes):
+
+    try:
+        with shelve.open("resources/db/quotes", "c") as shelf:
+            shelf["quotes"] = updated_quotes
+            shelf.close()
+    except Exception as e:
+        logger.error(
+            "Caught Error in dao.update_quotes - {} \n {}", e, traceback.format_exc()
+        )
+
+    return
+
+
 # Initialize DBs on startup
 init_db()
