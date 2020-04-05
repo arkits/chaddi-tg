@@ -11,4 +11,6 @@ source .env/bin/activate
 
 cd src
 
-python chaddi_bot.py
+TIMESTAMP=date+"%s"
+
+python chaddi_bot.py > ../chaddi_$TIMESTAMP.log 2>&1 & 
