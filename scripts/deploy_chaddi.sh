@@ -16,7 +16,7 @@ source .env/bin/activate
 # Update libs
 pip install -r requirements.txt
 
-cd scripts
+cd /opt/software/chaddi-tg/scripts/
 
 # Kill existing bot
 ./kill.sh
