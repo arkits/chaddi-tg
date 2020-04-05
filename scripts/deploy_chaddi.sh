@@ -11,7 +11,7 @@ cd /opt/software/chaddi-tg
 git pull
 
 # Enable Virtualenv
-source src/.env/bin/activate
+source .env/bin/activate
 
 # Update libs
 pip install -r requirements.txt
