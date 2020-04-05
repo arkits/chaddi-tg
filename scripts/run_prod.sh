@@ -13,4 +13,4 @@ cd src
 
 TIMESTAMP=`date +"%s"`
 
-python chaddi_bot.py > ../chaddi_$TIMESTAMP.log 2>&1 & 
+python chaddi_bot.py > ../logs/chaddi_$TIMESTAMP.log 2>&1 & 
