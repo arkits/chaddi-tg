@@ -5,7 +5,7 @@
 set -e
 
 # Go to chaddi home
-cd ~/chaddi-tg
+cd /opt/software/chaddi-tg
 
 # Pull latest from Git
 git pull
@@ -16,11 +16,8 @@ source src/.env/bin/activate
 # Update libs
 pip install -r requirements.txt
 
-# Run the tests
-pytest
-
 # Kill existing bot
-./kill_prod.sh
+./kill.sh
 
 # New run
 ./run_prod.sh

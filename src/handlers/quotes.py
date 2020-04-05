@@ -1,38 +1,23 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
-from telegram import ParseMode
-from datetime import datetime
-import logging
-import pickle
+from loguru import logger
+from util import util, config, dao
+import json
 import random
+import datetime
 import shortuuid
-import config
+from telegram import ParseMode
 
-# Enable logging
-logger = logging.getLogger(__name__)
-
-# Using Python pickling for data persistence
-try:
-    with open('resources/quotes.pickle', 'rb') as handle:
-        quotes_dict = pickle.load(handle)
-        logger.info('Loaded Quotes pickle')
-except:
-    logger.info('Quotes pickle not found... Making new one')
-    quotes_dict = {}
-    with open('resources/quotes.pickle', 'wb') as handle:
-        pickle.dump(quotes_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
+chaddi_config = config.get_config()
 
 
-def handle(bot, update):
+def handle(update, context):
 
-    logger.info("/quotes: Handling /quotes request from user '%s' in group '%s'",
-                update.message.from_user['username'], update.message.chat.title)
+    util.log_chat("quotes", update)
 
     # Extract query...
     query = update.message.text
-    query = query.split(' ')
+    query = query.split(" ")
+
+    command = None
 
     try:
         command = query[1]
@@ -40,56 +25,43 @@ def handle(bot, update):
         command = "random"
 
     if command == "add":
-
         if update.message.reply_to_message.text:
-
             response = add_quote(update)
-
-            update.message.reply_text(
-                text=response,
-                parse_mode=ParseMode.MARKDOWN
-            )
+            update.message.reply_text(text=response, parse_mode=ParseMode.MARKDOWN)
 
     elif command == "remove":
-
-        if is_admin(update.message.from_user['id']):
-
+        if util.is_admin(update.message.from_user["id"]):
             try:
                 id_to_remove = query[2]
             except:
                 update.message.reply_text(
                     text="Please include the Quote ID you want to remove!",
-                    parse_mode=ParseMode.MARKDOWN
+                    parse_mode=ParseMode.MARKDOWN,
                 )
                 return
-
             response = remove_quote(id_to_remove)
-
         else:
-
             response = "Chal kat re bsdk!"
 
-        update.message.reply_text(
-            text=response,
-            parse_mode=ParseMode.MARKDOWN
-        )
+        update.message.reply_text(text=response, parse_mode=ParseMode.MARKDOWN)
 
     else:
         # Return a random quote
         random_quote = get_random_quote()
 
-        logger.info("/quotes: Returning a random quote '%s'", random_quote)
+        logger.info("[quotes] Returning a random quote '{}", random_quote)
 
-        pretty_quote = "`{}` \n ** - @{} ** \n - {}".format(
-            random_quote['message'],
-            random_quote['user'],
-            random_quote['id']
+        pretty_quote = """
+```
+{}
+``` 
+** - @{} **
+- {}
+        """.format(
+            random_quote["message"], random_quote["user"], random_quote["id"]
         )
 
-        update.message.reply_text(
-            text=pretty_quote,
-            parse_mode=ParseMode.MARKDOWN
-        )
+        update.message.reply_text(text=pretty_quote, parse_mode=ParseMode.MARKDOWN)
 
 
 # Add the quoted message to quotes_dict
@@ -98,27 +70,31 @@ def add_quote(update):
     quote_id = shortuuid.uuid()
 
     quoted_message = update.message.reply_to_message.text
+    quoted_message = quoted_message.encode(encoding="UTF-8")
 
-    if update.message.reply_to_message.from_user['username']:
-        quoted_user = update.message.reply_to_message.from_user['username']
+    if update.message.reply_to_message.from_user["username"]:
+        quoted_user = update.message.reply_to_message.from_user["username"]
     else:
-        quoted_user = update.message.reply_to_message.from_user['first_name']
+        quoted_user = update.message.reply_to_message.from_user["first_name"]
 
     quoted_date = update.message.reply_to_message.date
 
     quote = {
-        'message': quoted_message,
-        'user': quoted_user,
-        'date': quoted_date,
-        'id': quote_id
+        "message": quoted_message,
+        "user": quoted_user,
+        "date": quoted_date,
+        "id": quote_id,
     }
 
-    quotes_dict[quote_id] = quote
-    logger.info(
-        "/quotes: Added Quoted Message to quotes_dict[%s] - %s", quote_id, quoted_message)
+    all_quotes = dao.get_quotes()
+    all_quotes[quote_id] = quote
+    dao.update_quotes(all_quotes)
 
-    with open('resources/quotes.pickle', 'wb') as handle:
-        pickle.dump(quotes_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    logger.info(
+        "[quotes] Added Quoted Message to quotes_dict[{}] - {}",
+        quote_id,
+        quoted_message,
+    )
 
     response = "✏️ Rote memorization successful! ({})".format(quote_id)
 
@@ -128,25 +104,23 @@ def add_quote(update):
 # Returns a random quote
 def get_random_quote():
 
-    random.seed(datetime.now())
+    all_quotes = dao.get_quotes()
 
-    return(random.choice(list(quotes_dict.values())))
+    random.seed(datetime.datetime.now())
+
+    return random.choice(list(all_quotes.values()))
 
 
 # Removes quote based on it's ID
 def remove_quote(id_to_remove):
 
     try:
-        id_to_remove = int(id_to_remove)
 
-        logger.info(id_to_remove)
+        all_quotes = dao.get_quotes()
 
-        logger.info(quotes_dict[id_to_remove])
+        del all_quotes[id_to_remove]
 
-        del quotes_dict[id_to_remove]
-
-        with open('resources/quotes.pickle', 'wb') as handle:
-            pickle.dump(quotes_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        dao.update_quotes(all_quotes)
 
         response = "Removed Quote!"
 
@@ -155,11 +129,3 @@ def remove_quote(id_to_remove):
         response = "Unable to remove quote :("
 
     return response
-
-
-def is_admin(og_bakchod):
-    if str(og_bakchod) in config.allowed_setters:
-        logger.info("is_admin: og_bakchod in config.allowed_setters")
-        return True
-    else:
-        return False

@@ -1,33 +1,28 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
-import logging
-import util
-import config
-from util import bakchod_util
+from loguru import logger
+from util import util, config, dao
 import spacy
 import json
 import random
+import datetime
 
-# Enable logging
-logger = logging.getLogger(__name__)
+chaddi_config = config.get_config()
 
 # Load Spacy
-nlp = spacy.load('en_core_web_sm')
-bot_username = "@" + config.bot_username
-mom_response_blacklist = [bot_username, "@Hirop84"]
+nlp = spacy.load("en_core_web_sm")
+
+BOT_USERNAME = "@" + chaddi_config["bot_username"]
+
+mom_response_blacklist = [BOT_USERNAME]
 
 
-# Handler /mom
-# Identify the verb in the sentence
-# Make it past tense and add to "v(p) your dad last night"
-def handle(bot, update):
-    
-    logger.info("/mom: Handling /mom request from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
+def handle(update, context):
+
+    random.seed(datetime.datetime.now())
+
+    util.log_chat("mom", update)
 
     # Get Telegram user id
-    og_sender_id = update.message.from_user['id']
+    og_sender_id = update.message.from_user["id"]
 
     # Check if Bakchod has enough rokda to do a /mom...
     if check_if_user_can_riposte(og_sender_id):
@@ -51,59 +46,61 @@ def handle(bot, update):
                     update.message.reply_text(riposte)
             else:
                 # User has chance to get protected
-                update.message.reply_text(respond_to + " is protected by a 👁️ Nazar Raksha Kavach")
+                update.message.reply_text(
+                    respond_to + " is protected by a 👁️ Nazar Raksha Kavach"
+                )
         else:
-            if respond_to == bot_username:
+            if respond_to == BOT_USERNAME:
                 # Don't insult Chaddi!
-                sticker_to_send = 'CAADAQADrAEAAp6M4Ahtgp9JaiLJPxYE'
+                sticker_to_send = "CAADAQADrAEAAp6M4Ahtgp9JaiLJPxYE"
                 update.message.reply_sticker(sticker=sticker_to_send)
             else:
                 # Protect the users in the blacklist
-                update.message.reply_text(respond_to + " is protected by a 👁️ Nazar Raksha Kavach")
-    
+                update.message.reply_text(
+                    respond_to + " is protected by a 👁️ Nazar Raksha Kavach"
+                )
+
     else:
         # Bakchod doesn't have enough rokda :(
-        update.message.reply_text("Sorry! You don't have enough ₹okda! Each /mom costs 50 ₹okda.")
+        update.message.reply_text(
+            "Sorry! You don't have enough ₹okda! Each /mom costs 50 ₹okda."
+        )
 
-def extract_pretty_name(from_user):
-
-    if(from_user['username']):
-        from_user = "@" + from_user['username']
-    elif(from_user['firstname']):
-        from_user = from_user['firstname']
-
-    return from_user
 
 # !! SEXISM !!
 # make a bad joke about it
 def joke_mom(sentence, victim):
+
+    random.seed(datetime.datetime.now())
+
     protagonist = "your mom"
 
     # flip the joke 20% of times
     if random.random() > 0.8:
         protagonist, victim = victim, protagonist
-    
+
     # extract parts of speech and generate insults
     if sentence is not None:
         verb = get_verb(sentence)
         if verb != 0:
             return "{} {} {} last night ".format(victim, verb, protagonist)
         else:
-            adjective = get_POS(sentence, 'ADJ')
+            adjective = get_POS(sentence, "ADJ")
             if adjective != 0:
                 return "{} is nice but you are {}".format(victim, adjective)
             else:
-                propn = get_POS(sentence, 'PROPN')
+                propn = get_POS(sentence, "PROPN")
                 if propn != 0:
                     return "{} {} {}".format(victim, protagonist, propn)
                 else:
-                    return "{} should get a life".format(victim)
+                    return random_reply(victim)
     else:
         return "{}, please link your aadhaar to continue".format(victim)
 
 
 # return the first relevant part of speech tag
 def get_POS(sentence, POS):
+
     doc = nlp(sentence)
     for token in doc:
         if token.pos_ == POS:
@@ -113,51 +110,85 @@ def get_POS(sentence, POS):
 
 # return a random verb from the sentence
 def get_verb(sentence):
+
     doc = nlp(sentence)
     verbs = []
     for token in doc:
-        if token.pos_ == 'VERB':
+        if token.pos_ == "VERB":
             verbs.append(str(token.lemma_))
     if verbs:
         verbPast = get_verb_past(random.choice(verbs))
         return verbPast
     else:
-        noun = get_POS(sentence, 'NOUN')
+        noun = get_POS(sentence, "NOUN")
         # see if the noun has a verb form
-        verb_form_past = get_verb_past(noun, lemmatize_unknown_verbs = False)
+        verb_form_past = get_verb_past(noun, lemmatize_unknown_verbs=False)
         if verb_form_past != -1:
             return verb_form_past
     return 0
 
 
 # return simple past form of verb
-def get_verb_past(verb, lemmatize_unknown_verbs = True):
+def get_verb_past(verb, lemmatize_unknown_verbs=True):
+
     verbLookupTable = "resources/verbPastLookup.json"
+
     with open(verbLookupTable) as fp:
         data = json.load(fp)
         try:
             verbPast = data[0][verb]
         except KeyError:
             if lemmatize_unknown_verbs:
-                if verb.endswith('ed'):
+                if verb.endswith("ed"):
                     verbPast = verb
-                elif verb.endswith('e'):
-                    verbPast = verb + 'd'
+                elif verb.endswith("e"):
+                    verbPast = verb + "d"
                 else:
-                    verbPast = verb + 'ed'
+                    verbPast = verb + "ed"
             else:
                 verbPast = -1
     return verbPast
 
 
-# Check whether a user can initate a /mom. 
+def extract_pretty_name(from_user):
+
+    if from_user["username"]:
+        from_user = "@" + from_user["username"]
+    elif from_user["firstname"]:
+        from_user = from_user["firstname"]
+
+    return from_user
+
+
+# Check whether a user can initate a /mom.
 # Also subtracts 50 rokda.
 def check_if_user_can_riposte(tg_id):
-    a_bakchod = bakchod_util.get_bakchod(tg_id)
 
-    if a_bakchod.rokda <= 50:
-        return False
+    bakchod = dao.get_bakchod(tg_id)
+
+    if bakchod is not None:
+        if bakchod.rokda <= 50:
+            return False
+        else:
+            bakchod.rokda = bakchod.rokda - 50
+            dao.update_bakchod(bakchod)
+            return True
     else:
-        a_bakchod.rokda = a_bakchod.rokda - 50
-        bakchod_util.set_bakchod(a_bakchod)
-        return True
+        return False
+
+
+def random_reply(victim):
+
+    replies = [
+        "{} should get a life".format(victim),
+        "haaaaaaaaaaaaaaaat",
+        "bhaaaaaaaaaaaaaaak",
+        "arrey isko hatao re",
+        "haat bsdk",
+        "bhaak bsdk",
+    ]
+
+    random.seed(datetime.datetime.now())
+    random_int = random.randint(0, len(replies) - 1)
+
+    return replies[random_int]

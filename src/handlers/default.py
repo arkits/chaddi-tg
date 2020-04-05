@@ -1,118 +1,124 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-import logging
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
-from telegram import ParseMode
-
-import util
-import handlers.hi as hi_handler
-import handlers.bestie as bestie_handler
-import handlers.macro as macro_handler
-import handlers.webm_converter as webm_handler
-from util import bakchod_util
-from util import group_util
-
-# Enable logging
-logger = logging.getLogger(__name__)
-
-# Handle /start
-def start(bot, update):
-
-    bakchod_util.bakchod_updater(update.message.from_user)
-
-    logger.info('/start: Handling /start response')
-    logger.info("Request from user '%s' in group '%s'", update.message.from_user['username'], update.message.chat.title)
-    update.message.reply_text(util.random_reply())
+from loguru import logger
+from util import dao
+from models.bakchod import Bakchod
+from models.group import Group
+from domain import bakchod as bakchod_domain
+import time
+import datetime
+from handlers import bestie, hi
 
 
-# Handle erros
-def error(bot, update, error):
-    logger.warning('Update "%s" caused error "%s"', update, error)
+def all(update, context):
 
+    bakchod = dao.get_bakchod(update.message.from_user.id)
 
-# Handle all text messages received
-def all_text(bot, update):
+    if bakchod is None:
+        bakchod = Bakchod.fromUpdate(update)
+        logger.info("Looks like we have a new Bakchod! - {}", bakchod.__dict__)
 
-    if censor_check(bot, update):
-        return
+    bakchod = update_bakchod(bakchod, update)
 
-    bakchod_util.bakchod_updater(update.message.from_user)
-    group_util.group_updater(update.message.chat, update.message.from_user)
-    
-    message_text = update.message.text
+    group = dao.get_group(update.message.chat.id)
 
-    # Handle 'hi' messages
-    if(message_text == 'hi' or message_text == 'Hi'):
-        hi_handler.handle(bot, update)
+    if group is None:
+        group = Group.fromUpdate(update)
+        logger.info("Looks like we have a new Group! - {}", group.__dict__)
 
-    # Handle bestie messages
-    if "bestie" in message_text.lower():
-        bestie_handler.handle(bot, update)
+    update_group(group, bakchod, update)
 
-
-# Handle all /commands received
-def all_commands(bot, update):
-
-    if censor_check(bot, update):
-        return
-
-    command_list = macro_handler.get_macros_keys()
+    logger.info(
+        "[default.all] b.username='{}' b.rokda={} g.title='{}'",
+        bakchod.username,
+        bakchod.rokda,
+        group.title,
+    )
 
     message_text = update.message.text
 
-    for command in command_list:
-        if message_text.startswith(command):
-            macro_handler.handle(bot, update, command)
+    if message_text is not None:
+
+        # Handle 'hi' messages
+        if "hi" == message_text.lower():
+            hi.handle(update, context)
+
+        # Handle bestie messages
+        if "bestie" in message_text.lower():
+            bestie.handle(update, context)
 
 
-# Handle all_videos received
-def all_videos(bot, update):
+def status_update(update, context):
 
-    if censor_check(bot, update):
-        return
+    group = dao.get_group(update.message.chat.id)
 
-    bakchod_util.bakchod_updater(update.message.from_user)
+    if group is None:
+        group = Group.fromUpdate(update)
 
-    webm_handler.handle(bot, update)
+    # Handle new_chat_title
+    new_chat_title = update.message.new_chat_title
 
+    if new_chat_title is not None:
+        group.title = new_chat_title
+        logger.info("[status_update] new_chat_title g.title={}", group.title)
+        dao.update_group(group)
 
-# Handle all_stickers received
-def all_stickers(bot, update):
-    
-    if censor_check(bot, update):
-        return
+    # Handle new_chat_member
+    new_chat_members = update.message.new_chat_members
 
-    bakchod_util.bakchod_updater(update.message.from_user)
+    if new_chat_members is not None:
+        for new_member in new_chat_members:
+            bakchod = Bakchod(new_member.id, new_member.username, new_member.first_name)
+            dao.update_bakchod(bakchod)
 
+            if bakchod.id not in group.members:
+                group.members.append(bakchod.id)
+                dao.update_group(group)
 
-# Handle all_other_messages received
-def all_other_messages(bot, update):
-
-    if censor_check(bot, update):
-        return
-
-    bakchod_util.bakchod_updater(update.message.from_user)
-
-
-# Checks whether the Bakchod is set to be censored.
-# If censored, delete the message and return True.
-def censor_check(bot, update):
-
-    censored = False
-    
-    bakchod = bakchod_util.get_bakchod(update.message.from_user['id'])
-
-    if bakchod is not None:
-        try:
-            if bakchod.censored:
-                logger.info("censoring id='%s' message='%s'",update.message.from_user['id'], update.message.text)
-                bot.delete_message(
-                    chat_id=update.message.chat_id,
-                    message_id=update.message.message_id
+                logger.info(
+                    "[status_update] new_chat_member g.title={} b.username={}",
+                    group.title,
+                    bakchod.username,
                 )
-                censored = True
-        except Exception as e:
-            logger.debug(e)
 
-    return censored
+    # Handle left_chat_member
+    left_chat_member = update.message.left_chat_member
+
+    if left_chat_member is not None:
+        group.members.remove(left_chat_member.id)
+        dao.update_group(group)
+
+        logger.info(
+            "[status_update] left_chat_member g.title={} b.username={}",
+            group.title,
+            left_chat_member.username,
+        )
+
+
+def update_bakchod(bakchod, update):
+
+    # usernames and first_name are mutable... have to keep them in sync
+    bakchod.username = update.message.from_user.username
+    bakchod.first_name = update.message.from_user.first_name
+
+    # Update rokda
+    bakchod.rokda = bakchod_domain.reward_rokda(bakchod.rokda)
+
+    # Update lastseen
+    bakchod.lastseen = datetime.datetime.now()
+
+    # Persist updated Bakchod
+    dao.update_bakchod(bakchod)
+
+    return bakchod
+
+
+def update_group(group, bakchod, update):
+
+    # group title is mutable... have to keep in sync
+    group.title = update.message.chat.title
+
+    # Add Bakchod to Group
+    if bakchod.id not in group.members:
+        group.members.append(bakchod.id)
+
+    # Persist updated Group
+    dao.update_group(group)

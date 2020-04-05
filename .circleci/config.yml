@@ -14,7 +14,7 @@ jobs:
       - run:
           name: Deploy Over SSH
           command: |
-            ssh $SSH_USER@$SSH_HOST "chaddi-tg/deploy_chaddi.sh"
+            ssh $SSH_USER@$SSH_HOST "/opt/software/chaddi-tg/scripts/deploy_chaddi.sh"
 workflows:
   version: 2
   build-and-deploy:
