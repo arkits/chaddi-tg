@@ -20,7 +20,7 @@ def main():
     util.print_title()
 
     # Create the Updater and pass it your bot's token.
-    updater = Updater(chaddi_config['tg_bot_token'], use_context=True)
+    updater = Updater(chaddi_config["tg_bot_token"], use_context=True)
 
     job_queue = updater.job_queue
 
@@ -28,7 +28,9 @@ def main():
     job_queue.run_once(handlers.good_morning.handle, 1)
 
     # Run good_morning everyday at 10am IST
-    job_queue.run_daily(handlers.good_morning.handle, time.fromisoformat('10:00:00+05:30'))
+    job_queue.run_daily(
+        handlers.good_morning.handle, time.fromisoformat("10:00:00+05:30")
+    )
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
@@ -40,6 +42,7 @@ def main():
     dp.add_handler(CommandHandler("mom", handlers.mom.handle))
     dp.add_handler(CommandHandler("gamble", handlers.gamble.handle))
     dp.add_handler(CommandHandler("quotes", handlers.quotes.handle))
+    dp.add_handler(CommandHandler("rokda", handlers.rokda.handle))
 
     dp.add_handler(MessageHandler(Filters.status_update, handlers.default.status_update))
     dp.add_handler(MessageHandler(Filters.all, handlers.default.all))
@@ -58,5 +61,5 @@ def main():
     updater.idle()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
