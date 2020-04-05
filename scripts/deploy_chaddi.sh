@@ -16,6 +16,8 @@ source .env/bin/activate
 # Update libs
 pip install -r requirements.txt
 
+cd scripts
+
 # Kill existing bot
 ./kill.sh
 
