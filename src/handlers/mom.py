@@ -1,5 +1,5 @@
 from loguru import logger
-from util import util, config, dao, extract_pretty_name
+from util import util, config, dao
 import spacy
 import json
 import random
@@ -149,6 +149,16 @@ def get_verb_past(verb, lemmatize_unknown_verbs=True):
             else:
                 verbPast = -1
     return verbPast
+
+
+def extract_pretty_name(from_user):
+
+    if from_user["username"]:
+        from_user = "@" + from_user["username"]
+    elif from_user["firstname"]:
+        from_user = from_user["firstname"]
+
+    return from_user
 
 
 # Check whether a user can initate a /mom.
