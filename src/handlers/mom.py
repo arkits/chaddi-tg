@@ -4,11 +4,12 @@ import spacy
 import json
 import random
 import datetime
+import en_core_web_sm
 
 chaddi_config = config.get_config()
 
-# Load Spacy
-nlp = spacy.load("en_core_web_sm")
+# Load Spacy English Language Pack
+nlp = en_core_web_sm.load()
 
 BOT_USERNAME = "@" + chaddi_config["bot_username"]
 

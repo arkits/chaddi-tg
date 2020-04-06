@@ -21,7 +21,6 @@ ChaddiBot has a variety of features to make your Telegram experience a whole lot
 - Chaddi-TG is Telegram Bot that runs 24*7. Ideally you want to runs this on a VPS.
 - Python 3.7+ 
 - ffmpeg (For WebM Conversion)
-- Spacy English Language Model (Refer to Additional Setup)
 
 ## Setup and Deployment
 
@@ -46,22 +45,14 @@ source .env/bin/activate
 cd chaddi-tg
 pip install -r requirements.txt
 ```
-* Create a `config.json` based on `sampel_config.json`
+* Create a `config.json` based on `sample_config.json`
 
 ### Running 
 
-* Run locally with `python bot_chaddi.py`.
-* Run in prod with `./run_prod.sh`.
+* Run locally with `python chaddi_bot.py`.
+* Run in prod with `./scripts/run_prod.sh`.
 
 ### Additional Setup for Special Handlers
-
-#### `/mom` handler
-
-The `/mom` handler uses spaCy library. It needs to be installed with the English language model.
-
-```bash 
-python -m spacy download en_core_web_sm
-```
 
 #### WebM converter
 
