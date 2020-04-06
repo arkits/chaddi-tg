@@ -28,3 +28,12 @@ def is_admin(og_bakchod):
         return True
     else:
         return False
+
+def extract_pretty_name(from_user):
+
+    if from_user["username"]:
+        from_user = "@" + from_user["username"]
+    elif from_user["firstname"]:
+        from_user = from_user["firstname"]
+
+    return from_user
