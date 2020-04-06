@@ -25,12 +25,12 @@ def main():
     job_queue = updater.job_queue
 
     # Run good_morning job once 1 sec after startup
-    job_queue.run_once(handlers.good_morning.handle, 1)
+    # job_queue.run_once(handlers.good_morning.handle, 1)
 
     # Run good_morning everyday at 10am IST
-    job_queue.run_daily(
-        handlers.good_morning.handle, time.fromisoformat("10:00:00+05:30")
-    )
+    # job_queue.run_daily(
+    #     handlers.good_morning.handle, time.fromisoformat("10:00:00+05:30")
+    # )
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
