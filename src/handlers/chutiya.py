@@ -1,9 +1,11 @@
 from loguru import logger
-from util import util
+from util import util, config
 import random
 from telegram import ParseMode
 import json
 
+chaddi_config = config.get_config()
+BOT_USERNAME = "@" + chaddi_config["bot_username"]
 
 def handle(update, context):
 
@@ -21,7 +23,7 @@ def handle(update, context):
 
         og_sender = extract_pretty_name(og_from)
 
-        if og_sender != config.bot_username:
+        if og_sender != BOT_USERNAME:
             update.message.reply_to_message.reply_text("{} is a \n{}".format(og_sender, acronymify('chutiya')))
         else:
             sticker_to_send = 'CAADAQADrAEAAp6M4Ahtgp9JaiLJPxYE'
