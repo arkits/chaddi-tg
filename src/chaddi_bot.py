@@ -42,6 +42,7 @@ def main():
     dp.add_handler(CommandHandler("mom", handlers.mom.handle))
     dp.add_handler(CommandHandler("gamble", handlers.gamble.handle))
     dp.add_handler(CommandHandler("quotes", handlers.quotes.handle))
+    dp.add_handler(CommandHandler("quote", handlers.quotes.handle))
     dp.add_handler(CommandHandler("rokda", handlers.rokda.handle))
 
     dp.add_handler(MessageHandler(Filters.status_update, handlers.default.status_update))
