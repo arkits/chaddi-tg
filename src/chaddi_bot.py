@@ -39,6 +39,7 @@ def main():
     dp.add_handler(CommandHandler("about", handlers.about.handle))
     dp.add_handler(CommandHandler("calc", handlers.calc.handle))
     dp.add_handler(CommandHandler("choose", handlers.choose.handle))
+    dp.add_handler(CommandHandler("chutiya", handlers.chutiya.handle))
     dp.add_handler(CommandHandler("mom", handlers.mom.handle))
     dp.add_handler(CommandHandler("gamble", handlers.gamble.handle))
     dp.add_handler(CommandHandler("quotes", handlers.quotes.handle))
