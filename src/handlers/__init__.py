@@ -9,3 +9,4 @@ from handlers import mom
 from handlers import gamble
 from handlers import quotes
 from handlers import rokda
+from handlers import chutiya
