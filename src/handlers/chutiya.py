@@ -22,7 +22,7 @@ def handle(update, context):
         else:
             og_from = update.message.from_user
 
-        og_sender = util.extract_pretty_name(og_from)
+        og_sender = extract_pretty_name(og_from)
 
         if og_sender != BOT_USERNAME:
             update.message.reply_to_message.reply_text(
@@ -39,6 +39,16 @@ def handle(update, context):
             "[chutiya] Caught Error! e={} \n update.message={} ", e, update.message
         )
         update.message.reply_text(text="bhak bc")
+
+
+def extract_pretty_name(from_user):
+
+    if from_user["username"]:
+        from_user = "@" + from_user["username"]
+    elif from_user["firstname"]:
+        from_user = from_user["firstname"]
+
+    return from_user
 
 
 # makes every word an acronym
