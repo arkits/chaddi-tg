@@ -5,7 +5,9 @@ from telegram import ParseMode
 import json
 
 chaddi_config = config.get_config()
+
 BOT_USERNAME = "@" + chaddi_config["bot_username"]
+
 
 def handle(update, context):
 
@@ -14,9 +16,8 @@ def handle(update, context):
     response = None
 
     try:
-        logger.info("[chutiya]: from user {} in group {}", update.message.from_user['username'], update.message.chat.title)
 
-        if(update.message.reply_to_message):
+        if update.message.reply_to_message:
             og_from = update.message.reply_to_message.from_user
         else:
             og_from = update.message.from_user
@@ -24,17 +25,20 @@ def handle(update, context):
         og_sender = extract_pretty_name(og_from)
 
         if og_sender != BOT_USERNAME:
-            update.message.reply_to_message.reply_text("{} is a \n{}".format(og_sender, acronymify('chutiya')))
+            update.message.reply_to_message.reply_text(
+                text="{} is a {}".format(og_sender, acronymify("chutiya")),
+                parse_mode=ParseMode.MARKDOWN,
+            )
         else:
-            sticker_to_send = 'CAADAQADrAEAAp6M4Ahtgp9JaiLJPxYE'
+            # DON'T INSULT CHADDI!
+            sticker_to_send = "CAADAQADrAEAAp6M4Ahtgp9JaiLJPxYE"
             update.message.reply_sticker(sticker=sticker_to_send)
+
     except Exception as e:
         logger.error(
             "[chutiya] Caught Error! e={} \n update.message={} ", e, update.message
         )
-        response = "bhak bc"
-
-    update.message.reply_text(text=response, parse_mode=ParseMode.MARKDOWN) 
+        update.message.reply_text(text="bhak bc")
 
 
 def extract_pretty_name(from_user):
@@ -46,6 +50,7 @@ def extract_pretty_name(from_user):
 
     return from_user
 
+
 # makes every word an acronym
 def acronymify(word):
     response = str()
@@ -55,11 +60,10 @@ def acronymify(word):
 
     return response
 
+
 # throws a random word that starts with letter
 def pick_a_word(letter):
-    verbLookupTable = "src/resources/verbPastLookup.json"
     words = list()
-    with open(verbLookupTable) as fp:
-        data = json.load(fp)
-        words = [x for x in data[0].values() if x.startswith(letter)]
+    verbLookupTable = util.get_verbLookupTable()
+    words = [x for x in verbLookupTable[0].values() if x.startswith(letter)]
     return random.choice(words)

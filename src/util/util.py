@@ -1,7 +1,16 @@
 from loguru import logger
 from util import config
+import json
 
 chaddi_config = config.get_config()
+
+# Read verbLookupTable on startup
+verbLookupTable_file = open("resources/verbPastLookup.json", "r")
+verbLookupTable = json.loads(verbLookupTable_file.read())
+
+
+def get_verbLookupTable():
+    return verbLookupTable
 
 
 def print_title():
