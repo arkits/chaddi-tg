@@ -30,7 +30,7 @@ def handle(update, context):
     if check_if_user_can_riposte(og_sender_id):
 
         # Get sender's name
-        og_sender_name = extract_pretty_name(update.message.from_user)
+        og_sender_name = util.extract_pretty_name(update.message.from_user)
 
         # Get recipient's name
         if update.message.reply_to_message:
@@ -149,17 +149,6 @@ def get_verb_past(verb, lemmatize_unknown_verbs=True):
             verbPast = -1
 
     return verbPast
-
-
-def extract_pretty_name(from_user):
-
-    if from_user["username"]:
-        from_user = "@" + from_user["username"]
-    elif from_user["firstname"]:
-        from_user = from_user["firstname"]
-
-    return from_user
-
 
 # Check whether a user can initate a /mom.
 # Also subtracts 50 rokda.
