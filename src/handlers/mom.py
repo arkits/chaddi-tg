@@ -132,22 +132,21 @@ def get_verb(sentence):
 # return simple past form of verb
 def get_verb_past(verb, lemmatize_unknown_verbs=True):
 
-    verbLookupTable = "resources/verbPastLookup.json"
+    verbLookupTable = util.get_verbLookupTable()
 
-    with open(verbLookupTable) as fp:
-        data = json.load(fp)
-        try:
-            verbPast = data[0][verb]
-        except KeyError:
-            if lemmatize_unknown_verbs:
-                if verb.endswith("ed"):
-                    verbPast = verb
-                elif verb.endswith("e"):
-                    verbPast = verb + "d"
-                else:
-                    verbPast = verb + "ed"
+    try:
+        verbPast = verbLookupTable[0][verb]
+    except KeyError:
+        if lemmatize_unknown_verbs:
+            if verb.endswith("ed"):
+                verbPast = verb
+            elif verb.endswith("e"):
+                verbPast = verb + "d"
             else:
-                verbPast = -1
+                verbPast = verb + "ed"
+        else:
+            verbPast = -1
+
     return verbPast
 
 
