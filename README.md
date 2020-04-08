@@ -9,7 +9,7 @@
 
 ChaddiBot has a variety of features to make your Telegram experience a whole lot more fun! Some of them are -
 
-- WebM to MP4 Converter to MP
+- WebM to MP4 Converter
 - `/mom` insults your mom.
 - `/quotes` fetches a random quote
 - `/rokda` displays your message count in the chat as a currency.
@@ -18,8 +18,8 @@ ChaddiBot has a variety of features to make your Telegram experience a whole lot
 
 ## Requirements and Dependecies
 
-- Chaddi-TG is Telegram Bot that runs 24*7. Ideally you want to runs this on a VPS.
-- Python 3.7+ 
+- A VPS to run Chaddi 24*7
+- Python 3
 - ffmpeg (For WebM Conversion)
 
 ## Setup and Deployment
@@ -46,6 +46,13 @@ cd chaddi-tg
 pip install -r requirements.txt
 ```
 * Create a `config.json` based on `sample_config.json`
+```json
+{
+  "bot_username": "ChaddiBot",
+  "tg_bot_token": "YOUR_TG_TOKEN_HERE",
+  "good_morning_channels": [""]
+}
+```
 
 ### Running 
 
