@@ -1,5 +1,5 @@
 from loguru import logger
-from util import dao
+from db import dao
 from models.bakchod import Bakchod
 from models.group import Group
 from domain import bakchod as bakchod_domain
@@ -10,7 +10,7 @@ from handlers import bestie, hi
 
 def all(update, context):
 
-    bakchod = dao.get_bakchod(update.message.from_user.id)
+    bakchod = dao.get_bakchod_by_id(update.message.from_user.id)
 
     if bakchod is None:
         bakchod = Bakchod.fromUpdate(update)
@@ -18,7 +18,7 @@ def all(update, context):
 
     bakchod = update_bakchod(bakchod, update)
 
-    group = dao.get_group(update.message.chat.id)
+    group = dao.get_group_by_id(update.message.chat.id)
 
     if group is None:
         group = Group.fromUpdate(update)
@@ -48,7 +48,7 @@ def all(update, context):
 
 def status_update(update, context):
 
-    group = dao.get_group(update.message.chat.id)
+    group = dao.get_group_by_id(update.message.chat.id)
 
     if group is None:
         group = Group.fromUpdate(update)
@@ -59,7 +59,7 @@ def status_update(update, context):
     if new_chat_title is not None:
         group.title = new_chat_title
         logger.info("[status_update] new_chat_title g.title={}", group.title)
-        dao.update_group(group)
+        dao.insert_group(group)
 
     # Handle new_chat_member
     new_chat_members = update.message.new_chat_members
@@ -67,11 +67,11 @@ def status_update(update, context):
     if new_chat_members is not None:
         for new_member in new_chat_members:
             bakchod = Bakchod(new_member.id, new_member.username, new_member.first_name)
-            dao.update_bakchod(bakchod)
+            dao.insert_bakchod(bakchod)
 
             if bakchod.id not in group.members:
                 group.members.append(bakchod.id)
-                dao.update_group(group)
+                dao.insert_group(group)
 
                 logger.info(
                     "[status_update] new_chat_member g.title={} b.username={}",
@@ -84,7 +84,7 @@ def status_update(update, context):
 
     if left_chat_member is not None:
         group.members.remove(left_chat_member.id)
-        dao.update_group(group)
+        dao.insert_group(group)
 
         logger.info(
             "[status_update] left_chat_member g.title={} b.username={}",
@@ -106,7 +106,7 @@ def update_bakchod(bakchod, update):
     bakchod.lastseen = datetime.datetime.now()
 
     # Persist updated Bakchod
-    dao.update_bakchod(bakchod)
+    dao.insert_bakchod(bakchod)
 
     return bakchod
 
@@ -121,4 +121,4 @@ def update_group(group, bakchod, update):
         group.members.append(bakchod.id)
 
     # Persist updated Group
-    dao.update_group(group)
+    dao.insert_group(group)

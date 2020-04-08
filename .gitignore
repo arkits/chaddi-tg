@@ -2,6 +2,7 @@ config.json
 prod_config.json
 logs
 src/resources/db/*
+*.db
 
 # Dev
 .vscode

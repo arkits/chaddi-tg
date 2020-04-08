@@ -1,5 +1,6 @@
 from loguru import logger
-from util import util, config, dao
+from util import util, config
+from db import dao
 import json
 import random
 import datetime
@@ -110,9 +111,7 @@ def add_quote(update):
         "id": quote_id,
     }
 
-    all_quotes = dao.get_quotes()
-    all_quotes[quote_id] = quote
-    dao.update_quotes(all_quotes)
+    dao.insert_quote(quote)
 
     logger.info(
         "[quotes] Added Quoted Message to quotes_dict[{}] - {}",
@@ -128,28 +127,24 @@ def add_quote(update):
 # Returns a random quote
 def get_random_quote():
 
-    all_quotes = dao.get_quotes()
+    all_quotes_ids = dao.get_all_quotes_ids()
 
     random.seed(datetime.datetime.now())
+    random_quote_id = random.choice(all_quotes_ids)
 
-    return random.choice(list(all_quotes.values()))
+    random_quote = dao.get_quote_by_id(random_quote_id)
+
+    return random_quote
 
 
 # Removes quote based on it's ID
 def remove_quote(id_to_remove):
 
     try:
-
-        all_quotes = dao.get_quotes()
-
-        del all_quotes[id_to_remove]
-
-        dao.update_quotes(all_quotes)
-
-        response = "Removed Quote!"
+        dao.delete_quote_by_id(id_to_remove)
+        response = "Removing Quote!"
 
     except:
-
         response = "Unable to remove quote :("
 
     return response
@@ -160,10 +155,8 @@ def get_quote_by_id(quote_id):
 
     quote_to_return = None
 
-    all_quotes = dao.get_quotes()
-
     try:
-        quote_to_return = all_quotes[quote_id]
+        quote_to_return = dao.get_quote_by_id(quote_id)
     except Exception as e:
         pass
 
