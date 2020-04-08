@@ -194,8 +194,8 @@ def get_quote_by_id(quote_id):
             quote["id"] = query_result[0]
             try:
                 quote["message"] = query_result[1].decode("utf-8")
-            except:
-                quote["message"] = query_result[1]
+            except Exception as e:
+                quote["message"] = query_result[1][2:-1]
                 pass
             quote["user"] = query_result[2]
             quote["date"] = query_result[3]  # TODO: Cast to Python datetime
