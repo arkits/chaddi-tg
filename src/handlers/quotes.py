@@ -45,23 +45,46 @@ def handle(update, context):
 
         update.message.reply_text(text=response, parse_mode=ParseMode.MARKDOWN)
 
+    elif command == "get":
+        try:
+            quote_id = query[2]
+        except:
+            update.message.reply_text(
+                text="Please include the Quote ID you want to remove!",
+                parse_mode=ParseMode.MARKDOWN,
+            )
+            return
+
+        quote = get_quote_by_id(quote_id)
+
+        pretty_quote = generate_pretty_quote(quote)
+
+        update.message.reply_text(text=pretty_quote, parse_mode=ParseMode.MARKDOWN)
+
     else:
         # Return a random quote
         random_quote = get_random_quote()
 
-        logger.info("[quotes] Returning a random quote '{}", random_quote)
+        logger.info("[quotes] Got a random quote '{}", random_quote)
 
-        pretty_quote = """
-```
-{}
-``` 
-** - @{} **
-- {}
-        """.format(
-            random_quote["message"], random_quote["user"], random_quote["id"]
-        )
+        pretty_quote = generate_pretty_quote(random_quote)
 
         update.message.reply_text(text=pretty_quote, parse_mode=ParseMode.MARKDOWN)
+
+
+def generate_pretty_quote(quote):
+
+    pretty_quote = """
+```
+{}
+```
+*~ {}*
+~ ID: `{}`
+    """.format(
+        str(quote["message"]), str(quote["user"]), str(quote["id"])
+    )
+
+    return pretty_quote
 
 
 # Add the quoted message to quotes_dict
@@ -74,6 +97,7 @@ def add_quote(update):
 
     if update.message.reply_to_message.from_user["username"]:
         quoted_user = update.message.reply_to_message.from_user["username"]
+        quoted_user = "@" + quoted_user
     else:
         quoted_user = update.message.reply_to_message.from_user["first_name"]
 
@@ -129,3 +153,18 @@ def remove_quote(id_to_remove):
         response = "Unable to remove quote :("
 
     return response
+
+
+# Returns a quote by ID
+def get_quote_by_id(quote_id):
+
+    quote_to_return = None
+
+    all_quotes = dao.get_quotes()
+
+    try:
+        quote_to_return = all_quotes[quote_id]
+    except Exception as e:
+        pass
+
+    return quote_to_return
