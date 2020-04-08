@@ -1,6 +1,6 @@
 from loguru import logger
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
-from util import config, util, dao
+from util import config, util
 from datetime import time
 
 import handlers
