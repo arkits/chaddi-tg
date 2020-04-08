@@ -1,6 +1,6 @@
 from loguru import logger
 from util import util
-from util import dao
+from db import dao
 from models.bakchod import Bakchod
 from telegram import ParseMode
 
@@ -14,10 +14,11 @@ def handle(update, context):
     else:
         query_id = update.message.from_user["id"]
 
-    bakchod = dao.get_bakchod(query_id)
+    bakchod = dao.get_bakchod_by_id(query_id)
 
     if bakchod is None:
         bakchod = Bakchod.fromUpdate(update)
+        dao.insert_bakchod(bakchod)
 
     update.message.reply_text(
         text=generate_about_response(bakchod), parse_mode=ParseMode.MARKDOWN

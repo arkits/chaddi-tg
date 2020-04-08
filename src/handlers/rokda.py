@@ -1,5 +1,6 @@
 from loguru import logger
-from util import util, dao
+from util import util
+from db import dao
 
 
 def handle(update, context):
@@ -11,7 +12,7 @@ def handle(update, context):
     else:
         bakchod_id = update.message.from_user["id"]
 
-    bakchod = dao.get_bakchod(bakchod_id)
+    bakchod = dao.get_bakchod_by_id(bakchod_id)
 
     if bakchod is not None:
 

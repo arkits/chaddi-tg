@@ -1,5 +1,6 @@
 from loguru import logger
-from util import util, config, dao
+from util import util, config
+from db import dao
 import spacy
 import json
 import random
@@ -164,14 +165,14 @@ def extract_pretty_name(from_user):
 # Also subtracts 50 rokda.
 def check_if_user_can_riposte(tg_id):
 
-    bakchod = dao.get_bakchod(tg_id)
+    bakchod = dao.get_bakchod_by_id(tg_id)
 
     if bakchod is not None:
         if bakchod.rokda <= 50:
             return False
         else:
             bakchod.rokda = bakchod.rokda - 50
-            dao.update_bakchod(bakchod)
+            dao.insert_bakchod(bakchod)
             return True
     else:
         return False

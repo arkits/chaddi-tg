@@ -1,5 +1,6 @@
 from loguru import logger
-from util import util, dao
+from util import util
+from db import dao
 import datetime
 import random
 from models.bakchod import Bakchod
@@ -9,21 +10,25 @@ def handle(update, context):
 
     util.log_chat("gamble", update)
 
-    response = gamble(update.message.from_user["id"], update.message.chat["id"])
+    response = gamble(update.message.from_user["id"], update.message.chat["id"], update)
 
     update.message.reply_text(response)
 
 
-def gamble(bakchod_id, chat_id):
+def gamble(bakchod_id, chat_id, update):
 
-    bakchod = dao.get_bakchod(bakchod_id)
+    bakchod = dao.get_bakchod_by_id(bakchod_id)
+
+    if bakchod is None:
+        bakchod = Bakchod.fromUpdate(update)
+        dao.insert_bakchod(bakchod)
 
     can_gamble, response = can_bakchod_gamble(bakchod)
 
     if can_gamble:
 
         # Get a random_bakchod from the same Group
-        group = dao.get_group(chat_id)
+        group = dao.get_group_by_id(chat_id)
         random_bakchod = get_random_bakchod(group, bakchod_id)
 
         response, bakchod, random_bakchod = gamble_engine(bakchod, random_bakchod)
@@ -38,11 +43,11 @@ def gamble(bakchod_id, chat_id):
         bakchod.history = history
 
         # Update gambler bakchod
-        dao.update_bakchod(bakchod)
+        dao.insert_bakchod(bakchod)
 
         # Update random_bakchod
         if random_bakchod.id != 0:
-            dao.update_bakchod(random_bakchod)
+            dao.insert_bakchod(random_bakchod)
 
     return response
 
@@ -156,7 +161,7 @@ def get_random_bakchod(group, bakchod_id):
 
         random_index = random.randint(0, len(members) - 1)
         random_bakchod_id = members[random_index]
-        random_bakchod = dao.get_bakchod(random_bakchod_id)
+        random_bakchod = dao.get_bakchod_by_id(random_bakchod_id)
 
         if random_bakchod.id == bakchod_id:
             return Bakchod(0, "cr", "cr")
