@@ -2,6 +2,7 @@ from loguru import logger
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from util import config, util
 from datetime import time
+import pytz
 
 import handlers
 
@@ -28,9 +29,11 @@ def main():
     # job_queue.run_once(handlers.good_morning.handle, 1)
 
     # Run good_morning everyday at 10am IST
-    # job_queue.run_daily(
-    #     handlers.good_morning.handle, time.fromisoformat("10:00:00+05:30")
-    # )
+    ist = pytz.timezone("Asia/Kolkata")
+    t = time(hour=10, minute=00, tzinfo=ist)
+    
+    logger.info("Good Morning Job will be triggered at {}", t.isoformat())
+    job_queue.run_daily(handlers.good_morning.handle, t)
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
