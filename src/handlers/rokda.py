@@ -16,7 +16,7 @@ def handle(update, context):
 
     if bakchod is not None:
 
-        response = "💰" + util.extract_pretty_name_from_bakchod(bakchod) + " has " + str(bakchod.rokda) + " ₹okda!"
+        response = "💰" + util.extract_pretty_name_from_bakchod(bakchod) + " has " + str(round(bakchod.rokda, 2)) + " ₹okda!"
         logger.info("[rokda] Sending response " + response)
         update.message.reply_text(response)
 
