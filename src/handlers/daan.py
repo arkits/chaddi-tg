@@ -46,7 +46,7 @@ def handle(update, context):
     )
 
     if (sender.rokda - daan) < 0:
-        update.message.reply_text("You don't have enough rokda!")
+        update.message.reply_text("Gareeb saale! You don't have enough ₹okda!")
         return
 
     sender.rokda = sender.rokda - daan
@@ -56,7 +56,7 @@ def handle(update, context):
     dao.insert_bakchod(receiver)
 
     update.message.reply_text(
-        "@{} gave @{}🤲 a daan of {} ₹okda! 🎉".format(
+        "@{} gave @{} 🤲 a daan of {} ₹okda! 🎉".format(
             sender.username, receiver.username, daan
         )
     )
