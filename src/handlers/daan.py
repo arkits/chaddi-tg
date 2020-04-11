@@ -3,6 +3,10 @@ from util import util
 from db import dao
 from telegram import ParseMode
 from models.bakchod import Bakchod
+import shortuuid
+import datetime
+from telegram import ParseMode
+
 
 def handle(update, context):
 
@@ -30,7 +34,9 @@ def handle(update, context):
 
     if update.message.reply_to_message:
         # Request is a reply to message... Extract receiver from ID
-        receiver = dao.get_bakchod_by_id(update.message.reply_to_message.from_user["id"])
+        receiver = dao.get_bakchod_by_id(
+            update.message.reply_to_message.from_user["id"]
+        )
 
         # Donation can be the rest of the message
         donation = query[1:]
@@ -42,7 +48,7 @@ def handle(update, context):
         # Remove the "@" prefix
         if receiver_username.startswith("@"):
             receiver_username = receiver_username[1:]
-        
+
         receiver = dao.get_bakchod_by_username(receiver_username)
 
         # Donation can be the rest of the message
@@ -63,7 +69,7 @@ def handle(update, context):
         daan = round(daan, 2)
         daan = abs(daan)
     except Exception as e:
-        update.message.reply_text("Kitna rokda be???")
+        update.message.reply_text("Kitna ₹okda be???")
         return
 
     logger.info(
@@ -90,11 +96,17 @@ def handle(update, context):
     receiver.rokda = receiver.rokda + daan
     dao.insert_bakchod(receiver)
 
+    daan_id = shortuuid.uuid()
+
+    dao.insert_daan(daan_id, sender.id, receiver.id, daan, str(datetime.datetime.now()))
+
     update.message.reply_text(
-        "{} gave {} 🤲 a daan of {} ₹okda! 🎉".format(
+        text="{} gave {} 🤲 a daan of {} ₹okda! 🎉 \n Daan ID - `{}`".format(
             util.extract_pretty_name_from_bakchod(sender),
             util.extract_pretty_name_from_bakchod(receiver),
             daan,
-        )
+            daan_id,
+        ),
+        parse_mode=ParseMode.MARKDOWN,
     )
     return

@@ -42,6 +42,16 @@ def init_db():
             )"""
         )
 
+        c.execute(
+            """CREATE TABLE IF NOT EXISTS daans (
+                id text primary key,
+                sender text,
+                receiver text,
+                amount real,
+                date blob
+            )"""
+        )
+
         chaddi_db.commit()
 
         logger.info("DB Setup Complete!")
@@ -286,6 +296,59 @@ def sanitizeQuoteMessage(message):
             return message[1][2:-1]
 
     return message
+
+
+def get_daan_by_id(daan_id):
+
+    daan = None
+
+    try:
+        c.execute("""SELECT * FROM daans WHERE id=:id""", {"id": daan_id})
+        query_result = c.fetchone()
+
+        if query_result is not None:
+
+            daan = {}
+            daan["id"] = query_result[0]
+            daan["sender"] = query_result[1]
+            daan["receiver"] = query_result[2]
+            daan["amount"] = query_result[3]
+            daan["date"] = query_result[4]
+
+    except Exception as e:
+
+        logger.error(
+            "Caught Error in dao.get_daan_by_id - {} \n {}", e, traceback.format_exc(),
+        )
+
+    return daan
+
+
+def insert_daan(id, sender_id, receiver_id, amount, date):
+
+    try:
+        c.execute(
+            """INSERT OR REPLACE INTO daans VALUES(
+                :id,
+                :sender,
+                :receiver,
+                :amount,
+                :date
+            )""",
+            {
+                "id": id,
+                "sender": sender_id,
+                "receiver": receiver_id,
+                "amount": amount,
+                "date": date,
+            },
+        )
+
+        chaddi_db.commit()
+    except Exception as e:
+        logger.error(
+            "Caught Error in dao.insert_daan - {} \n {}", e, traceback.format_exc(),
+        )
 
 
 init_db()
