@@ -26,7 +26,7 @@ def handle(update, context):
 
     # pick the user from reply_to_message
     if update.message.reply_to_message:
-        receiver_username = update.message.reply_to_message.from_user
+        receiver_username = update.message.reply_to_message.from_user["username"]
         donation = query[1:]
     else:
         receiver_username = query[1]
