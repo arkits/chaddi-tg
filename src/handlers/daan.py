@@ -49,6 +49,12 @@ def handle(update, context):
         update.message.reply_text("Gareeb saale! You don't have enough ₹okda!")
         return
 
+    if sender.id == receiver.id:
+        file_id = "CAADAwADrQADnozgCI_qxocBgD_OFgQ"
+        sticker_to_send = file_id
+        update.message.reply_sticker(sticker=sticker_to_send)
+        return
+
     sender.rokda = sender.rokda - daan
     dao.insert_bakchod(sender)
 
