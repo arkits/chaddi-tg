@@ -199,13 +199,9 @@ def get_quote_by_id(quote_id):
         if query_result is not None:
             quote = {}
             quote["id"] = query_result[0]
-            try:
-                quote["message"] = query_result[1].decode("utf-8")
-            except Exception as e:
-                quote["message"] = query_result[1]
-                pass
+            quote["message"] = sanitizeQuoteMessage(query_result[1])
             quote["user"] = query_result[2]
-            quote["date"] = query_result[3]  # TODO: Cast to Python datetime
+            quote["date"] = query_result[3]
 
     except Exception as e:
         logger.error(
@@ -248,6 +244,17 @@ def delete_quote_by_id(quote_id):
         logger.error(
             "Caught Error in dao.get_quote_by_id - {} \n {}", e, traceback.format_exc(),
         )
+
+
+def sanitizeQuoteMessage(message):
+    
+    if isinstance(message, (bytes, bytearray)):
+        return str(message, "utf-8")
+    else:
+        if message.startswith("b'"):
+            return message[1][2:-1]
+    
+    return message
 
 
 init_db()
