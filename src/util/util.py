@@ -78,8 +78,6 @@ def extract_pretty_name_from_bakchod(bakchod):
 
     pretty_name = "A Chutiya"
 
-    logger.info(bakchod.__dict__)
-
     if bakchod.username:
         pretty_name = "@" + bakchod.username
     elif bakchod.first_name:
