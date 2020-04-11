@@ -113,6 +113,37 @@ def get_bakchod_by_id(bakchod_id):
     return bakchod
 
 
+def get_bakchod_by_username(username):
+
+    bakchod = None
+
+    try:
+        c.execute(
+            """SELECT * FROM bakchods WHERE username=:username""",
+            {"username": username},
+        )
+        query_result = c.fetchone()
+
+        if query_result is not None:
+
+            bakchod = Bakchod(query_result[0], query_result[1], query_result[2])
+            bakchod.lastseen = query_result[3]
+            bakchod.rokda = query_result[4]
+            bakchod.birthday = query_result[5]
+            bakchod.history = json.loads(query_result[6])
+            bakchod.censored = bool(query_result[7])
+
+    except Exception as e:
+
+        logger.error(
+            "Caught Error in dao.get_bakchod_by_username - {} \n {}",
+            e,
+            traceback.format_exc(),
+        )
+
+    return bakchod
+
+
 def insert_group(group):
 
     try:
@@ -247,13 +278,13 @@ def delete_quote_by_id(quote_id):
 
 
 def sanitizeQuoteMessage(message):
-    
+
     if isinstance(message, (bytes, bytearray)):
         return str(message, "utf-8")
     else:
         if message.startswith("b'"):
             return message[1][2:-1]
-    
+
     return message
 
 

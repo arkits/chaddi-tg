@@ -11,3 +11,4 @@ from handlers import quotes
 from handlers import rokda
 from handlers import chutiya
 from handlers import superpower
+from handlers import daan
