@@ -22,13 +22,15 @@ def print_title():
 
 def log_chat(handler_name, update):
 
-    pretty_name = "None"
+    pretty_name = "A Chutiya"
 
     try:
         if update.message.from_user["username"] is not None:
             pretty_name = update.message.from_user["username"]
         elif update.message.from_user["first_name"] is not None:
             pretty_name = update.message.from_user["first_name"]
+        elif update.message.from_user["id"] is not None:
+            pretty_name = update.message.from_user["id"]
     except Exception as e:
         pass
 
@@ -70,3 +72,33 @@ def pretty_time_delta(seconds):
         return "%dm %ds" % (minutes, seconds)
     else:
         return "%ds" % (seconds,)
+
+
+def extract_pretty_name_from_bakchod(bakchod):
+
+    pretty_name = "A Chutiya"
+
+    logger.info(bakchod.__dict__)
+
+    if bakchod.username:
+        pretty_name = "@" + bakchod.username
+    elif bakchod.first_name:
+        pretty_name = bakchod.first_name
+    elif bakchod.id:
+        pretty_name = bakchod.id
+
+    return pretty_name
+
+
+def extract_pretty_name_from_tg_user(bakchod):
+
+    pretty_name = "A Chutiya"
+
+    if bakchod["username"]:
+        pretty_name = "@" + bakchod["username"]
+    elif bakchod["first_name"]:
+        pretty_name = bakchod["first_name"]
+    elif bakchod["id"]:
+        pretty_name = bakchod["id"]
+
+    return pretty_name

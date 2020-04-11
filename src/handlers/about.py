@@ -27,7 +27,7 @@ def handle(update, context):
 
 def generate_about_response(bakchod):
 
-    about_response = "*About " + bakchod.username + ":* \n"
+    about_response = "*About " + util.extract_pretty_name_from_bakchod(bakchod) + ":* \n"
     about_response = about_response + '~ ID: `{}` \n'.format(bakchod.id)
     about_response = about_response + '~ ₹okda: `{}` \n'.format(bakchod.rokda)
 
