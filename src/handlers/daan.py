@@ -3,6 +3,7 @@ from util import util
 from db import dao
 from telegram import ParseMode
 
+
 def handle(update, context):
 
     util.log_chat("daan", update)
@@ -32,7 +33,7 @@ def handle(update, context):
         return
 
     try:
-        daan = int("".join(query[2:]))
+        daan = float("".join(query[2:]))
     except Exception as e:
         update.message.reply_text("Kitna rokda be???")
         return
@@ -43,6 +44,10 @@ def handle(update, context):
         receiver.username,
         daan,
     )
+
+    if (sender.rokda - daan) < 0:
+        update.message.reply_text("You don't have enough rokda!")
+        return
 
     sender.rokda = sender.rokda - daan
     dao.insert_bakchod(sender)
