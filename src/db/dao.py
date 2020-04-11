@@ -73,7 +73,7 @@ def insert_bakchod(bakchod):
                 "lastseen": bakchod.lastseen,
                 "rokda": bakchod.rokda,
                 "birthday": bakchod.birthday,
-                "history": json.dumps(bakchod.history),
+                "history": json.dumps(bakchod.history, default=str),
                 "censored": bakchod.censored,
             },
         )
@@ -146,7 +146,14 @@ def get_group_by_id(group_id):
 
         if query_result is not None:
             group = Group(query_result[0], query_result[1])
-            group.members = json.loads(query_result[2])
+
+            # Santize Group Members
+            members_str = []
+            members = json.loads(query_result[2])
+            for id in members:
+                if str(id) not in members_str:
+                    members_str.append(str(id))
+            group.members = members_str
 
     except Exception as e:
         logger.error(

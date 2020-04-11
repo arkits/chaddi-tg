@@ -4,6 +4,7 @@ from db import dao
 import datetime
 import random
 from models.bakchod import Bakchod
+import ciso8601
 
 
 def handle(update, context):
@@ -128,16 +129,15 @@ def can_bakchod_gamble(bakchod):
     try:
         one_min_ago = datetime.datetime.now() - datetime.timedelta(minutes=1)
 
-        if bakchod.history["gamble"] > one_min_ago:
+        last_time_gambled = ciso8601.parse_datetime(bakchod.history["gamble"])
+
+        if last_time_gambled > one_min_ago:
             can_gamble = False
             response = "This is becoming an addiction for you... Come back later!"
             logger.info("[gamble] bakchod.history['gamble'] > one_min_ago")
             return can_gamble, response
-    except:
-        logger.info(
-            "%s didn't have a history... letting him gamble this time!",
-            bakchod.username,
-        )
+    except Exception as e:
+        logger.error("Caught Exception in can_bakchod_gamble - {}", e)
 
     try:
         if bakchod.rokda < 50:
@@ -163,7 +163,7 @@ def get_random_bakchod(group, bakchod_id):
         random_bakchod_id = members[random_index]
         random_bakchod = dao.get_bakchod_by_id(random_bakchod_id)
 
-        if random_bakchod.id == bakchod_id:
+        if random_bakchod.id == str(bakchod_id):
             return Bakchod(0, "cr", "cr")
 
     return random_bakchod
