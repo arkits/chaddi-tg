@@ -34,6 +34,7 @@ def handle(update, context):
 
     try:
         daan = float("".join(query[2:]))
+        daan = round(daan, 2)
     except Exception as e:
         update.message.reply_text("Kitna rokda be???")
         return
