@@ -24,7 +24,14 @@ def handle(update, context):
         sender = Bakchod.fromUpdate(update)
         dao.insert_bakchod(sender)
 
-    receiver_username = query[1]
+    # pick the user from reply_to_message
+    if update.message.reply_to_message:
+        receiver_username = update.message.reply_to_message.from_user
+        donation = query[1:]
+    else:
+        receiver_username = query[1]
+        donation = query[2:]
+
     if receiver_username.startswith("@"):
         receiver_username = receiver_username[1:]
     receiver = dao.get_bakchod_by_username(receiver_username)
@@ -33,7 +40,7 @@ def handle(update, context):
         return
 
     try:
-        daan = float("".join(query[2:]))
+        daan = float("".join(donation))
         daan = round(daan, 2)
         daan = abs(daan)
     except Exception as e:
