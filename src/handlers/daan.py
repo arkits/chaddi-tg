@@ -2,7 +2,7 @@ from loguru import logger
 from util import util
 from db import dao
 from telegram import ParseMode
-
+from models.bakchod import Bakchod
 
 def handle(update, context):
 
@@ -19,26 +19,45 @@ def handle(update, context):
         )
         return
 
+    # Extract Sender by ID
     sender = dao.get_bakchod_by_id(update.message.from_user["id"])
     if sender is None:
         sender = Bakchod.fromUpdate(update)
         dao.insert_bakchod(sender)
 
-    # pick the user from reply_to_message
+    # Extract Receiver
+    receiver = None
+
     if update.message.reply_to_message:
-        receiver_username = update.message.reply_to_message.from_user["username"]
+        # Request is a reply to message... Extract receiver from ID
+        receiver = dao.get_bakchod_by_id(update.message.reply_to_message.from_user["id"])
+
+        # Donation can be the rest of the message
         donation = query[1:]
+
     else:
+        # Request include username
         receiver_username = query[1]
+
+        # Remove the "@" prefix
+        if receiver_username.startswith("@"):
+            receiver_username = receiver_username[1:]
+        
+        receiver = dao.get_bakchod_by_username(receiver_username)
+
+        # Donation can be the rest of the message
         donation = query[2:]
 
-    if receiver_username.startswith("@"):
-        receiver_username = receiver_username[1:]
-    receiver = dao.get_bakchod_by_username(receiver_username)
+    # Handle if receiver could be extracted
     if receiver is None:
-        update.message.reply_text(receiver_username + "??? Who dat???")
-        return
+        if receiver_username:
+            update.message.reply_text(receiver_username + "??? Who dat???")
+            return
+        else:
+            update.message.reply_text("Kisko daan do be????")
+            return
 
+    # Parse Daan amount
     try:
         daan = float("".join(donation))
         daan = round(daan, 2)
@@ -49,8 +68,8 @@ def handle(update, context):
 
     logger.info(
         "[daan] sender={} receiver={} daan={}",
-        sender.username,
-        receiver.username,
+        util.extract_pretty_name_from_bakchod(sender),
+        util.extract_pretty_name_from_bakchod(receiver),
         daan,
     )
 
@@ -64,6 +83,7 @@ def handle(update, context):
         update.message.reply_sticker(sticker=sticker_to_send)
         return
 
+    # Commit Daan transaction to DB
     sender.rokda = sender.rokda - daan
     dao.insert_bakchod(sender)
 
@@ -71,8 +91,10 @@ def handle(update, context):
     dao.insert_bakchod(receiver)
 
     update.message.reply_text(
-        "@{} gave @{} 🤲 a daan of {} ₹okda! 🎉".format(
-            sender.username, receiver.username, daan
+        "{} gave {} 🤲 a daan of {} ₹okda! 🎉".format(
+            util.extract_pretty_name_from_bakchod(sender),
+            util.extract_pretty_name_from_bakchod(receiver),
+            daan,
         )
     )
     return
