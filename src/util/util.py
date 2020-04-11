@@ -1,6 +1,7 @@
 from loguru import logger
 from util import config
 import json
+from datetime import datetime, date, timezone
 
 chaddi_config = config.get_config()
 
@@ -39,10 +40,9 @@ def log_chat(handler_name, update):
             update.message.chat.title,
         )
     except Exception as e:
-        # This is by design... logging shouldn't throw an Error, 
+        # This is by design... logging shouldn't throw an Error,
         # only my terrible coding should!
         pass
-
 
 
 def is_admin(og_bakchod):
@@ -54,3 +54,19 @@ def is_admin(og_bakchod):
         return True
     else:
         return False
+
+
+# Generates a human readable time_delta
+def pretty_time_delta(seconds):
+    seconds = int(seconds)
+    days, seconds = divmod(seconds, 86400)
+    hours, seconds = divmod(seconds, 3600)
+    minutes, seconds = divmod(seconds, 60)
+    if days > 0:
+        return "%dd %dh %dm %ds" % (days, hours, minutes, seconds)
+    elif hours > 0:
+        return "%dh %dm %ds" % (hours, minutes, seconds)
+    elif minutes > 0:
+        return "%dm %ds" % (minutes, seconds)
+    else:
+        return "%ds" % (seconds,)
