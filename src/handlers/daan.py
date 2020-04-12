@@ -42,14 +42,22 @@ def handle(update, context):
         donation = query[1:]
 
     else:
-        # Request include username
-        receiver_username = query[1]
+        # Request includes the username as a mention
+        if update.message.entities:
+            for entity in update.message.entities:
+                if entity.type == "text_mention" and entity.user is not None:
+                    receiver = dao.get_bakchod_by_id(entity.user.id)
 
-        # Remove the "@" prefix
-        if receiver_username.startswith("@"):
-            receiver_username = receiver_username[1:]
+        # Last attempt... try to lookup username in DB
+        if receiver is None:
 
-        receiver = dao.get_bakchod_by_username(receiver_username)
+            receiver_username = query[1]
+
+            # Remove the "@" prefix
+            if receiver_username.startswith("@"):
+                receiver_username = receiver_username[1:]
+
+            receiver = dao.get_bakchod_by_username(receiver_username)
 
         # Donation can be the rest of the message
         donation = query[2:]
