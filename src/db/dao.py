@@ -293,7 +293,8 @@ def sanitizeQuoteMessage(message):
         return str(message, "utf-8")
     else:
         if message.startswith("b'"):
-            return message[1][2:-1]
+            trimed = message[2:-1]
+            return trimed
 
     return message
 

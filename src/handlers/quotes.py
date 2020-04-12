@@ -79,10 +79,11 @@ def generate_pretty_quote(quote):
 ```
 {}
 ```
-*~ {}*
+*~ by श्री {}*
+*~ on {}*
 ~ ID: `{}`
     """.format(
-        str(quote["message"]), str(quote["user"]), str(quote["id"])
+        str(quote["message"]), str(quote["user"]), str(quote["date"]), str(quote["id"])
     )
 
     return pretty_quote
