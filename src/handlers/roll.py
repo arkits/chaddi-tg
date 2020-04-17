@@ -6,6 +6,7 @@ import random
 import traceback
 import datetime
 import ciso8601
+from models.bakchod import Bakchod
 
 
 def handle(update, context):
@@ -34,11 +35,19 @@ def handle(update, context):
                 )
                 return
             else:
-                pretty_roll = generate_pretty_roll(current_roll)
-                response = "* Current active roulette - * {}".format(pretty_roll)
-                logger.info(response)
-                update.message.reply_text(text=response, parse_mode=ParseMode.MARKDOWN)
-                return
+                # Handle expired roll
+                roll_expiry = ciso8601.parse_datetime(current_roll["expiry"])
+                if roll_expiry <= datetime.datetime.now():
+                    update.message.reply_text(
+                        text="No active roulette right now. `/roll start` to start one!",
+                        parse_mode=ParseMode.MARKDOWN,
+                    )
+                    return
+                else:
+                    pretty_roll = generate_pretty_roll(current_roll)
+                    response = "* Current active roulette:* {}".format(pretty_roll)
+                    update.message.reply_text(text=response, parse_mode=ParseMode.MARKDOWN)
+                    return
 
         elif command == "start":
 
@@ -99,6 +108,11 @@ def handle_dice_rolls(dice_value, update, context):
             logger.info("[roll] current_roll was a None... skipping")
             return
 
+        # Check whether roll already a winrar
+        if current_roll["winrar"] is not None:
+            logger.info("[roll] current_roll already has a winrar... skipping")
+            return
+
         # Check roll expiry
         roll_expiry = ciso8601.parse_datetime(current_roll["expiry"])
         if roll_expiry <= datetime.datetime.now():
@@ -108,13 +122,39 @@ def handle_dice_rolls(dice_value, update, context):
         # Check roll outcome
         roll_number = int(current_roll["roll_number"])
         if dice_value == roll_number:
-            logger.info("We got a winrar!")
-            update.message.reply_text("WINRAR!!!!")
-        
+            
+            # Handle roll winrar
+            bakchod = dao.get_bakchod_by_id(update.message.from_user.id)
+
+            logger.info(
+                "[roll] We got a winrar! bakchod={} roll_number={} group_id={}",
+                util.extract_pretty_name_from_bakchod(bakchod),
+                roll_number,
+                group_id,
+            )
+
+            current_roll["winrar"] = bakchod.id
+
+            # Update roll in DB
+            dao.insert_roll(
+                current_roll["group_id"],
+                current_roll["rule"],
+                current_roll["roll_number"],
+                current_roll["victim"],
+                current_roll["winrar"],
+                current_roll["expiry"],
+            )
+
+            response = "*WINRAR!!!* {}".format(generate_pretty_roll(current_roll))
+
+            update.message.reply_text(text=response, parse_mode=ParseMode.MARKDOWN)
+            return
 
     except Exception as e:
         logger.error(
-            "Caught Error in roll.handle_dice_rolls - {} \n {}", e, traceback.format_exc(),
+            "Caught Error in roll.handle_dice_rolls - {} \n {}",
+            e,
+            traceback.format_exc(),
         )
 
     return
@@ -127,11 +167,26 @@ def generate_pretty_roll(roll):
     victim = dao.get_bakchod_by_id(roll["victim"])
 
     try:
-        pretty_roll = "Roll a {} to `{}` {}!".format(
-            roll["roll_number"],
-            roll["rule"],
-            util.extract_pretty_name_from_bakchod(victim),
-        )
+
+        if roll["winrar"] is None:
+
+            pretty_roll = "Roll a {} to `{}` {}!".format(
+                roll["roll_number"],
+                roll["rule"],
+                util.extract_pretty_name_from_bakchod(victim),
+            )
+
+        else:
+
+            winrar = dao.get_bakchod_by_id(roll["winrar"])
+
+            pretty_roll = "{} is the winrar by rolling a {} and `{}` {}!".format(
+                util.extract_pretty_name_from_bakchod(winrar),
+                roll["roll_number"],
+                roll["rule"],
+                util.extract_pretty_name_from_bakchod(victim),
+            )
+
     except Exception as e:
         pass
 
