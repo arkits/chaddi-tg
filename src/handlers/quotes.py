@@ -16,6 +16,7 @@ def handle(update, context):
 
     # Extract query...
     query = update.message.text
+    query = query.lower()
     query = query.split(" ")
 
     command = None
