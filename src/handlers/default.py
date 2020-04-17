@@ -5,11 +5,14 @@ from models.group import Group
 from domain import bakchod as bakchod_domain
 import time
 import datetime
-from handlers import bestie, hi
+from handlers import bestie, hi, roll
 
 
 def all(update, context):
 
+    # logger.info(update)
+
+    # Update Bakchod DB
     bakchod = dao.get_bakchod_by_id(update.message.from_user.id)
 
     if bakchod is None:
@@ -18,6 +21,7 @@ def all(update, context):
 
     bakchod = update_bakchod(bakchod, update)
 
+    # Update Group DB
     group = dao.get_group_by_id(update.message.chat.id)
 
     if group is None:
@@ -26,6 +30,7 @@ def all(update, context):
 
     update_group(group, bakchod, update)
 
+    # Log this
     logger.info(
         "[default.all] b.username='{}' b.rokda={} g.title='{}'",
         bakchod.username,
@@ -33,17 +38,9 @@ def all(update, context):
         group.title,
     )
 
-    message_text = update.message.text
+    handle_dice_rolls(update, context)
 
-    if message_text is not None:
-
-        # Handle 'hi' messages
-        if "hi" == message_text.lower():
-            hi.handle(update, context)
-
-        # Handle bestie messages
-        if "bestie" in message_text.lower():
-            bestie.handle(update, context)
+    handle_message_matching(update, context)
 
 
 def status_update(update, context):
@@ -122,3 +119,31 @@ def update_group(group, bakchod, update):
 
     # Persist updated Group
     dao.insert_group(group)
+
+
+def handle_message_matching(update, context):
+
+    message_text = update.message.text
+
+    if message_text is not None:
+
+        # Handle 'hi' messages
+        if "hi" == message_text.lower():
+            hi.handle(update, context)
+
+        # Handle bestie messages
+        if "bestie" in message_text.lower():
+            bestie.handle(update, context)
+
+    return
+
+
+def handle_dice_rolls(update, context):
+
+    dice = update.message.dice
+
+    if dice is not None:
+
+        roll.handle_dice_rolls(dice.value, update, context)
+
+    return

@@ -52,6 +52,17 @@ def init_db():
             )"""
         )
 
+        c.execute(
+            """CREATE TABLE IF NOT EXISTS rolls (
+                group_id text primary key,
+                rule text,
+                roll_number text,
+                victim text,
+                winrar text,
+                expiry blob
+            )"""
+        )
+
         chaddi_db.commit()
 
         logger.info("DB Setup Complete!")
@@ -349,6 +360,64 @@ def insert_daan(id, sender_id, receiver_id, amount, date):
     except Exception as e:
         logger.error(
             "Caught Error in dao.insert_daan - {} \n {}", e, traceback.format_exc(),
+        )
+
+
+def get_roll_by_id(group_id):
+
+    roll = None
+
+    try:
+        c.execute(
+            """SELECT * FROM rolls WHERE group_id=:group_id""", {"group_id": group_id}
+        )
+        query_result = c.fetchone()
+
+        if query_result is not None:
+
+            roll = {}
+            roll["group_id"] = query_result[0]
+            roll["rule"] = query_result[1]
+            roll["roll_number"] = query_result[2]
+            roll["victim"] = query_result[3]
+            roll["winrar"] = query_result[4]
+            roll["expiry"] = query_result[5]
+
+    except Exception as e:
+
+        logger.error(
+            "Caught Error in dao.get_roll_by_id - {} \n {}", e, traceback.format_exc(),
+        )
+
+    return roll
+
+
+def insert_roll(group_id, rule, roll_number, victim, winrar, expiry):
+
+    try:
+        c.execute(
+            """INSERT OR REPLACE INTO rolls VALUES(
+                :group_id,
+                :rule,
+                :roll_number,
+                :victim,
+                :winrar,
+                :expiry
+            )""",
+            {
+                "group_id": group_id,
+                "rule": rule,
+                "roll_number": roll_number,
+                "victim": victim,
+                "winrar": winrar,
+                "expiry": expiry,
+            },
+        )
+
+        chaddi_db.commit()
+    except Exception as e:
+        logger.error(
+            "Caught Error in dao.insert_roll - {} \n {}", e, traceback.format_exc(),
         )
 
 

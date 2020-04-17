@@ -51,6 +51,7 @@ def main():
     dp.add_handler(CommandHandler("superpower", handlers.superpower.handle))
     dp.add_handler(CommandHandler("daan", handlers.daan.handle))
     dp.add_handler(CommandHandler("set", handlers.setter.handle))
+    dp.add_handler(CommandHandler("roll", handlers.roll.handle))
 
     dp.add_handler(MessageHandler(Filters.status_update, handlers.default.status_update))
     dp.add_handler(MessageHandler(Filters.all, handlers.default.all))
