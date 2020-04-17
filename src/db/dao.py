@@ -21,7 +21,7 @@ def init_db():
                 rokda real,
                 birthday blob,
                 history blob,
-                censored blob
+                modifiers blob
             )"""
         )
 
@@ -85,7 +85,7 @@ def insert_bakchod(bakchod):
                 :rokda,
                 :birthday,
                 :history,
-                :censored
+                :modifiers
             )""",
             {
                 "id": bakchod.id,
@@ -95,7 +95,7 @@ def insert_bakchod(bakchod):
                 "rokda": bakchod.rokda,
                 "birthday": bakchod.birthday,
                 "history": json.dumps(bakchod.history, default=str),
-                "censored": bakchod.censored,
+                "modifiers": json.dumps(bakchod.modifiers, default=str),
             },
         )
 
@@ -121,7 +121,7 @@ def get_bakchod_by_id(bakchod_id):
             bakchod.rokda = query_result[4]
             bakchod.birthday = query_result[5]
             bakchod.history = json.loads(query_result[6])
-            bakchod.censored = bool(query_result[7])
+            bakchod.modifiers = json.loads(query_result[7])
 
     except Exception as e:
 
@@ -152,7 +152,7 @@ def get_bakchod_by_username(username):
             bakchod.rokda = query_result[4]
             bakchod.birthday = query_result[5]
             bakchod.history = json.loads(query_result[6])
-            bakchod.censored = bool(query_result[7])
+            bakchod.modifiers = json.loads(query_result[7])
 
     except Exception as e:
 
