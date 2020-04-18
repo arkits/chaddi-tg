@@ -95,7 +95,7 @@ def handle(update, context):
             group_id = get_group_id_from_update(update)
             if group_id is None:
                 update.message.reply_text(
-                    text="You can roll can only be used in a group!"
+                    text="Roll can only be used in a group!"
                 )
                 return
 
