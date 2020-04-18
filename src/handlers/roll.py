@@ -1,12 +1,12 @@
 from loguru import logger
 from util import util
-from telegram import ParseMode
 from db import dao
 import random
 import traceback
 import datetime
 import ciso8601
 from models.bakchod import Bakchod
+import telegram
 
 
 def handle(update, context):
@@ -16,7 +16,66 @@ def handle(update, context):
     try:
         command = extract_command_from_update(update)
 
-        if command == "status":
+        if command == "start":
+
+            if util.is_admin(update.message.from_user["id"]):
+
+                group_id = get_group_id_from_update(update)
+                if group_id is None:
+                    update.message.reply_text(
+                        text="You can roll can only be used in a group!"
+                    )
+                    return
+
+                rule = "mute_user"
+
+                roll_number = random.randint(1, 6)
+
+                victim = get_random_bakchod(group_id)
+                if victim is None:
+                    update.message.reply_text(text="Couldn't get a random Bakchod :(")
+                    return
+
+                winrar = None
+
+                expiry = datetime.datetime.now() + datetime.timedelta(hours=1)
+
+                dao.insert_roll(group_id, rule, roll_number, victim.id, winrar, expiry)
+
+                roll = dao.get_roll_by_id(group_id)
+                if roll is None:
+                    update.message.reply_text(text="Couldn't start a new roll :(")
+                    return
+
+                pretty_roll = generate_pretty_roll(roll)
+                response = "*Started new roulette!* " + pretty_roll
+                update.message.reply_text(
+                    text=response, parse_mode=telegram.ParseMode.MARKDOWN
+                )
+
+                return
+
+            else:
+                update.message.reply_text("Chal kat re bsdk!")
+                return
+
+        elif command == "reset":
+
+            if util.is_admin(update.message.from_user["id"]):
+
+                # Schedule callback for resetting roll effects
+                context.job_queue.run_once(
+                    reset_roll_effects, 1, context=update.message.chat_id
+                )
+                return
+
+            else:
+                update.message.reply_text("Chal kat re bsdk!")
+                return
+
+        else:
+
+            # Return roll status for anything else
 
             group_id = get_group_id_from_update(update)
 
@@ -31,7 +90,7 @@ def handle(update, context):
             if current_roll is None:
                 update.message.reply_text(
                     text="No active roulette right now. `/roll start` to start one!",
-                    parse_mode=ParseMode.MARKDOWN,
+                    parse_mode=telegram.ParseMode.MARKDOWN,
                 )
                 return
             else:
@@ -40,49 +99,16 @@ def handle(update, context):
                 if roll_expiry <= datetime.datetime.now():
                     update.message.reply_text(
                         text="No active roulette right now. `/roll start` to start one!",
-                        parse_mode=ParseMode.MARKDOWN,
+                        parse_mode=telegram.ParseMode.MARKDOWN,
                     )
                     return
                 else:
                     pretty_roll = generate_pretty_roll(current_roll)
                     response = "* Current active roulette:* {}".format(pretty_roll)
-                    update.message.reply_text(text=response, parse_mode=ParseMode.MARKDOWN)
+                    update.message.reply_text(
+                        text=response, parse_mode=telegram.ParseMode.MARKDOWN
+                    )
                     return
-
-        elif command == "start":
-
-            group_id = get_group_id_from_update(update)
-            if group_id is None:
-                update.message.reply_text(
-                    text="You can roll can only be used in a group!"
-                )
-                return
-
-            rule = "mute_user"
-
-            roll_number = random.randint(1, 6)
-
-            victim = get_random_bakchod(group_id)
-            if victim is None:
-                update.message.reply_text(text="Couldn't get a random Bakchod :(")
-                return
-
-            winrar = None
-
-            expiry = datetime.datetime.now() + datetime.timedelta(hours=1)
-
-            dao.insert_roll(group_id, rule, roll_number, victim.id, winrar, expiry)
-
-            roll = dao.get_roll_by_id(group_id)
-            if roll is None:
-                update.message.reply_text(text="Couldn't start a new roll :(")
-                return
-
-            pretty_roll = generate_pretty_roll(roll)
-            response = "*Started new roulette!* " + pretty_roll
-            update.message.reply_text(text=response, parse_mode=ParseMode.MARKDOWN)
-
-            return
 
     except Exception as e:
         logger.error(
@@ -121,19 +147,20 @@ def handle_dice_rolls(dice_value, update, context):
 
         # Check roll outcome
         roll_number = int(current_roll["roll_number"])
+
         if dice_value == roll_number:
-            
+
             # Handle roll winrar
-            bakchod = dao.get_bakchod_by_id(update.message.from_user.id)
+            winrar_bakchod = dao.get_bakchod_by_id(update.message.from_user.id)
 
             logger.info(
                 "[roll] We got a winrar! bakchod={} roll_number={} group_id={}",
-                util.extract_pretty_name_from_bakchod(bakchod),
+                util.extract_pretty_name_from_bakchod(winrar_bakchod),
                 roll_number,
                 group_id,
             )
 
-            current_roll["winrar"] = bakchod.id
+            current_roll["winrar"] = winrar_bakchod.id
 
             # Update roll in DB
             dao.insert_roll(
@@ -151,13 +178,20 @@ def handle_dice_rolls(dice_value, update, context):
 
             if current_roll["rule"] == "mute_user":
                 modifiers["censored"] = True
-            
+
             victim.modifiers = modifiers
             dao.insert_bakchod(victim)
 
             response = "*WINRAR!!!* {}".format(generate_pretty_roll(current_roll))
+            update.message.reply_text(
+                text=response, parse_mode=telegram.ParseMode.MARKDOWN
+            )
 
-            update.message.reply_text(text=response, parse_mode=ParseMode.MARKDOWN)
+            # Schedule callback for resetting roll effects in 1 hour
+            context.job_queue.run_once(
+                reset_roll_effects, 3600, context=update.message.chat_id
+            )
+
             return
 
     except Exception as e:
@@ -166,6 +200,39 @@ def handle_dice_rolls(dice_value, update, context):
             e,
             traceback.format_exc(),
         )
+
+    return
+
+
+def reset_roll_effects(context: telegram.ext.CallbackContext):
+
+    # Get group_id
+    group_id = context.job.context
+
+    # Get relevant roll based on group_id
+    roll = dao.get_roll_by_id(group_id)
+
+    # Get victim's Bakchod
+    victim = dao.get_bakchod_by_id(roll["victim"])
+
+    logger.info(
+        "[roll] Resetting roll effects for {} in group={}",
+        util.extract_pretty_name_from_bakchod(victim),
+        group_id,
+    )
+
+    # Reset victim's modifiers
+    victim.modifiers = {}
+
+    dao.insert_bakchod(victim)
+
+    # Post reset message
+    response = "Roll Modifiers for {} are now removed!".format(
+        util.extract_pretty_name_from_bakchod(victim)
+    )
+    context.bot.send_message(
+        group_id, text=response,
+    )
 
     return
 
@@ -190,11 +257,16 @@ def generate_pretty_roll(roll):
 
             winrar = dao.get_bakchod_by_id(roll["winrar"])
 
-            pretty_roll = "{} is the winrar by rolling a {} and `{}` {}!".format(
+            roll_expiry = ciso8601.parse_datetime(roll["expiry"])
+            now = datetime.datetime.now()
+            td = roll_expiry - now
+
+            pretty_roll = "{} won by rolling a {}! {} has now been `{}` for {}".format(
                 util.extract_pretty_name_from_bakchod(winrar),
                 roll["roll_number"],
-                roll["rule"],
                 util.extract_pretty_name_from_bakchod(victim),
+                roll["rule"],
+                util.pretty_time_delta(td.total_seconds()),
             )
 
     except Exception as e:
