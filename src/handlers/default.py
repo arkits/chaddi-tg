@@ -156,7 +156,6 @@ def handle_bakchod_modifiers(update, context, bakchod):
     bot = context.bot
 
     modifiers = bakchod.modifiers
-    logger.info(modifiers)
 
     try:
 
