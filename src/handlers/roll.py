@@ -78,6 +78,12 @@ def handle(update, context):
 
             if util.is_admin(update.message.from_user["id"]):
 
+                # Remove schedule reset job
+                for job in context.job_queue.jobs():
+                    if job.name == "reset_roll_effects" and job.context == update.message.chat_id:
+                        logger.info("[roll] Removing pre-scheduled reset_roll_effects job...")
+                        job.schedule_removal()
+
                 # Schedule callback for resetting roll effects
                 context.job_queue.run_once(
                     reset_roll_effects, 1, context=update.message.chat_id
