@@ -145,6 +145,16 @@ def handle_dice_rolls(dice_value, update, context):
                 current_roll["expiry"],
             )
 
+            # Add roll effect to victims modifiers
+            victim = dao.get_bakchod_by_id(current_roll["victim"])
+            modifiers = victim.modifiers
+
+            if current_roll["rule"] == "mute_user":
+                modifiers["censored"] = True
+            
+            victim.modifiers = modifiers
+            dao.insert_bakchod(victim)
+
             response = "*WINRAR!!!* {}".format(generate_pretty_roll(current_roll))
 
             update.message.reply_text(text=response, parse_mode=ParseMode.MARKDOWN)
