@@ -37,6 +37,7 @@ def main():
 
     # logger.info("New Roll Job will be triggered at {}", t.isoformat())
     job_queue.run_daily(handlers.roll.start_new_daily_roll, t)
+    # job_queue.run_once(handlers.roll.start_new_daily_roll, 1)
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher

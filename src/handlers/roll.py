@@ -1,5 +1,5 @@
 from loguru import logger
-from util import util
+from util import util, config
 from db import dao
 import random
 import traceback
@@ -7,6 +7,8 @@ import datetime
 import ciso8601
 from models.bakchod import Bakchod
 import telegram
+
+chaddi_config = config.get_config()
 
 
 def handle(update, context):
