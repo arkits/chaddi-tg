@@ -165,8 +165,7 @@ def handle_dice_rolls(dice_value, update, context):
         
         five_min_ago = datetime.datetime.now() - datetime.timedelta(minutes=5)
         
-        last_time_rolled_str = history["roll"]
-        if last_time_rolled_str is not None:
+        if "roll" in history:
             last_time_rolled = ciso8601.parse_datetime(history["roll"])
             if last_time_rolled > five_min_ago:
                 logger.info("[roll] rolled too soon... skipping")
