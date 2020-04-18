@@ -24,9 +24,7 @@ def handle(update, context):
 
             group_id = get_group_id_from_update(update)
             if group_id is None:
-                update.message.reply_text(
-                    text="You can roll can only be used in a group!"
-                )
+                update.message.reply_text(text="Roll only be used in a group!")
                 return
 
             current_roll = dao.get_roll_by_id(group_id)
@@ -375,7 +373,11 @@ def get_group_id_from_update(update):
     group_id = None
 
     try:
-        if update.message.chat.id is not None and update.message.chat.type == "group":
+        if (
+            update.message.chat.id is not None
+            and update.message.chat.type == "group"
+            or update.message.chat.type == "supergroup"
+        ):
             group_id = update.message.chat.id
     except Exception as e:
         pass
