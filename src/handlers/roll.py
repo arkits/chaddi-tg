@@ -284,7 +284,11 @@ def generate_pretty_roll(roll):
             )
 
     except Exception as e:
-        pass
+        logger.error(
+            "Caught Error in roll.generate_pretty_roll - {} \n {}",
+            e,
+            traceback.format_exc(),
+        )
 
     return pretty_roll
 
