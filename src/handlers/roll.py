@@ -89,7 +89,7 @@ def handle(update, context):
                 return
 
         else:
-            
+
             # Return roll status for anything else
 
             group_id = get_group_id_from_update(update)
@@ -249,6 +249,44 @@ def reset_roll_effects(context: telegram.ext.CallbackContext):
     )
 
     return
+
+
+def start_new_daily_roll(context: telegram.ext.CallbackContext):
+
+    for group_id in chaddi_config["good_morning_channels"]:
+
+        logger.info("[roll] starting new daily roll! group_id={}", group_id)
+
+        rule = "mute_user"
+
+        roll_number = random.randint(1, 6)
+
+        victim = get_random_bakchod(group_id)
+        if victim is None:
+            update.message.reply_text(text="Couldn't get a random Bakchod :(")
+            return
+
+        winrar = None
+
+        expiry = datetime.datetime.now() + datetime.timedelta(hours=1)
+
+        dao.insert_roll(group_id, rule, roll_number, victim.id, winrar, expiry)
+
+        roll = dao.get_roll_by_id(group_id)
+
+        if roll is None:
+            context.bot.send_message(
+                chat_id=group_id,
+                text="bhaaaaaaaaaaaaak",
+                parse_mode=telegram.ParseMode.MARKDOWN,
+            )
+
+        pretty_roll = generate_pretty_roll(roll)
+        response = "*Started new roulette!* " + pretty_roll
+
+        context.bot.send_message(
+            chat_id=group_id, text=response, parse_mode=telegram.ParseMode.MARKDOWN,
+        )
 
 
 def generate_pretty_roll(roll):
