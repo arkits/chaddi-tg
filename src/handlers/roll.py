@@ -159,6 +159,24 @@ def handle_dice_rolls(dice_value, update, context):
             logger.info("[roll] current_roll has expired... skipping")
             return
 
+        # Check and update roll history
+        roller = dao.get_bakchod_by_id(update.message.from_user.id)
+        history = roller.history
+
+        five_min_ago = datetime.datetime.now() - datetime.timedelta(minutes=5)
+        last_time_rolled = ciso8601.parse_datetime(history["roll"])
+
+        if last_time_rolled > five_min_ago:
+            logger.info("[roll] rolled too soon... skipping")
+            update.message.reply_text(
+                "You can only roll once every 5 mins... Ignoring this roll!"
+            )
+            return
+        else:
+            history["roll"] = datetime.datetime.now()
+            roller.history = history
+            dao.insert_bakchod(roller)
+
         # Check roll outcome
         roll_number = int(current_roll["roll_number"])
 
@@ -205,8 +223,6 @@ def handle_dice_rolls(dice_value, update, context):
             context.job_queue.run_once(
                 reset_roll_effects, 3600, context=update.message.chat_id
             )
-
-            return
 
     except Exception as e:
         logger.error(
