@@ -17,18 +17,25 @@ def handle(update, context):
 
     try:
 
-        if update.message.reply_to_message:
+        reply_to_message = update.message.reply_to_message
+        if reply_to_message is not None:
             og_from = update.message.reply_to_message.from_user
         else:
             og_from = update.message.from_user
 
         og_sender = extract_pretty_name(og_from)
-
         if og_sender != BOT_USERNAME:
-            update.message.reply_to_message.reply_text(
-                text="{} is a {}".format(og_sender, acronymify("chutiya")),
-                parse_mode=ParseMode.MARKDOWN,
-            )
+            if reply_to_message is not None:
+                update.message.reply_to_message.reply_text(
+                    text="{} is a {}".format(og_sender, acronymify("chutiya")),
+                    parse_mode=ParseMode.MARKDOWN,
+                )
+            else:
+                update.message.reply_text(
+                    text="{} is a {}".format(og_sender, acronymify("chutiya")),
+                    parse_mode=ParseMode.MARKDOWN,
+                )
+
         else:
             # DON'T INSULT CHADDI!
             sticker_to_send = "CAADAQADrAEAAp6M4Ahtgp9JaiLJPxYE"
@@ -38,15 +45,13 @@ def handle(update, context):
         logger.error(
             "[chutiya] Caught Error! e={} \n update.message={} ", e, update.message
         )
-        update.message.reply_text(text="bhak bc")
-
 
 def extract_pretty_name(from_user):
 
     if from_user["username"]:
         from_user = "@" + from_user["username"]
-    elif from_user["firstname"]:
-        from_user = from_user["firstname"]
+    elif from_user["first_name"]:
+        from_user = from_user["first_name"]
 
     return from_user
 
