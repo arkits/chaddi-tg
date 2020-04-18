@@ -6,11 +6,11 @@ from domain import bakchod as bakchod_domain
 import time
 import datetime
 from handlers import bestie, hi, roll
+import traceback
+from util import util
 
 
 def all(update, context):
-
-    # logger.info(update)
 
     # Update Bakchod DB
     bakchod = dao.get_bakchod_by_id(update.message.from_user.id)
@@ -33,10 +33,12 @@ def all(update, context):
     # Log this
     logger.info(
         "[default.all] b.username='{}' b.rokda={} g.title='{}'",
-        bakchod.username,
+        util.extract_pretty_name_from_bakchod(bakchod),
         bakchod.rokda,
         group.title,
     )
+
+    handle_bakchod_modifiers(update, context, bakchod)
 
     handle_dice_rolls(update, context)
 
@@ -145,5 +147,49 @@ def handle_dice_rolls(update, context):
     if dice is not None:
 
         roll.handle_dice_rolls(dice.value, update, context)
+
+    return
+
+
+def handle_bakchod_modifiers(update, context, bakchod):
+
+    bot = context.bot
+
+    modifiers = bakchod.modifiers
+    logger.info(modifiers)
+
+    try:
+
+        if "censored" in modifiers.keys():
+
+            if modifiers["censored"] == True:
+
+                logger.info(
+                    "[modifiers] censoring {}",
+                    util.extract_pretty_name_from_bakchod(bakchod),
+                )
+
+                try:
+                    bot.delete_message(
+                        chat_id=update.message.chat_id,
+                        message_id=update.message.message_id,
+                    )
+                except Exception as e:
+                    logger.error(
+                        "Caught Error in censoring Bakchod - {} \n {}",
+                        e,
+                        traceback.format_exc(),
+                    )
+                    bot.send_message(
+                        chat_id=update.message.chat_id,
+                        text="Looks like I'm not able to delete messages... Please check the Group permissions!",
+                    )
+
+    except Exception as e:
+        logger.error(
+            "Caught Error in default.handle_bakchod_modifiers - {} \n {}",
+            e,
+            traceback.format_exc(),
+        )
 
     return
