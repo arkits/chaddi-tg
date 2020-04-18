@@ -24,7 +24,8 @@ class Bakchod:
         # key="history_type", value=Date
         self.history = {}
 
-        self.censored = False
+        # Modifiers Dictionary
+        self.modifiers = {}
 
     @classmethod
     def fromUpdate(cls, update):

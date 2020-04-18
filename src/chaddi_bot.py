@@ -32,8 +32,11 @@ def main():
     ist = pytz.timezone("Asia/Kolkata")
     t = time(hour=10, minute=00, tzinfo=ist)
     
-    logger.info("Good Morning Job will be triggered at {}", t.isoformat())
+    # logger.info("Good Morning Job will be triggered at {}", t.isoformat())
     job_queue.run_daily(handlers.good_morning.handle, t)
+
+    # logger.info("New Roll Job will be triggered at {}", t.isoformat())
+    job_queue.run_daily(handlers.roll.start_new_daily_roll, t)
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
@@ -51,6 +54,7 @@ def main():
     dp.add_handler(CommandHandler("superpower", handlers.superpower.handle))
     dp.add_handler(CommandHandler("daan", handlers.daan.handle))
     dp.add_handler(CommandHandler("set", handlers.setter.handle))
+    dp.add_handler(CommandHandler("roll", handlers.roll.handle))
 
     dp.add_handler(MessageHandler(Filters.status_update, handlers.default.status_update))
     dp.add_handler(MessageHandler(Filters.all, handlers.default.all))

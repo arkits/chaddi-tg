@@ -5,11 +5,14 @@ from models.group import Group
 from domain import bakchod as bakchod_domain
 import time
 import datetime
-from handlers import bestie, hi
+from handlers import bestie, hi, roll
+import traceback
+from util import util
 
 
 def all(update, context):
 
+    # Update Bakchod DB
     bakchod = dao.get_bakchod_by_id(update.message.from_user.id)
 
     if bakchod is None:
@@ -18,6 +21,7 @@ def all(update, context):
 
     bakchod = update_bakchod(bakchod, update)
 
+    # Update Group DB
     group = dao.get_group_by_id(update.message.chat.id)
 
     if group is None:
@@ -26,24 +30,19 @@ def all(update, context):
 
     update_group(group, bakchod, update)
 
+    # Log this
     logger.info(
         "[default.all] b.username='{}' b.rokda={} g.title='{}'",
-        bakchod.username,
+        util.extract_pretty_name_from_bakchod(bakchod),
         bakchod.rokda,
         group.title,
     )
 
-    message_text = update.message.text
+    handle_bakchod_modifiers(update, context, bakchod)
 
-    if message_text is not None:
+    handle_dice_rolls(update, context)
 
-        # Handle 'hi' messages
-        if "hi" == message_text.lower():
-            hi.handle(update, context)
-
-        # Handle bestie messages
-        if "bestie" in message_text.lower():
-            bestie.handle(update, context)
+    handle_message_matching(update, context)
 
 
 def status_update(update, context):
@@ -122,3 +121,74 @@ def update_group(group, bakchod, update):
 
     # Persist updated Group
     dao.insert_group(group)
+
+
+def handle_message_matching(update, context):
+
+    message_text = update.message.text
+
+    if message_text is not None:
+
+        # Handle 'hi' messages
+        if "hi" == message_text.lower():
+            hi.handle(update, context)
+
+        # Handle bestie messages
+        if "bestie" in message_text.lower():
+            bestie.handle(update, context)
+
+    return
+
+
+def handle_dice_rolls(update, context):
+
+    dice = update.message.dice
+
+    if dice is not None:
+
+        roll.handle_dice_rolls(dice.value, update, context)
+
+    return
+
+
+def handle_bakchod_modifiers(update, context, bakchod):
+
+    bot = context.bot
+
+    modifiers = bakchod.modifiers
+
+    try:
+
+        if "censored" in modifiers.keys():
+
+            if modifiers["censored"] == True:
+
+                logger.info(
+                    "[modifiers] censoring {}",
+                    util.extract_pretty_name_from_bakchod(bakchod),
+                )
+
+                try:
+                    bot.delete_message(
+                        chat_id=update.message.chat_id,
+                        message_id=update.message.message_id,
+                    )
+                except Exception as e:
+                    logger.error(
+                        "Caught Error in censoring Bakchod - {} \n {}",
+                        e,
+                        traceback.format_exc(),
+                    )
+                    bot.send_message(
+                        chat_id=update.message.chat_id,
+                        text="Looks like I'm not able to delete messages... Please check the Group permissions!",
+                    )
+
+    except Exception as e:
+        logger.error(
+            "Caught Error in default.handle_bakchod_modifiers - {} \n {}",
+            e,
+            traceback.format_exc(),
+        )
+
+    return

@@ -55,6 +55,7 @@ def is_admin(og_bakchod):
         logger.info("[is_admin] og_bakchod={} in config.allowed_setters", og_bakchod)
         return True
     else:
+        logger.info("[is_admin] og_bakchod={} not in config.allowed_setters", og_bakchod)
         return False
 
 
