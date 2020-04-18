@@ -30,11 +30,11 @@ def handle(update, context):
             current_roll = dao.get_roll_by_id(group_id)
             if current_roll is None:
                 create_new_roll = True
-
-            # Handle expired roll
-            roll_expiry = ciso8601.parse_datetime(current_roll["expiry"])
-            if roll_expiry <= datetime.datetime.now():
-                create_new_roll = True
+            else:
+                # Pre-exisitng roll... check if expired
+                roll_expiry = ciso8601.parse_datetime(current_roll["expiry"])
+                if roll_expiry <= datetime.datetime.now():
+                    create_new_roll = True
 
             # Allow admins to create new rolls
             if util.is_admin(update.message.from_user["id"]):
@@ -63,9 +63,9 @@ def handle(update, context):
                     return
 
                 pretty_roll = generate_pretty_roll(roll)
-                response = "*Started new roulette!* " + pretty_roll
+                response = "<b>Started new roulette!</b> " + pretty_roll
                 update.message.reply_text(
-                    text=response, parse_mode=telegram.ParseMode.MARKDOWN
+                    text=response, parse_mode=telegram.ParseMode.HTML
                 )
                 return
 
@@ -94,17 +94,15 @@ def handle(update, context):
 
             group_id = get_group_id_from_update(update)
             if group_id is None:
-                update.message.reply_text(
-                    text="Roll can only be used in a group!"
-                )
+                update.message.reply_text(text="Roll can only be used in a group!")
                 return
 
             current_roll = dao.get_roll_by_id(group_id)
 
             if current_roll is None:
                 update.message.reply_text(
-                    text="No active roulette right now. `/roll start` to start one!",
-                    parse_mode=telegram.ParseMode.MARKDOWN,
+                    text="No active roulette right now. <code>/roll start</code> to start one!",
+                    parse_mode=telegram.ParseMode.HTML,
                 )
                 return
             else:
@@ -112,15 +110,15 @@ def handle(update, context):
                 roll_expiry = ciso8601.parse_datetime(current_roll["expiry"])
                 if roll_expiry <= datetime.datetime.now():
                     update.message.reply_text(
-                        text="No active roulette right now. `/roll start` to start one!",
-                        parse_mode=telegram.ParseMode.MARKDOWN,
+                        text="No active roulette right now. <code>/roll start</code> to start one!",
+                        parse_mode=telegram.ParseMode.HTML,
                     )
                     return
                 else:
                     pretty_roll = generate_pretty_roll(current_roll)
-                    response = "* Current active roulette:* {}".format(pretty_roll)
+                    response = "<b>Current active roulette:</b> {}".format(pretty_roll)
                     update.message.reply_text(
-                        text=response, parse_mode=telegram.ParseMode.MARKDOWN
+                        text=response, parse_mode=telegram.ParseMode.HTML
                     )
                     return
 
@@ -162,9 +160,9 @@ def handle_dice_rolls(dice_value, update, context):
         # Check and update roll history
         roller = dao.get_bakchod_by_id(update.message.from_user.id)
         history = roller.history
-        
+
         five_min_ago = datetime.datetime.now() - datetime.timedelta(minutes=5)
-        
+
         if "roll" in history:
             last_time_rolled = ciso8601.parse_datetime(history["roll"])
             if last_time_rolled > five_min_ago:
@@ -215,10 +213,8 @@ def handle_dice_rolls(dice_value, update, context):
             victim.modifiers = modifiers
             dao.insert_bakchod(victim)
 
-            response = "*WINRAR!!!* {}".format(generate_pretty_roll(current_roll))
-            update.message.reply_text(
-                text=response, parse_mode=telegram.ParseMode.MARKDOWN
-            )
+            response = "<b>WINRAR!!!</b> {}".format(generate_pretty_roll(current_roll))
+            update.message.reply_text(text=response, parse_mode=telegram.ParseMode.HTML)
 
             # Schedule callback for resetting roll effects in 1 hour
             context.job_queue.run_once(
@@ -280,7 +276,9 @@ def start_new_daily_roll(context: telegram.ext.CallbackContext):
 
         victim = get_random_bakchod(group_id)
         if victim is None:
-            update.message.reply_text(text="Couldn't get a random Bakchod :(")
+            context.bot.send_message(
+                chat_id=group_id, text="Couldn't get a random Bakchod :("
+            )
             return
 
         winrar = None
@@ -295,14 +293,14 @@ def start_new_daily_roll(context: telegram.ext.CallbackContext):
             context.bot.send_message(
                 chat_id=group_id,
                 text="bhaaaaaaaaaaaaak",
-                parse_mode=telegram.ParseMode.MARKDOWN,
+                parse_mode=telegram.ParseMode.HTML,
             )
 
         pretty_roll = generate_pretty_roll(roll)
         response = "*Started new roulette!* " + pretty_roll
 
         context.bot.send_message(
-            chat_id=group_id, text=response, parse_mode=telegram.ParseMode.MARKDOWN,
+            chat_id=group_id, text=response, parse_mode=telegram.ParseMode.HTML,
         )
 
 
@@ -316,9 +314,9 @@ def generate_pretty_roll(roll):
 
         if roll["winrar"] is None:
 
-            pretty_roll = "Roll a {} to `{}` {}!".format(
+            pretty_roll = "Roll a {} to {} {}!".format(
                 roll["roll_number"],
-                roll["rule"],
+                pretty_roll_rule(roll["rule"]),
                 util.extract_pretty_name_from_bakchod(victim),
             )
 
@@ -330,11 +328,11 @@ def generate_pretty_roll(roll):
             now = datetime.datetime.now()
             td = roll_expiry - now
 
-            pretty_roll = "{} won by rolling a {}! {} has now been `{}` for {}".format(
+            pretty_roll = "{} won by rolling a {}! {} is now {} for {}".format(
                 util.extract_pretty_name_from_bakchod(winrar),
                 roll["roll_number"],
                 util.extract_pretty_name_from_bakchod(victim),
-                roll["rule"],
+                pretty_roll_rule(roll["rule"]),
                 util.pretty_time_delta(td.total_seconds()),
             )
 
@@ -401,3 +399,13 @@ def get_random_bakchod(group_id):
         random_bakchod = dao.get_bakchod_by_id(random_bakchod_id)
 
     return random_bakchod
+
+
+def pretty_roll_rule(roll_rule):
+
+    pretty_roll_rule_mapping = {"mute_user": "mute"}
+
+    if roll_rule in pretty_roll_rule_mapping.keys():
+        return pretty_roll_rule_mapping[roll_rule]
+    else:
+        return None
