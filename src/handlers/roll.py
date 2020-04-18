@@ -162,16 +162,18 @@ def handle_dice_rolls(dice_value, update, context):
         # Check and update roll history
         roller = dao.get_bakchod_by_id(update.message.from_user.id)
         history = roller.history
-
+        
         five_min_ago = datetime.datetime.now() - datetime.timedelta(minutes=5)
-        last_time_rolled = ciso8601.parse_datetime(history["roll"])
-
-        if last_time_rolled > five_min_ago:
-            logger.info("[roll] rolled too soon... skipping")
-            update.message.reply_text(
-                "You can only roll once every 5 mins... Ignoring this roll!"
-            )
-            return
+        
+        last_time_rolled_str = history["roll"]
+        if last_time_rolled_str is not None:
+            last_time_rolled = ciso8601.parse_datetime(history["roll"])
+            if last_time_rolled > five_min_ago:
+                logger.info("[roll] rolled too soon... skipping")
+                update.message.reply_text(
+                    "You can only roll once every 5 mins... Ignoring this roll!"
+                )
+                return
         else:
             history["roll"] = datetime.datetime.now()
             roller.history = history
