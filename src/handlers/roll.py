@@ -18,14 +18,29 @@ def handle(update, context):
 
         if command == "start":
 
-            if util.is_admin(update.message.from_user["id"]):
+            create_new_roll = False
 
-                group_id = get_group_id_from_update(update)
-                if group_id is None:
-                    update.message.reply_text(
-                        text="You can roll can only be used in a group!"
-                    )
-                    return
+            group_id = get_group_id_from_update(update)
+            if group_id is None:
+                update.message.reply_text(
+                    text="You can roll can only be used in a group!"
+                )
+                return
+
+            current_roll = dao.get_roll_by_id(group_id)
+            if current_roll is None:
+                create_new_roll = True
+
+            # Handle expired roll
+            roll_expiry = ciso8601.parse_datetime(current_roll["expiry"])
+            if roll_expiry <= datetime.datetime.now():
+                create_new_roll = True
+
+            # Allow admins to create new rolls
+            if util.is_admin(update.message.from_user["id"]):
+                create_new_roll = True
+
+            if create_new_roll:
 
                 rule = "mute_user"
 
@@ -52,10 +67,10 @@ def handle(update, context):
                 update.message.reply_text(
                     text=response, parse_mode=telegram.ParseMode.MARKDOWN
                 )
-
                 return
 
             else:
+                # Handle when not create_new_roll
                 update.message.reply_text("Chal kat re bsdk!")
                 return
 
@@ -74,11 +89,10 @@ def handle(update, context):
                 return
 
         else:
-
+            
             # Return roll status for anything else
 
             group_id = get_group_id_from_update(update)
-
             if group_id is None:
                 update.message.reply_text(
                     text="You can roll can only be used in a group!"
