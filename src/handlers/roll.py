@@ -46,7 +46,21 @@ def handle(update, context):
 
                 roll_number = random.randint(1, 6)
 
-                victim = get_random_bakchod(group_id)
+                # Extract victim from command param...
+                victim = None
+                parsed_victim_username = extract_param_from_update(update)
+                
+                if parsed_victim_username is not None:
+                    
+                    victim = dao.get_bakchod_by_username(parsed_victim_username)
+
+                    if victim is not None:
+                        logger.info("[roll] Found passed Bakchod username={} in DB", parsed_victim_username)
+
+                # Or else get a Random Bakchod
+                if victim is None:
+                    victim = get_random_bakchod(group_id)
+
                 if victim is None:
                     update.message.reply_text(text="Couldn't get a random Bakchod :(")
                     return
@@ -80,8 +94,13 @@ def handle(update, context):
 
                 # Remove schedule reset job
                 for job in context.job_queue.jobs():
-                    if job.name == "reset_roll_effects" and job.context == update.message.chat_id:
-                        logger.info("[roll] Removing pre-scheduled reset_roll_effects job...")
+                    if (
+                        job.name == "reset_roll_effects"
+                        and job.context == update.message.chat_id
+                    ):
+                        logger.info(
+                            "[roll] Removing pre-scheduled reset_roll_effects job..."
+                        )
                         job.schedule_removal()
 
                 # Schedule callback for resetting roll effects
@@ -201,7 +220,9 @@ def handle_dice_rolls(dice_value, update, context):
             )
 
             current_roll["winrar"] = winrar_bakchod.id
-            current_roll["expiry"] = datetime.datetime.now() + datetime.timedelta(hours=1)
+            current_roll["expiry"] = datetime.datetime.now() + datetime.timedelta(
+                hours=1
+            )
 
             # Update roll in DB
             dao.insert_roll(
@@ -379,6 +400,32 @@ def extract_command_from_update(update):
         pass
 
     return command
+
+
+def extract_param_from_update(update):
+
+    param = None
+
+    try:
+        # Extract query...
+        query = update.message.text
+        query = query.lower()
+        query = query.split(" ")
+
+        try:
+            param = query[2:]
+            param = "".join(param)
+
+            if param[0] == "@":
+                param = param[1:]
+
+        except:
+            param = None
+
+    except Exception as e:
+        pass
+
+    return param
 
 
 def get_group_id_from_update(update):
