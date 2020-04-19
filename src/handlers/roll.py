@@ -167,6 +167,9 @@ def handle_dice_rolls(dice_value, update, context):
         roller = dao.get_bakchod_by_id(update.message.from_user.id)
         history = roller.history
 
+        if history is None:
+            history = {}
+
         five_min_ago = datetime.datetime.now() - datetime.timedelta(minutes=5)
 
         if "roll" in history:
@@ -177,10 +180,10 @@ def handle_dice_rolls(dice_value, update, context):
                     "You can only roll once every 5 mins... Ignoring this roll!"
                 )
                 return
-        else:
-            history["roll"] = datetime.datetime.now()
-            roller.history = history
-            dao.insert_bakchod(roller)
+
+        history["roll"] = datetime.datetime.now()
+        roller.history = history
+        dao.insert_bakchod(roller)
 
         # Check roll outcome
         roll_number = int(current_roll["roll_number"])
