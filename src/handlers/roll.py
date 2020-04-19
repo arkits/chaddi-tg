@@ -201,6 +201,7 @@ def handle_dice_rolls(dice_value, update, context):
             )
 
             current_roll["winrar"] = winrar_bakchod.id
+            current_roll["expiry"] = datetime.datetime.now() + datetime.timedelta(hours=1)
 
             # Update roll in DB
             dao.insert_roll(
