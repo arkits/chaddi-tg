@@ -334,7 +334,11 @@ def generate_pretty_roll(roll):
 
             winrar = dao.get_bakchod_by_id(roll["winrar"])
 
-            roll_expiry = ciso8601.parse_datetime(roll["expiry"])
+            try:
+                roll_expiry = ciso8601.parse_datetime(roll["expiry"])
+            except Exception as e:
+                roll_expiry = roll["expiry"]
+
             now = datetime.datetime.now()
             td = roll_expiry - now
 
