@@ -328,7 +328,7 @@ def start_new_daily_roll(context: telegram.ext.CallbackContext):
             )
 
         pretty_roll = generate_pretty_roll(roll)
-        response = "*Started new roulette!* " + pretty_roll
+        response = "<b>Started new roulette!</b> " + pretty_roll
 
         context.bot.send_message(
             chat_id=group_id, text=response, parse_mode=telegram.ParseMode.HTML,
