@@ -251,7 +251,7 @@ def get_quote_by_id(quote_id):
         if query_result is not None:
             quote = {}
             quote["id"] = query_result[0]
-            quote["message"] = sanitizeQuoteMessage(query_result[1])
+            quote["message"] = sanitize_quote_message(query_result[1])
             quote["user"] = query_result[2]
             quote["date"] = query_result[3]
 
@@ -298,7 +298,7 @@ def delete_quote_by_id(quote_id):
         )
 
 
-def sanitizeQuoteMessage(message):
+def sanitize_quote_message(message):
 
     if isinstance(message, (bytes, bytearray)):
         return str(message, "utf-8")
@@ -419,6 +419,40 @@ def insert_roll(group_id, rule, roll_number, victim, winrar, expiry):
         logger.error(
             "Caught Error in dao.insert_roll - {} \n {}", e, traceback.format_exc(),
         )
+
+
+def get_all_bakchods():
+
+    bakchods = None
+
+    try:
+        c.execute("""SELECT * FROM bakchods""")
+        query_results = c.fetchall()
+
+        if query_results is not None:
+
+            bakchods = []
+
+            for query_result in query_results:
+
+                bakchod = Bakchod(query_result[0], query_result[1], query_result[2])
+                bakchod.lastseen = query_result[3]
+                bakchod.rokda = query_result[4]
+                bakchod.birthday = query_result[5]
+                bakchod.history = json.loads(query_result[6])
+                bakchod.modifiers = json.loads(query_result[7])
+
+                bakchods.append(bakchod)
+
+    except Exception as e:
+
+        logger.error(
+            "Caught Error in dao.get_all_bakchods - {} \n {}",
+            e,
+            traceback.format_exc(),
+        )
+
+    return bakchods
 
 
 init_db()
