@@ -227,7 +227,7 @@ def insert_quote(quote):
             )""",
             {
                 "id": quote["id"],
-                "message": quote["message"],
+                "message": json.dumps(quote["message"], default=str),
                 "user": quote["user"],
                 "date": quote["date"],
             },
@@ -251,7 +251,7 @@ def get_quote_by_id(quote_id):
         if query_result is not None:
             quote = {}
             quote["id"] = query_result[0]
-            quote["message"] = sanitize_quote_message(query_result[1])
+            quote["message"] = json.loads(query_result[1])
             quote["user"] = query_result[2]
             quote["date"] = query_result[3]
 
@@ -262,6 +262,27 @@ def get_quote_by_id(quote_id):
 
     return quote
 
+def get_quote_by_id_legacy(quote_id):
+
+    quote = None
+
+    try:
+        c.execute("""SELECT * FROM quotes WHERE id=:id""", {"id": quote_id})
+        query_result = c.fetchone()
+
+        if query_result is not None:
+            quote = {}
+            quote["id"] = query_result[0]
+            quote["message"] = query_result[1]
+            quote["user"] = query_result[2]
+            quote["date"] = query_result[3]
+
+    except Exception as e:
+        logger.error(
+            "Caught Error in dao.get_quote_by_id - {} \n {}", e, traceback.format_exc(),
+        )
+
+    return quote
 
 def get_all_quotes_ids():
 
@@ -296,18 +317,6 @@ def delete_quote_by_id(quote_id):
         logger.error(
             "Caught Error in dao.get_quote_by_id - {} \n {}", e, traceback.format_exc(),
         )
-
-
-def sanitize_quote_message(message):
-
-    if isinstance(message, (bytes, bytearray)):
-        return str(message, "utf-8")
-    else:
-        if message.startswith("b'"):
-            trimed = message[2:-1]
-            return trimed
-
-    return message
 
 
 def get_daan_by_id(daan_id):
