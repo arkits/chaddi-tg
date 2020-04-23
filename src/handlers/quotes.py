@@ -124,14 +124,30 @@ def generate_pretty_quote(quote):
 
     messages = quote["message"]
 
-    for message in messages:
-        pretty_quote = pretty_quote + "`{} <{}> {}` \n".format(
-            str(message["date"]),
-            str(message["user"]),
-            sanitize_quote_message(message["message"]),
-        )
+    if len(messages) == 1:
 
-    pretty_quote = pretty_quote + "\n ~ ID: `{}`".format(str(quote["id"]))
+        pretty_quote = """
+```
+{}
+```
+*~ by श्री {}*
+*~ on {}*
+~ ID: `{}`
+        """.format(
+            sanitize_quote_message(quote["message"][0]["message"]),
+            str(quote["user"]),
+            str(quote["date"]),
+            str(quote["id"]),
+        )
+    else:
+        for message in messages:
+            pretty_quote = pretty_quote + "`{} <{}> {}` \n".format(
+                str(message["date"]),
+                str(message["user"]),
+                sanitize_quote_message(message["message"]),
+            )
+
+        pretty_quote = pretty_quote + "\n ~ ID: `{}`".format(str(quote["id"]))
 
     return pretty_quote
 
@@ -256,7 +272,9 @@ def generate_message(update):
         if update.message.reply_to_message.forward_sender_name is not None:
             quoted_user = update.message.reply_to_message.forward_sender_name
         elif update.message.reply_to_message.forward_from is not None:
-            quoted_user = util.extract_pretty_name_from_tg_user(update.message.reply_to_message.forward_from)
+            quoted_user = util.extract_pretty_name_from_tg_user(
+                update.message.reply_to_message.forward_from
+            )
         else:
             quoted_user = util.extract_pretty_name_from_tg_user(
                 update.message.reply_to_message.from_user
@@ -268,7 +286,9 @@ def generate_message(update):
 
     except Exception as e:
         logger.error(
-            "Caught Error in quotes.generate_message - {} \n {}", e, traceback.format_exc(),
+            "Caught Error in quotes.generate_message - {} \n {}",
+            e,
+            traceback.format_exc(),
         )
 
     return message
