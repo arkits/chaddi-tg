@@ -6,6 +6,7 @@ import random
 import datetime
 import shortuuid
 from telegram import ParseMode
+import traceback
 
 chaddi_config = config.get_config()
 
@@ -14,67 +15,86 @@ def handle(update, context):
 
     util.log_chat("quotes", update)
 
-    # Extract query...
-    query = update.message.text
-    query = query.lower()
-    query = query.split(" ")
-
-    command = None
-
     try:
-        command = query[1]
-    except:
-        command = "random"
 
-    if command == "add":
-        if update.message.reply_to_message.text:
-            response = add_quote(update)
+        # Extract query...
+        query = update.message.text
+        query = query.split(" ")
+
+        command = None
+
+        try:
+            command = query[1].lower()
+        except:
+            command = "random"
+
+        if command == "add":
+            if update.message.reply_to_message.text:
+                response = add_quote(update)
+                update.message.reply_text(text=response, parse_mode=ParseMode.MARKDOWN)
+
+        elif command == "remove":
+            if util.is_admin(update.message.from_user["id"]):
+                try:
+                    id_to_remove = query[2]
+                except:
+                    update.message.reply_text(
+                        text="Please include the Quote ID you want to remove!",
+                        parse_mode=ParseMode.MARKDOWN,
+                    )
+                    return
+                response = remove_quote(id_to_remove)
+            else:
+                response = "Chal kat re bsdk!"
+
             update.message.reply_text(text=response, parse_mode=ParseMode.MARKDOWN)
 
-    elif command == "remove":
-        if util.is_admin(update.message.from_user["id"]):
+        elif command == "get":
+
+            response = ""
+
             try:
-                id_to_remove = query[2]
+                quote_id = query[2]
             except:
                 update.message.reply_text(
                     text="Please include the Quote ID you want to remove!",
                     parse_mode=ParseMode.MARKDOWN,
                 )
                 return
-            response = remove_quote(id_to_remove)
+
+            quote = get_quote_by_id(quote_id)
+
+            if quote is None:
+                quote = get_random_quote()
+                response = "Couldn't find quote with ID `{}`... but here's a random one - \n".format(
+                    quote_id
+                )
+
+            pretty_quote = generate_pretty_quote(quote)
+
+            response = response + pretty_quote
+
+            update.message.reply_text(text=response, parse_mode=ParseMode.MARKDOWN)
+
         else:
-            response = "Chal kat re bsdk!"
+            # Return a random quote
+            random_quote = get_random_quote()
 
-        update.message.reply_text(text=response, parse_mode=ParseMode.MARKDOWN)
+            logger.info("[quotes] Got a random quote '{}", random_quote)
 
-    elif command == "get":
-        try:
-            quote_id = query[2]
-        except:
-            update.message.reply_text(
-                text="Please include the Quote ID you want to remove!",
-                parse_mode=ParseMode.MARKDOWN,
-            )
-            return
+            pretty_quote = generate_pretty_quote(random_quote)
 
-        quote = get_quote_by_id(quote_id)
+            update.message.reply_text(text=pretty_quote, parse_mode=ParseMode.MARKDOWN)
 
-        pretty_quote = generate_pretty_quote(quote)
-
-        update.message.reply_text(text=pretty_quote, parse_mode=ParseMode.MARKDOWN)
-
-    else:
-        # Return a random quote
-        random_quote = get_random_quote()
-
-        logger.info("[quotes] Got a random quote '{}", random_quote)
-
-        pretty_quote = generate_pretty_quote(random_quote)
-
-        update.message.reply_text(text=pretty_quote, parse_mode=ParseMode.MARKDOWN)
+    except Exception as e:
+        logger.error(
+            "Caught Error in quotes.handle - {} \n {}", e, traceback.format_exc(),
+        )
 
 
 def generate_pretty_quote(quote):
+
+    logger.info(quote)
 
     pretty_quote = """
 ```
@@ -93,35 +113,44 @@ def generate_pretty_quote(quote):
 # Add the quoted message to quotes_dict
 def add_quote(update):
 
-    quote_id = shortuuid.uuid()
+    try:
+        quote_id = shortuuid.uuid()
 
-    quoted_message = update.message.reply_to_message.text
-    quoted_message = quoted_message.encode(encoding="UTF-8")
+        quoted_message = update.message.reply_to_message.text
+        quoted_message = quoted_message.encode(encoding="UTF-8")
 
-    if update.message.reply_to_message.from_user["username"]:
-        quoted_user = update.message.reply_to_message.from_user["username"]
-        quoted_user = "@" + quoted_user
-    else:
-        quoted_user = update.message.reply_to_message.from_user["first_name"]
+        quoted_user = None
 
-    quoted_date = update.message.reply_to_message.date
+        forward_from = update.message.reply_to_message.forward_from
 
-    quote = {
-        "message": quoted_message,
-        "user": quoted_user,
-        "date": quoted_date,
-        "id": quote_id,
-    }
+        if forward_from is not None:
+            # Message was forwarded... we want the original sender
+            quoted_user = util.extract_pretty_name_from_tg_user(forward_from)
+        else:
+            # Regular message... we will store the sender
+            quoted_user = util.extract_pretty_name_from_tg_user(
+                update.message.reply_to_message.from_user
+            )
 
-    dao.insert_quote(quote)
+        quoted_date = update.message.reply_to_message.date
 
-    logger.info(
-        "[quotes] Added Quoted Message to quotes_dict[{}] - {}",
-        quote_id,
-        quoted_message,
-    )
+        quote = {
+            "message": quoted_message,
+            "user": quoted_user,
+            "date": quoted_date,
+            "id": quote_id,
+        }
 
-    response = "✏️ Rote memorization successful! ({})".format(quote_id)
+        dao.insert_quote(quote)
+
+        logger.info("[quotes] Added Quoted Message! - {}", quote)
+
+        response = "✏️ Rote memorization successful! (`{}`)".format(quote_id)
+
+    except Exception as e:
+        logger.error(
+            "Caught Error in quotes.add_quote - {} \n {}", e, traceback.format_exc(),
+        )
 
     return response
 
@@ -160,6 +189,8 @@ def get_quote_by_id(quote_id):
     try:
         quote_to_return = dao.get_quote_by_id(quote_id)
     except Exception as e:
-        pass
+        logger.error(
+            "Caught Error in quotes.get_quote_by_id - {} \n {}", e, traceback.format_exc(),
+        )
 
     return quote_to_return
