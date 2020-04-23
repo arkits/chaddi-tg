@@ -213,7 +213,7 @@ def sanitize_quote_message(message):
     if isinstance(message, (bytes, bytearray)):
         return str(message, "utf-8")
     else:
-        if message.startswith("b'"):
+        if message.startswith("b'") or message.startswith('b"'):
             trimed = message[2:-1]
             return trimed
 
