@@ -146,7 +146,9 @@ def handle_dice_rolls(update, context):
 
     if dice is not None:
 
-        roll.handle_dice_rolls(dice.value, update, context)
+        if dice.emoji == '🎲':
+
+            roll.handle_dice_rolls(dice.value, update, context)
 
     return
 
