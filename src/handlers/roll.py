@@ -49,13 +49,16 @@ def handle(update, context):
                 # Extract victim from command param...
                 victim = None
                 parsed_victim_username = extract_param_from_update(update)
-                
+
                 if parsed_victim_username is not None:
-                    
+
                     victim = dao.get_bakchod_by_username(parsed_victim_username)
 
                     if victim is not None:
-                        logger.info("[roll] Found passed Bakchod username={} in DB", parsed_victim_username)
+                        logger.info(
+                            "[roll] Found passed Bakchod username={} in DB",
+                            parsed_victim_username,
+                        )
 
                 # Or else get a Random Bakchod
                 if victim is None:
@@ -239,7 +242,18 @@ def handle_dice_rolls(dice_value, update, context):
             modifiers = victim.modifiers
 
             if current_roll["rule"] == "mute_user":
-                modifiers["censored"] = True
+
+                if "censored" in modifiers:
+                    censored_modifier = modifiers["censored"]
+                else:
+                    censored_modifier = {}
+
+                if "group_ids" not in censored_modifier:
+                    censored_modifier["group_ids"] = []
+
+                censored_modifier["group_ids"].append(group_id)
+
+                modifiers["censored"] = censored_modifier
 
             victim.modifiers = modifiers
             dao.insert_bakchod(victim)
@@ -280,7 +294,10 @@ def reset_roll_effects(context: telegram.ext.CallbackContext):
     )
 
     # Reset victim's modifiers
-    victim.modifiers = {}
+    censored_modifiers = victim.modifiers["censored"]
+    if censored_modifiers is not None:
+        censored_modifiers["group_ids"].remove(group_id)
+        victim.modifiers = censored_modifiers
 
     dao.insert_bakchod(victim)
 

@@ -55,7 +55,9 @@ def is_admin(og_bakchod):
         logger.info("[is_admin] og_bakchod={} in config.allowed_setters", og_bakchod)
         return True
     else:
-        logger.info("[is_admin] og_bakchod={} not in config.allowed_setters", og_bakchod)
+        logger.info(
+            "[is_admin] og_bakchod={} not in config.allowed_setters", og_bakchod
+        )
         return False
 
 
@@ -101,3 +103,20 @@ def extract_pretty_name_from_tg_user(bakchod):
         pretty_name = bakchod["id"]
 
     return pretty_name
+
+
+def get_group_id_from_update(update):
+
+    group_id = None
+
+    try:
+        if (
+            update.message.chat.id is not None
+            and update.message.chat.type == "group"
+            or update.message.chat.type == "supergroup"
+        ):
+            group_id = update.message.chat.id
+    except Exception as e:
+        pass
+
+    return group_id

@@ -146,7 +146,7 @@ def handle_dice_rolls(update, context):
 
     if dice is not None:
 
-        if dice.emoji == '🎲':
+        if dice.emoji == "🎲":
 
             roll.handle_dice_rolls(dice.value, update, context)
 
@@ -159,32 +159,42 @@ def handle_bakchod_modifiers(update, context, bakchod):
 
     modifiers = bakchod.modifiers
 
+    group_id = util.get_group_id_from_update(update)
+
     try:
 
         if "censored" in modifiers.keys():
 
-            if modifiers["censored"] == True:
+            if modifiers["censored"]:
 
-                logger.info(
-                    "[modifiers] censoring {}",
-                    util.extract_pretty_name_from_bakchod(bakchod),
-                )
+                censored_modifer = modifiers["censored"]
 
-                try:
-                    bot.delete_message(
-                        chat_id=update.message.chat_id,
-                        message_id=update.message.message_id,
+                if (
+                    censored_modifer["enabled"]
+                    and group_id is not None
+                    and group_id in censored_modifer["group_ids"]
+                ):
+
+                    logger.info(
+                        "[modifiers] censoring {}",
+                        util.extract_pretty_name_from_bakchod(bakchod),
                     )
-                except Exception as e:
-                    logger.error(
-                        "Caught Error in censoring Bakchod - {} \n {}",
-                        e,
-                        traceback.format_exc(),
-                    )
-                    bot.send_message(
-                        chat_id=update.message.chat_id,
-                        text="Looks like I'm not able to delete messages... Please check the Group permissions!",
-                    )
+
+                    try:
+                        bot.delete_message(
+                            chat_id=update.message.chat_id,
+                            message_id=update.message.message_id,
+                        )
+                    except Exception as e:
+                        logger.error(
+                            "Caught Error in censoring Bakchod - {} \n {}",
+                            e,
+                            traceback.format_exc(),
+                        )
+                        bot.send_message(
+                            chat_id=update.message.chat_id,
+                            text="Looks like I'm not able to delete messages... Please check the Group permissions!",
+                        )
 
     except Exception as e:
         logger.error(
