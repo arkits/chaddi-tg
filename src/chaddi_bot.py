@@ -5,6 +5,7 @@ from datetime import time
 import pytz
 
 import handlers
+from domain import jobs
 
 # Get application config
 chaddi_config = config.get_config()
@@ -25,19 +26,8 @@ def main():
 
     job_queue = updater.job_queue
 
-    # Run good_morning job once 1 sec after startup
-    # job_queue.run_once(handlers.good_morning.handle, 1)
-
-    # Run good_morning everyday at 10am IST
-    ist = pytz.timezone("Asia/Kolkata")
-    t = time(hour=10, minute=00, tzinfo=ist)
-    
-    # logger.info("Good Morning Job will be triggered at {}", t.isoformat())
-    job_queue.run_daily(handlers.good_morning.handle, t)
-
-    # logger.info("New Roll Job will be triggered at {}", t.isoformat())
-    job_queue.run_daily(handlers.roll.start_new_daily_roll, t)
-    # job_queue.run_once(handlers.roll.start_new_daily_roll, 1)
+    # Schedule the required timer based jobs
+    jobs.schedule_timer_jobs(job_queue)
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
