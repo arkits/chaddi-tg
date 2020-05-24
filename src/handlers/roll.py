@@ -10,6 +10,12 @@ import telegram
 
 chaddi_config = config.get_config()
 
+ROLL_TYPES = ["mute_user", "auto_mom"]
+PRETTY_ROLL_MAPPING = {
+    "mute_user": "mute",
+    "auto_mom": "/mom",
+}
+
 
 def handle(update, context):
 
@@ -42,18 +48,19 @@ def handle(update, context):
 
             if create_new_roll:
 
-                rule = "mute_user"
+                # Create new roll...
 
+                # Set roll rule type
+                rule = get_random_roll_type()
+
+                # Set the number to required to win
                 roll_number = random.randint(1, 6)
 
                 # Extract victim from command param...
                 victim = None
                 parsed_victim_username = extract_param_from_update(update)
-
                 if parsed_victim_username is not None:
-
                     victim = dao.get_bakchod_by_username(parsed_victim_username)
-
                     if victim is not None:
                         logger.info(
                             "[roll] Found passed Bakchod username={} in DB",
@@ -68,6 +75,7 @@ def handle(update, context):
                     update.message.reply_text(text="Couldn't get a random Bakchod :(")
                     return
 
+                # Set the roll winrar to None
                 winrar = None
 
                 expiry = datetime.datetime.now() + datetime.timedelta(hours=1)
@@ -255,6 +263,20 @@ def handle_dice_rolls(dice_value, update, context):
 
                 modifiers["censored"] = censored_modifier
 
+            elif current_roll["rule"] == "auto_mom":
+
+                if "auto_mom" in modifiers:
+                    auto_mom_modifier = modifiers["auto_mom"]
+                else:
+                    auto_mom_modifier = {}
+
+                if "group_ids" not in auto_mom_modifier:
+                    auto_mom_modifier["group_ids"] = []
+
+                auto_mom_modifier["group_ids"].append(group_id)
+
+                modifiers["auto_mom"] = auto_mom_modifier
+
             victim.modifiers = modifiers
             dao.insert_bakchod(victim)
 
@@ -318,8 +340,10 @@ def start_new_daily_roll(context: telegram.ext.CallbackContext):
 
         logger.info("[roll] starting new daily roll! group_id={}", group_id)
 
-        rule = "mute_user"
+        # Set roll rule type
+        rule = get_random_roll_type()
 
+        # Set the number to required to win
         roll_number = random.randint(1, 6)
 
         victim = get_random_bakchod(group_id)
@@ -481,9 +505,15 @@ def get_random_bakchod(group_id):
 
 def pretty_roll_rule(roll_rule):
 
-    pretty_roll_rule_mapping = {"mute_user": "mute"}
-
-    if roll_rule in pretty_roll_rule_mapping.keys():
-        return pretty_roll_rule_mapping[roll_rule]
+    if roll_rule in PRETTY_ROLL_MAPPING.keys():
+        return PRETTY_ROLL_MAPPING[roll_rule]
     else:
         return None
+
+
+def get_random_roll_type():
+
+    random.seed(datetime.datetime.now())
+    random_int = random.randint(0, len(ROLL_TYPES) - 1)
+
+    return ROLL_TYPES[random_int]

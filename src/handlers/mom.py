@@ -71,15 +71,16 @@ def handle(update, context):
 
 # !! SEXISM !!
 # make a bad joke about it
-def joke_mom(sentence, victim):
+def joke_mom(sentence, victim, force=False):
 
     random.seed(datetime.datetime.now())
 
     protagonist = "your mom"
 
-    # flip the joke 20% of times
-    if random.random() > 0.8:
-        protagonist, victim = victim, protagonist
+    if not force:
+        # flip the joke 20% of times
+        if random.random() > 0.8:
+            protagonist, victim = victim, protagonist
 
     # extract parts of speech and generate insults
     if sentence is not None:

@@ -5,9 +5,11 @@ from models.group import Group
 from domain import bakchod as bakchod_domain
 import time
 import datetime
-from handlers import bestie, hi, roll
+from handlers import bestie, hi, roll, mom
 import traceback
-from util import util
+from util import util, config
+
+chaddi_config = config.get_config()
 
 
 def all(update, context):
@@ -163,6 +165,7 @@ def handle_bakchod_modifiers(update, context, bakchod):
 
     try:
 
+        # Handle censored modifier
         if "censored" in modifiers.keys():
 
             if modifiers["censored"]:
@@ -195,6 +198,30 @@ def handle_bakchod_modifiers(update, context, bakchod):
                             chat_id=update.message.chat_id,
                             text="Looks like I'm not able to delete messages... Please check the Group permissions!",
                         )
+
+                    return
+
+        # Handle auto_mom modifier
+        if "auto_mom" in modifiers.keys():
+
+            if modifiers["auto_mom"]:
+
+                auto_mom_modifier = modifiers["auto_mom"]
+
+                if group_id is not None and group_id in auto_mom_modifier["group_ids"]:
+
+                    logger.info(
+                        "[modifiers] auto_mom - victim={} message={}",
+                        util.extract_pretty_name_from_bakchod(bakchod),
+                        update.message.text,
+                    )
+
+                    response = mom.joke_mom(
+                        update.message.text, chaddi_config["bot_username"], True
+                    )
+
+                    update.message.reply_text(response)
+                    return
 
     except Exception as e:
         logger.error(
