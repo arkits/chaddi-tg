@@ -10,11 +10,9 @@ import telegram
 
 chaddi_config = config.get_config()
 
-ROLL_TYPES = ["mute_user", "auto_mom"]
-PRETTY_ROLL_MAPPING = {
-    "mute_user": "mute",
-    "auto_mom": "/mom",
-}
+ROLL_TYPES = ["mute_user", "auto_mom", "kick_user"]
+PRETTY_ROLL_MAPPING = {"mute_user": "mute", "auto_mom": "/mom", "kick_user": "kick"}
+DEBUG = False
 
 
 def handle(update, context):
@@ -202,14 +200,17 @@ def handle_dice_rolls(dice_value, update, context):
 
         five_min_ago = datetime.datetime.now() - datetime.timedelta(minutes=5)
 
-        if "roll" in history:
-            last_time_rolled = ciso8601.parse_datetime(history["roll"])
-            if last_time_rolled > five_min_ago:
-                logger.info("[roll] rolled too soon... skipping")
-                update.message.reply_text(
-                    "You can only roll once every 5 mins... Ignoring this roll!"
-                )
-                return
+        if not DEBUG:
+            if "roll" in history:
+                last_time_rolled = ciso8601.parse_datetime(history["roll"])
+                if last_time_rolled > five_min_ago:
+                    logger.info("[roll] rolled too soon... skipping")
+                    update.message.reply_text(
+                        "You can only roll once every 5 mins... Ignoring this roll!"
+                    )
+                    return
+        else:
+            logger.debug("[roll] DEBUG is True... ignoring time check")
 
         history["roll"] = datetime.datetime.now()
         roller.history = history
@@ -277,6 +278,34 @@ def handle_dice_rolls(dice_value, update, context):
 
                 modifiers["auto_mom"] = auto_mom_modifier
 
+            elif current_roll["rule"] == "kick_user":
+
+                try:
+
+                    logger.info(
+                        "[roll] Kicking User - group_id={} victim.id={}",
+                        group_id,
+                        victim.id,
+                    )
+                    context.bot.send_message(
+                        chat_id=update.message.chat_id,
+                        text="BYEEEEEEEEEEEE "
+                        + util.extract_pretty_name_from_bakchod(victim),
+                    )
+                    context.bot.kick_chat_member(group_id, victim.id)
+
+                except Exception as e:
+                    logger.error(
+                        "[roll] Caught Error in kick Bakchod - {} \n {}",
+                        e,
+                        traceback.format_exc(),
+                    )
+                    context.bot.send_message(
+                        chat_id=update.message.chat_id,
+                        text="Looks like I'm not able to kick user... Please check the Group permissions!",
+                    )
+                    return
+
             victim.modifiers = modifiers
             dao.insert_bakchod(victim)
 
@@ -316,10 +345,17 @@ def reset_roll_effects(context: telegram.ext.CallbackContext):
     )
 
     # Reset victim's modifiers
-    censored_modifiers = victim.modifiers["censored"]
-    if censored_modifiers is not None:
-        censored_modifiers["group_ids"].remove(group_id)
-        victim.modifiers = censored_modifiers
+    if roll["rule"] == "mute_user":
+        censored_modifiers = victim.modifiers["censored"]
+        if censored_modifiers is not None:
+            censored_modifiers["group_ids"].remove(group_id)
+            victim.modifiers["censored"] = censored_modifiers
+
+    elif roll["rule"] == "auto_mom":
+        auto_mom_modifiers = victim.modifiers["auto_mom"]
+        if auto_mom_modifiers is not None:
+            auto_mom_modifiers["group_ids"].remove(group_id)
+            victim.modifiers["auto_mom"] = auto_mom_modifiers
 
     dao.insert_bakchod(victim)
 
@@ -404,13 +440,20 @@ def generate_pretty_roll(roll):
             now = datetime.datetime.now()
             td = roll_expiry - now
 
-            pretty_roll = "{} won by rolling a {}! {} is now {} for {}".format(
-                util.extract_pretty_name_from_bakchod(winrar),
-                roll["roll_number"],
-                util.extract_pretty_name_from_bakchod(victim),
-                pretty_roll_rule(roll["rule"]),
-                util.pretty_time_delta(td.total_seconds()),
-            )
+            if roll["rule"] == "kick_user":
+                pretty_roll = "{} won by rolling a {}! {} has been kicked from this group!".format(
+                    util.extract_pretty_name_from_bakchod(winrar),
+                    roll["roll_number"],
+                    util.extract_pretty_name_from_bakchod(victim),
+                )
+            else:
+                pretty_roll = "{} won by rolling a {}! {} is now {} for {}".format(
+                    util.extract_pretty_name_from_bakchod(winrar),
+                    roll["roll_number"],
+                    util.extract_pretty_name_from_bakchod(victim),
+                    pretty_roll_rule(roll["rule"]),
+                    util.pretty_time_delta(td.total_seconds()),
+                )
 
     except Exception as e:
         logger.error(
