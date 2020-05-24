@@ -38,7 +38,8 @@ def init_db():
                 id text primary key,
                 message text,
                 user text,
-                date blob
+                date blob,
+                group_id text
             )"""
         )
 
@@ -223,13 +224,15 @@ def insert_quote(quote):
                 :id,
                 :message,
                 :user,
-                :date       
+                :date,
+                :group_id       
             )""",
             {
                 "id": quote["id"],
                 "message": json.dumps(quote["message"], default=str),
                 "user": quote["user"],
                 "date": quote["date"],
+                "group_id": quote["group_id"],
             },
         )
 
@@ -254,6 +257,7 @@ def get_quote_by_id(quote_id):
             quote["message"] = json.loads(query_result[1])
             quote["user"] = query_result[2]
             quote["date"] = query_result[3]
+            quote["group_id"] = query_result[4]
 
     except Exception as e:
         logger.error(
@@ -279,6 +283,31 @@ def get_all_quotes_ids():
     except Exception as e:
         logger.error(
             "Caught Error in dao.get_all_quotes_ids - {} \n {}",
+            e,
+            traceback.format_exc(),
+        )
+
+    return all_quote_ids
+
+
+def get_quotes_ids_by_group_id(group_id):
+
+    all_quote_ids = None
+
+    try:
+        c.execute(
+            """SELECT id FROM quotes WHERE group_id=:group_id""", {"group_id": group_id}
+        )
+        query_result = c.fetchall()
+
+        if query_result is not None:
+            all_quote_ids = []
+            for q in query_result:
+                all_quote_ids.append(q[0])
+
+    except Exception as e:
+        logger.error(
+            "Caught Error in dao.get_quotes_ids_by_group_id - {} \n {}",
             e,
             traceback.format_exc(),
         )

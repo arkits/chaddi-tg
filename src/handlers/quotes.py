@@ -67,12 +67,20 @@ def handle(update, context):
 
             if quote is None:
 
+                group_id = util.get_group_id_from_update(update)
+                if group_id is None:
+                    update.message.reply_text(text="Can't run this command here!")
+                    return
+
                 # Return a random quote
-                random_quote = get_random_quote()
+                random_quote = get_random_quote(group_id)
 
                 if random_quote is None:
-                    logger.info("[quotes] No quotes found!")
-                    update.message.reply_text(text="No quotes found!")
+                    logger.info("[quotes] No quotes found! - group_id={}", group_id)
+                    update.message.reply_text(
+                        text="No quotes found for this Group! You can add quotes with `/quotes add`",
+                        parse_mode=ParseMode.MARKDOWN,
+                    )
                     return
 
                 response = "Couldn't find quote with ID `{}`... but here's a random one - \n".format(
@@ -125,7 +133,7 @@ def handle(update, context):
                 if last_time_get > two_min_ago:
                     logger.info("[quotes] request random quote too soon... skipping")
                     update.message.reply_text(
-                        "You can only request a random quotes once every 2 mins... Ignoring this request!"
+                        "Quotes ki dukan band hai... come back later!"
                     )
                     return
 
@@ -133,12 +141,20 @@ def handle(update, context):
             bakchod.history = history
             dao.insert_bakchod(bakchod)
 
+            group_id = util.get_group_id_from_update(update)
+            if group_id is None:
+                update.message.reply_text(text="Can't run this command here!")
+                return
+
             # Return a random quote
-            random_quote = get_random_quote()
+            random_quote = get_random_quote(group_id)
 
             if random_quote is None:
-                logger.info("[quotes] No quotes found!")
-                update.message.reply_text(text="No quotes found!")
+                logger.info("[quotes] No quotes found! - group_id={}", group_id)
+                update.message.reply_text(
+                    text="No quotes found for this Group! You can add quotes with `/quotes add`",
+                    parse_mode=ParseMode.MARKDOWN,
+                )
                 return
 
             logger.info("[quotes] Got a random quote '{}", random_quote)
@@ -194,11 +210,14 @@ def add_quote(update):
 
         message = generate_message(update)
 
+        group_id = util.get_group_id_from_update(update)
+
         quote = {
             "message": [message],
             "user": message["user"],
             "date": message["date"],
             "id": quote_id,
+            "group_id": group_id,
         }
 
         dao.insert_quote(quote)
@@ -216,9 +235,9 @@ def add_quote(update):
 
 
 # Returns a random quote
-def get_random_quote():
+def get_random_quote(group_id):
 
-    all_quotes_ids = dao.get_all_quotes_ids()
+    all_quotes_ids = dao.get_quotes_ids_by_group_id(group_id)
 
     if len(all_quotes_ids) > 0:
 
