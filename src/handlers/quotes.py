@@ -7,6 +7,7 @@ import datetime
 import shortuuid
 from telegram import ParseMode
 import traceback
+import ciso8601
 
 chaddi_config = config.get_config()
 
@@ -57,7 +58,7 @@ def handle(update, context):
                 quote_id = query[2]
             except:
                 update.message.reply_text(
-                    text="Please include the Quote ID you want to remove!",
+                    text="Please include the Quote ID you want to get!",
                     parse_mode=ParseMode.MARKDOWN,
                 )
                 return
@@ -65,15 +66,21 @@ def handle(update, context):
             quote = get_quote_by_id(quote_id)
 
             if quote is None:
-                quote = get_random_quote()
+
+                # Return a random quote
+                random_quote = get_random_quote()
+
+                if random_quote is None:
+                    logger.info("[quotes] No quotes found!")
+                    update.message.reply_text(text="No quotes found!")
+                    return
+
                 response = "Couldn't find quote with ID `{}`... but here's a random one - \n".format(
                     quote_id
                 )
 
             pretty_quote = generate_pretty_quote(quote)
-
             response = response + pretty_quote
-
             update.message.reply_text(text=response, parse_mode=ParseMode.MARKDOWN)
 
         elif command == "join":
@@ -103,14 +110,41 @@ def handle(update, context):
             update.message.reply_text(text=response, parse_mode=ParseMode.MARKDOWN)
 
         else:
+
+            # Enforce rate limiting on getting random quotes
+            bakchod = dao.get_bakchod_by_id(update.message.from_user.id)
+            history = bakchod.history
+
+            if history is None:
+                history = {}
+
+            two_min_ago = datetime.datetime.now() - datetime.timedelta(minutes=2)
+
+            if "random_quote_get" in history:
+                last_time_get = ciso8601.parse_datetime(history["random_quote_get"])
+                if last_time_get > two_min_ago:
+                    logger.info("[quotes] request random quote too soon... skipping")
+                    update.message.reply_text(
+                        "You can only request a random quotes once every 2 mins... Ignoring this request!"
+                    )
+                    return
+
+            history["random_quote_get"] = datetime.datetime.now()
+            bakchod.history = history
+            dao.insert_bakchod(bakchod)
+
             # Return a random quote
             random_quote = get_random_quote()
 
+            if random_quote is None:
+                logger.info("[quotes] No quotes found!")
+                update.message.reply_text(text="No quotes found!")
+                return
+
             logger.info("[quotes] Got a random quote '{}", random_quote)
-
             pretty_quote = generate_pretty_quote(random_quote)
-
             update.message.reply_text(text=pretty_quote, parse_mode=ParseMode.MARKDOWN)
+            return
 
     except Exception as e:
         logger.error(
@@ -186,12 +220,18 @@ def get_random_quote():
 
     all_quotes_ids = dao.get_all_quotes_ids()
 
-    random.seed(datetime.datetime.now())
-    random_quote_id = random.choice(all_quotes_ids)
+    if len(all_quotes_ids) > 0:
 
-    random_quote = dao.get_quote_by_id(random_quote_id)
+        random.seed(datetime.datetime.now())
+        random_quote_id = random.choice(all_quotes_ids)
 
-    return random_quote
+        random_quote = dao.get_quote_by_id(random_quote_id)
+
+        return random_quote
+
+    else:
+
+        return None
 
 
 # Removes quote based on it's ID
