@@ -88,7 +88,7 @@ def joke_mom(sentence, victim, force=False):
     if sentence is not None:
         verb = get_verb(sentence)
         if verb != 0:
-            return "{} {} {} last night ".format(victim, verb, protagonist)
+            return "{} {} {} last night".format(victim, verb, protagonist)
         else:
             adjective = get_POS(sentence, "ADJ")
             if adjective != 0:
@@ -96,7 +96,8 @@ def joke_mom(sentence, victim, force=False):
             else:
                 propn = get_POS(sentence, "PROPN")
                 if propn != 0:
-                    return "{} {} {}".format(victim, propn, protagonist)
+                    past = get_verb_past(propn)
+                    return "{} {} {} last night".format(victim, past, protagonist)
                 else:
                     return random_reply(victim)
     else:
@@ -127,14 +128,14 @@ def get_verb(sentence):
     else:
         noun = get_POS(sentence, "NOUN")
         # see if the noun has a verb form
-        verb_form_past = get_verb_past(noun, lemmatize_unknown_verbs=False)
+        verb_form_past = get_verb_past(noun)
         if verb_form_past != -1:
             return verb_form_past
     return 0
 
 
 # return simple past form of verb
-def get_verb_past(verb, lemmatize_unknown_verbs=True):
+def get_verb_past(verb):
 
     verbLookupTable = util.get_verbLookupTable()
 
