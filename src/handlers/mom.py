@@ -35,7 +35,9 @@ def handle(update, context):
         # Get recipient's name
         if update.message.reply_to_message:
             riposte = joke_mom(update.message.reply_to_message.text, og_sender_name)
-            respond_to = util.extract_pretty_name_from_tg_user(update.message.reply_to_message.from_user)
+            respond_to = util.extract_pretty_name_from_tg_user(
+                update.message.reply_to_message.from_user
+            )
         else:
             riposte = joke_mom(update.message.text, og_sender_name)
             respond_to = og_sender_name
@@ -94,7 +96,7 @@ def joke_mom(sentence, victim, force=False):
             else:
                 propn = get_POS(sentence, "PROPN")
                 if propn != 0:
-                    return "{} {} {}".format(victim, protagonist, propn)
+                    return "{} {} {}".format(victim, propn, protagonist)
                 else:
                     return random_reply(victim)
     else:
