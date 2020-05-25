@@ -8,6 +8,7 @@ import datetime
 from handlers import bestie, hi, roll, mom
 import traceback
 from util import util, config
+import random
 
 chaddi_config = config.get_config()
 
@@ -210,18 +211,18 @@ def handle_bakchod_modifiers(update, context, bakchod):
 
                 if group_id is not None and group_id in auto_mom_modifier["group_ids"]:
 
-                    logger.info(
-                        "[modifiers] auto_mom - victim={} message={}",
-                        util.extract_pretty_name_from_bakchod(bakchod),
-                        update.message.text,
-                    )
+                    if random.random() > 0.5:
 
-                    response = mom.joke_mom(
-                        update.message.text, chaddi_config["bot_username"], True
-                    )
+                        logger.info(
+                            "[modifiers] auto_mom - victim={} message={}",
+                            util.extract_pretty_name_from_bakchod(bakchod),
+                            update.message.text,
+                        )
 
-                    update.message.reply_text(response)
-                    return
+                        response = mom.joke_mom(update.message.text, "Chaddi", True)
+
+                        update.message.reply_text(response)
+                        return
 
     except Exception as e:
         logger.error(
