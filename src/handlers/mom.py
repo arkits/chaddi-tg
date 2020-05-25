@@ -6,6 +6,7 @@ import json
 import random
 import datetime
 import en_core_web_sm
+import traceback
 
 chaddi_config = config.get_config()
 
@@ -19,55 +20,64 @@ mom_response_blacklist = [BOT_USERNAME]
 
 def handle(update, context):
 
-    random.seed(datetime.datetime.now())
+    try:
 
-    util.log_chat("mom", update)
+        random.seed(datetime.datetime.now())
 
-    # Get Telegram user id
-    og_sender_id = update.message.from_user["id"]
+        util.log_chat("mom", update)
 
-    # Check if Bakchod has enough rokda to do a /mom...
-    if check_if_user_can_riposte(og_sender_id):
+        # Get Telegram user id
+        og_sender_id = update.message.from_user["id"]
 
-        # Get sender's name
-        og_sender_name = util.extract_pretty_name_from_tg_user(update.message.from_user)
+        # Check if Bakchod has enough rokda to do a /mom...
+        if check_if_user_can_riposte(og_sender_id):
 
-        # Get recipient's name
-        if update.message.reply_to_message:
-            riposte = joke_mom(update.message.reply_to_message.text, og_sender_name)
-            respond_to = util.extract_pretty_name_from_tg_user(
-                update.message.reply_to_message.from_user
+            # Get sender's name
+            og_sender_name = util.extract_pretty_name_from_tg_user(
+                update.message.from_user
             )
-        else:
-            riposte = joke_mom(update.message.text, og_sender_name)
-            respond_to = og_sender_name
 
-        if respond_to not in mom_response_blacklist:
-            if random.random() > 0.10:
-                if update.message.reply_to_message:
-                    update.message.reply_to_message.reply_text(riposte)
+            # Get recipient's name
+            if update.message.reply_to_message:
+                riposte = joke_mom(update.message.reply_to_message.text, og_sender_name)
+                respond_to = util.extract_pretty_name_from_tg_user(
+                    update.message.reply_to_message.from_user
+                )
+            else:
+                riposte = joke_mom(update.message.text, og_sender_name)
+                respond_to = og_sender_name
+
+            if respond_to not in mom_response_blacklist:
+                if random.random() > 0.10:
+                    if update.message.reply_to_message:
+                        update.message.reply_to_message.reply_text(riposte)
+                    else:
+                        update.message.reply_text(riposte)
                 else:
-                    update.message.reply_text(riposte)
+                    # User has chance to get protected
+                    update.message.reply_text(
+                        respond_to + " is protected by a 👁️ Nazar Raksha Kavach"
+                    )
             else:
-                # User has chance to get protected
-                update.message.reply_text(
-                    respond_to + " is protected by a 👁️ Nazar Raksha Kavach"
-                )
-        else:
-            if respond_to == BOT_USERNAME:
-                # Don't insult Chaddi!
-                sticker_to_send = "CAADAQADrAEAAp6M4Ahtgp9JaiLJPxYE"
-                update.message.reply_sticker(sticker=sticker_to_send)
-            else:
-                # Protect the users in the blacklist
-                update.message.reply_text(
-                    respond_to + " is protected by a 👁️ Nazar Raksha Kavach"
-                )
+                if respond_to == BOT_USERNAME:
+                    # Don't insult Chaddi!
+                    sticker_to_send = "CAADAQADrAEAAp6M4Ahtgp9JaiLJPxYE"
+                    update.message.reply_sticker(sticker=sticker_to_send)
+                else:
+                    # Protect the users in the blacklist
+                    update.message.reply_text(
+                        respond_to + " is protected by a 👁️ Nazar Raksha Kavach"
+                    )
 
-    else:
-        # Bakchod doesn't have enough rokda :(
-        update.message.reply_text(
-            "Sorry! You don't have enough ₹okda! Each /mom costs 50 ₹okda."
+        else:
+            # Bakchod doesn't have enough rokda :(
+            update.message.reply_text(
+                "Sorry! You don't have enough ₹okda! Each /mom costs 50 ₹okda."
+            )
+
+    except Exception as e:
+        logger.error(
+            "Caught Error in mom.handle - {} \n {}", e, traceback.format_exc(),
         )
 
 
@@ -118,19 +128,31 @@ def get_POS(sentence, POS):
 def get_verb(sentence):
 
     doc = nlp(sentence)
+
     verbs = []
+
     for token in doc:
         if token.pos_ == "VERB":
             verbs.append(str(token.lemma_))
+
     if verbs:
+
+        logger.info("verb")
         verbPast = get_verb_past(random.choice(verbs))
         return verbPast
+
     else:
+
         noun = get_POS(sentence, "NOUN")
-        # see if the noun has a verb form
-        verb_form_past = get_verb_past(noun)
-        if verb_form_past != -1:
-            return verb_form_past
+
+        if noun:
+
+            # see if the noun has a verb form
+            verb_form_past = get_verb_past(noun)
+
+            if verb_form_past != -1:
+                return verb_form_past
+
     return 0
 
 
@@ -142,15 +164,12 @@ def get_verb_past(verb):
     try:
         verbPast = verbLookupTable[0][verb]
     except KeyError:
-        if lemmatize_unknown_verbs:
-            if verb.endswith("ed"):
-                verbPast = verb
-            elif verb.endswith("e"):
-                verbPast = verb + "d"
-            else:
-                verbPast = verb + "ed"
+        if verb.endswith("ed"):
+            verbPast = verb
+        elif verb.endswith("e"):
+            verbPast = verb + "d"
         else:
-            verbPast = -1
+            verbPast = verb + "ed"
 
     return verbPast
 
