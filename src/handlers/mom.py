@@ -137,7 +137,6 @@ def get_verb(sentence):
 
     if verbs:
 
-        logger.info("verb")
         verbPast = get_verb_past(random.choice(verbs))
         return verbPast
 

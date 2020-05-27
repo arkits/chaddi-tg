@@ -2,6 +2,7 @@ from loguru import logger
 from util import config
 import json
 from datetime import datetime, date, timezone
+import random
 
 chaddi_config = config.get_config()
 
@@ -120,3 +121,11 @@ def get_group_id_from_update(update):
         pass
 
     return group_id
+
+
+def choose_random_element_from_list(input_list):
+
+    random.seed(datetime.now())
+    random_int = random.randint(0, len(input_list) - 1)
+
+    return input_list[random_int]

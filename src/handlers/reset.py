@@ -49,5 +49,5 @@ def handle(update, context):
 
     except Exception as e:
         logger.error(
-            "Caught Error in quotes.handle - {} \n {}", e, traceback.format_exc(),
+            "Caught Error in reset.handle - {} \n {}", e, traceback.format_exc(),
         )
