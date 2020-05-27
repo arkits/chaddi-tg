@@ -102,7 +102,7 @@ def extract_magic_word(target_message):
 
 def get_support_word():
 
-    support_words = ["dikhae", "sikhae"]
+    support_words = ["dikhae", "sikhae", "kare"]
 
     support_word = util.choose_random_element_from_list(support_words)
 
