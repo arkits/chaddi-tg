@@ -5,13 +5,10 @@ import spacy
 import json
 import random
 import datetime
-import en_core_web_sm
 import traceback
 
 chaddi_config = config.get_config()
 
-# Load Spacy English Language Pack
-nlp = en_core_web_sm.load()
 
 BOT_USERNAME = "@" + chaddi_config["bot_username"]
 
@@ -67,7 +64,7 @@ def extract_target_message(update):
 
 def extract_magic_word(target_message):
 
-    doc = nlp(target_message)
+    doc = util.get_nlp()(target_message)
 
     # the types on pos that we care about - refer to https://universaldependencies.org/docs/u/pos/
     accepted_pos_types = ["VERB", "NOUN"]

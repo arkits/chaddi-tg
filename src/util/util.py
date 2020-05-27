@@ -3,6 +3,7 @@ from util import config
 import json
 from datetime import datetime, date, timezone
 import random
+import en_core_web_sm
 
 chaddi_config = config.get_config()
 
@@ -10,9 +11,16 @@ chaddi_config = config.get_config()
 verbLookupTable_file = open("resources/verbPastLookup.json", "r")
 verbLookupTable = json.loads(verbLookupTable_file.read())
 
+# Load Spacy English Language Pack
+nlp = en_core_web_sm.load()
+
 
 def get_verbLookupTable():
     return verbLookupTable
+
+
+def get_nlp():
+    return nlp
 
 
 def print_title():

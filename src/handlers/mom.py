@@ -5,13 +5,9 @@ import spacy
 import json
 import random
 import datetime
-import en_core_web_sm
 import traceback
 
 chaddi_config = config.get_config()
-
-# Load Spacy English Language Pack
-nlp = en_core_web_sm.load()
 
 BOT_USERNAME = "@" + chaddi_config["bot_username"]
 
@@ -117,7 +113,7 @@ def joke_mom(sentence, victim, force=False):
 # return the first relevant part of speech tag
 def get_POS(sentence, POS):
 
-    doc = nlp(sentence)
+    doc = util.get_nlp()(sentence)
     for token in doc:
         if token.pos_ == POS:
             return token.text
@@ -127,7 +123,7 @@ def get_POS(sentence, POS):
 # return a random verb from the sentence
 def get_verb(sentence):
 
-    doc = nlp(sentence)
+    doc = util.get_nlp()(sentence)
 
     verbs = []
 
