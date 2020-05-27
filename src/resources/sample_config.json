@@ -1,5 +1,10 @@
 {
   "bot_username": "ChaddiBot",
   "tg_bot_token": "YOUR_TG_TOKEN_HERE",
-  "good_morning_channels": [""]
+  "good_morning_channels": [
+    ""
+  ],
+  "hi_response_whitelist": [
+    "arkits"
+  ]
 }

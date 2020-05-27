@@ -1,13 +1,14 @@
 from loguru import logger
-from util import util
-
+from util import util, config
 import random
 import datetime
 
+chaddi_config = config.get_config()
+
+hi_response_whitelist = chaddi_config["hi_response_whitelist"]
+
 
 def handle(update, context):
-
-    hi_response_whitelist = ["pahagwl", "arkits", "volis2"]
 
     if update.message.from_user["username"] in hi_response_whitelist:
         util.log_chat("hi", update)
