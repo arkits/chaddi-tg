@@ -7,6 +7,7 @@ import datetime
 import ciso8601
 from models.bakchod import Bakchod
 import telegram
+import math
 
 chaddi_config = config.get_config()
 
@@ -537,11 +538,37 @@ def get_random_bakchod(group_id):
 
     if group is not None:
 
-        members = group.members
+        collected_bakchods = []
 
-        random_index = random.randint(0, len(members) - 1)
-        random_bakchod_id = members[random_index]
-        random_bakchod = dao.get_bakchod_by_id(random_bakchod_id)
+        # loop through the member ids and store the bakchod objects
+        for member_id in group.members:
+
+            bakchod = dao.get_bakchod_by_id(member_id)
+
+            if bakchod is not None:
+
+                if bakchod.lastseen is not None:
+
+                    try:
+                        bakchod.lastseen = ciso8601.parse_datetime(bakchod.lastseen)
+                        collected_bakchods.append(bakchod)
+                    except Exception as e:
+                        logger.error(
+                            "Caught Error in roll.get_random_bakchod - {} \n {}",
+                            e,
+                            traceback.format_exc(),
+                        )
+
+        # sort the bakchods by lastseen
+        collected_bakchods.sort(key=lambda r: r.lastseen)
+
+        # only care about the x% of the lastseen
+        relevant_section = math.ceil(0.15 * len(collected_bakchods))
+
+        # pick a random bakchod from the relevant section
+        index = random.randint(0, relevant_section)
+
+        random_bakchod = collected_bakchods[index]
 
     return random_bakchod
 
