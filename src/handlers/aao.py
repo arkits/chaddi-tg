@@ -26,7 +26,7 @@ def handle(update, context):
             logger.error("[aao] initiator_id was None!")
             return
 
-        if not util.paywall_user(initiator_id, 50):
+        if not util.paywall_user(initiator_id, 100):
             update.message.reply_text(
                 "Sorry! You don't have enough ₹okda! Each /aao costs 50 ₹okda."
             )

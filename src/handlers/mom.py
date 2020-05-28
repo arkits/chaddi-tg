@@ -26,7 +26,7 @@ def handle(update, context):
         og_sender_id = update.message.from_user["id"]
 
         # Check if Bakchod has enough rokda to do a /mom...
-        if util.paywall_user(og_sender_id):
+        if util.paywall_user(og_sender_id, 100):
 
             # Get sender's name
             og_sender_name = util.extract_pretty_name_from_tg_user(
