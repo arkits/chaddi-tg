@@ -560,7 +560,7 @@ def get_random_bakchod(group_id):
                         )
 
         # sort the bakchods by lastseen
-        collected_bakchods.sort(key=lambda r: r.lastseen)
+        collected_bakchods.sort(key=lambda r: r.lastseen, reverse=True)
 
         # only care about the x% of the lastseen
         relevant_section = math.ceil(0.15 * len(collected_bakchods))
