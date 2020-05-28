@@ -21,6 +21,17 @@ def handle(update, context):
 
         util.log_chat("aao", update)
 
+        initiator_id = update.message.from_user["id"]
+        if initiator_id is None:
+            logger.error("[aao] initiator_id was None!")
+            return
+
+        if not util.paywall_user(initiator_id, 50):
+            update.message.reply_text(
+                "Sorry! You don't have enough ₹okda! Each /aao costs 50 ₹okda."
+            )
+            return
+
         target_message = extract_target_message(update)
         if target_message is None:
             logger.info("[aao] target_message was None!")
@@ -34,6 +45,7 @@ def handle(update, context):
         support_word = get_support_word()
 
         response = "aao {} {}".format(magic_word, support_word)
+        response = response.lower()
 
         logger.info("[aao] generated response={}", response)
 

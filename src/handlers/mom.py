@@ -26,7 +26,7 @@ def handle(update, context):
         og_sender_id = update.message.from_user["id"]
 
         # Check if Bakchod has enough rokda to do a /mom...
-        if check_if_user_can_riposte(og_sender_id):
+        if util.paywall_user(og_sender_id):
 
             # Get sender's name
             og_sender_name = util.extract_pretty_name_from_tg_user(
@@ -167,23 +167,6 @@ def get_verb_past(verb):
             verbPast = verb + "ed"
 
     return verbPast
-
-
-# Check whether a user can initate a /mom.
-# Also subtracts 50 rokda.
-def check_if_user_can_riposte(tg_id):
-
-    bakchod = dao.get_bakchod_by_id(tg_id)
-
-    if bakchod is not None:
-        if bakchod.rokda <= 50:
-            return False
-        else:
-            bakchod.rokda = bakchod.rokda - 50
-            dao.insert_bakchod(bakchod)
-            return True
-    else:
-        return False
 
 
 def random_reply(victim):

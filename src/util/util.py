@@ -4,6 +4,7 @@ import json
 from datetime import datetime, date, timezone
 import random
 import en_core_web_sm
+from db import dao
 
 chaddi_config = config.get_config()
 
@@ -137,3 +138,21 @@ def choose_random_element_from_list(input_list):
     random_int = random.randint(0, len(input_list) - 1)
 
     return input_list[random_int]
+
+
+def paywall_user(tg_id, cost):
+
+    bakchod = dao.get_bakchod_by_id(tg_id)
+
+    if bakchod is not None:
+        if bakchod.rokda <= cost:
+            logger.info(
+                "[paywall] {} doesn't have enough rokda cost={}", bakchod.id, cost
+            )
+            return False
+        else:
+            bakchod.rokda = bakchod.rokda - cost
+            dao.insert_bakchod(bakchod)
+            return True
+    else:
+        return False
