@@ -13,6 +13,8 @@ BOT_USERNAME = "@" + chaddi_config["bot_username"]
 
 mom_response_blacklist = [BOT_USERNAME]
 
+COMMAND_COST = 100
+
 
 def handle(update, context):
 
@@ -26,7 +28,7 @@ def handle(update, context):
         og_sender_id = update.message.from_user["id"]
 
         # Check if Bakchod has enough rokda to do a /mom...
-        if util.paywall_user(og_sender_id, 100):
+        if util.paywall_user(og_sender_id, COMMAND_COST):
 
             # Get sender's name
             og_sender_name = util.extract_pretty_name_from_tg_user(
@@ -68,7 +70,9 @@ def handle(update, context):
         else:
             # Bakchod doesn't have enough rokda :(
             update.message.reply_text(
-                "Sorry! You don't have enough ₹okda! Each /mom costs 50 ₹okda."
+                "Sorry! You don't have enough ₹okda! Each /mom costs {} ₹okda.".format(
+                    COMMAND_COST
+                )
             )
 
     except Exception as e:

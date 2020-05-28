@@ -14,6 +14,8 @@ BOT_USERNAME = "@" + chaddi_config["bot_username"]
 
 response_blacklist = [BOT_USERNAME]
 
+COMMAND_COST = 100
+
 
 def handle(update, context):
 
@@ -26,9 +28,11 @@ def handle(update, context):
             logger.error("[aao] initiator_id was None!")
             return
 
-        if not util.paywall_user(initiator_id, 100):
+        if not util.paywall_user(initiator_id, COMMAND_COST):
             update.message.reply_text(
-                "Sorry! You don't have enough ₹okda! Each /aao costs 50 ₹okda."
+                "Sorry! You don't have enough ₹okda! Each /aao costs {} ₹okda.".format(
+                    COMMAND_COST
+                )
             )
             return
 
