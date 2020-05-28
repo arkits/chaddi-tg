@@ -173,11 +173,7 @@ def handle_bakchod_modifiers(update, context, bakchod):
 
                 censored_modifer = modifiers["censored"]
 
-                if (
-                    censored_modifer["enabled"]
-                    and group_id is not None
-                    and group_id in censored_modifer["group_ids"]
-                ):
+                if group_id is not None and group_id in censored_modifer["group_ids"]:
 
                     logger.info(
                         "[modifiers] censoring {}",
