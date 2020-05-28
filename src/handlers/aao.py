@@ -67,7 +67,7 @@ def extract_magic_word(target_message):
     doc = util.get_nlp()(target_message)
 
     # the types on pos that we care about - refer to https://universaldependencies.org/docs/u/pos/
-    accepted_pos_types = ["VERB", "NOUN"]
+    accepted_pos_types = ["VERB", "NOUN", "PROPN"]
 
     # Create a dict for storing the tokens sorted by pos types
     tokens_sorted = {}
@@ -78,6 +78,8 @@ def extract_magic_word(target_message):
 
         for pos_type in accepted_pos_types:
 
+            # logger.debug("token={} - pos={}", token, token.pos_)
+
             if token.pos_ == pos_type:
 
                 if pos_type == "VERB":
@@ -85,10 +87,20 @@ def extract_magic_word(target_message):
                 else:
                     tokens_sorted[pos_type].append(token)
 
+    # remove the key from the dict if it's empty
+    # need to use list(), or else python will complain
+    for sorted_key in list(tokens_sorted.keys()):
+        if len(tokens_sorted[sorted_key]) == 0:
+            tokens_sorted.pop(sorted_key, None)
+
     logger.debug("[aao] tokens_sorted={}", tokens_sorted)
 
+    if len(tokens_sorted.keys()) == 0:
+        logger.info("[aao] tokens_sorted.keys() was zero!")
+        return None
+
     # choose which pos_type to use...
-    magic_pos_type = util.choose_random_element_from_list(accepted_pos_types)
+    magic_pos_type = util.choose_random_element_from_list(list(tokens_sorted.keys()))
     logger.debug("[aao] magic_pos_type={}", magic_pos_type)
 
     # choose magic word...
