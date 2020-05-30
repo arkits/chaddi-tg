@@ -56,9 +56,13 @@ def main():
     dp.add_error_handler(handlers.error.log_error)
 
     # Start the Bot
-    updater.start_polling()
-
-    logger.info("Started Polling...")
+    if chaddi_config["webhook"]["enabled"]:
+        updater.start_webhook(listen="127.0.0.1", port=5000, url_path="TOKEN1")
+        updater.bot.set_webhook(url=chaddi_config["webhook"]["url"])
+        logger.info("Started Bot with Webhook url={}", chaddi_config["webhook"]["url"])
+    else:
+        updater.start_polling()
+        logger.info("Started Bot with Polling...")
 
     # Run the bot until you press Ctrl-C or the process receives SIGINT,
     # SIGTERM or SIGABRT. This should be used most of the time, since

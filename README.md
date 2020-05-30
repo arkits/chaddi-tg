@@ -16,9 +16,10 @@ ChaddiBot has a variety of features to make your Telegram experience a whole lot
 - `/gamble` lets you win or lose some of your internet points.
 - `/choose` makes a random selection if you're confused about two or more things.
 
-## Requirements and Dependecies
+## Requirements and Dependencies
 
-- A VPS to run Chaddi 24*7
+- A node to run Chaddi 24*7
+  - Your node needs to be publicly accessible over the internet if you want to setup Webhook Connectivity.
 - Python 3
 - ffmpeg (For WebM Conversion)
 
@@ -45,14 +46,7 @@ source .env/bin/activate
 cd chaddi-tg
 pip install -r requirements.txt
 ```
-* Create a `config.json` based on `sample_config.json`
-```json
-{
-  "bot_username": "ChaddiBot",
-  "tg_bot_token": "YOUR_TG_TOKEN_HERE",
-  "good_morning_channels": [""]
-}
-```
+* Create a `config.json` based on `sample_config.json` in `src/resources`.
 
 ### Running 
 
@@ -65,7 +59,7 @@ pip install -r requirements.txt
 
 WebM files are converted into mp4 by `src/handlers/webm_converter.py` using ffmpeg. Make sure to install that. 
 
-#### Webhook Conectivity
+#### Webhook Connectivity
 
 [Refer to python-telegram-bot's official documentation](https://github.com/python-telegram-bot/python-telegram-bot/wiki/Webhooks)
 
