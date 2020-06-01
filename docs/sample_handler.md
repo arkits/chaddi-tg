@@ -3,9 +3,17 @@
 ```python
 from loguru import logger
 from util import util
+import traceback
+
 
 def handle(update, context):
 
-    util.log_chat("hi", update)
+    try:
 
+        util.log_chat("default", update)
+
+    except Exception as e:
+        logger.error(
+            "Caught Error in default.handle - {} \n {}", e, traceback.format_exc(),
+        )
 ```
