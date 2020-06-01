@@ -16,3 +16,4 @@ from handlers import setter
 from handlers import roll
 from handlers import reset
 from handlers import aao
+from handlers import purge

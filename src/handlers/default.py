@@ -15,37 +15,45 @@ chaddi_config = config.get_config()
 
 def all(update, context):
 
-    # Update Bakchod DB
-    bakchod = dao.get_bakchod_by_id(update.message.from_user.id)
+    try:
 
-    if bakchod is None:
-        bakchod = Bakchod.fromUpdate(update)
-        logger.info("Looks like we have a new Bakchod! - {}", bakchod.__dict__)
+        # Update Bakchod DB
+        bakchod = dao.get_bakchod_by_id(update.message.from_user.id)
 
-    bakchod = update_bakchod(bakchod, update)
+        if bakchod is None:
+            bakchod = Bakchod.fromUpdate(update)
+            logger.info("Looks like we have a new Bakchod! - {}", bakchod.__dict__)
 
-    # Update Group DB
-    group = dao.get_group_by_id(update.message.chat.id)
+        bakchod = update_bakchod(bakchod, update)
 
-    if group is None:
-        group = Group.fromUpdate(update)
-        logger.info("Looks like we have a new Group! - {}", group.__dict__)
+        # Update Group DB
+        group = dao.get_group_by_id(update.message.chat.id)
 
-    update_group(group, bakchod, update)
+        if group is None:
+            group = Group.fromUpdate(update)
+            logger.info("Looks like we have a new Group! - {}", group.__dict__)
 
-    # Log this
-    logger.info(
-        "[default.all] b.username='{}' b.rokda={} g.title='{}'",
-        util.extract_pretty_name_from_bakchod(bakchod),
-        bakchod.rokda,
-        group.title,
-    )
+        update_group(group, bakchod, update)
 
-    handle_bakchod_modifiers(update, context, bakchod)
+        # Log this
+        logger.info(
+            "[default.all] b.username='{}' b.rokda={} g.title='{}' m.message_id={}",
+            util.extract_pretty_name_from_bakchod(bakchod),
+            bakchod.rokda,
+            group.title,
+            update.message.message_id,
+        )
 
-    handle_dice_rolls(update, context)
+        handle_bakchod_modifiers(update, context, bakchod)
 
-    handle_message_matching(update, context)
+        handle_dice_rolls(update, context)
+
+        handle_message_matching(update, context)
+
+    except Exception as e:
+        logger.error(
+            "Caught Error in default.handle - {} \n {}", e, traceback.format_exc(),
+        )
 
 
 def status_update(update, context):
