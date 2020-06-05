@@ -12,6 +12,7 @@ cryptography==2.8
 cymem==2.0.3
 decorator==4.4.2
 future==0.18.2
+googletrans==2.4.0
 idna==2.9
 importlib-metadata==1.6.0
 loguru==0.4.1
