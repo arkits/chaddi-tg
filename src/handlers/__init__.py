@@ -17,3 +17,4 @@ from handlers import roll
 from handlers import reset
 from handlers import aao
 from handlers import purge
+from handlers import year
