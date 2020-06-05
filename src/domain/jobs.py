@@ -16,7 +16,7 @@ def schedule_timer_jobs(job_queue):
     # job_queue.run_once(handlers.good_morning.handle, 1)
 
     ten_am = time(hour=10, minute=00, tzinfo=ist)
-    job_queue.run_daily(handlers.good_morning.handle, ten_am)
+    job_queue.run_daily(handlers.year.handle, ten_am)
 
     eleven_am = time(hour=11, minute=00, tzinfo=ist)
     job_queue.run_daily(handlers.roll.start_new_daily_roll, eleven_am)
