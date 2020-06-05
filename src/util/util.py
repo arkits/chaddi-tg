@@ -1,10 +1,11 @@
 from loguru import logger
 from util import config
 import json
-from datetime import datetime, date, timezone
+from datetime import datetime, date, timezone, timedelta
 import random
 import en_core_web_sm
 from db import dao
+import ciso8601
 
 chaddi_config = config.get_config()
 
@@ -156,3 +157,31 @@ def paywall_user(tg_id, cost):
             return True
     else:
         return False
+
+
+def ratelimit_user(update, ratelimit_key, fail_message, timeout_mins):
+
+    limited = False
+
+    # Enforce rate limiting on getting random quotes
+    bakchod = dao.get_bakchod_by_id(update.message.from_user.id)
+    history = bakchod.history
+
+    if history is None:
+        history = {}
+
+    timeout_time = datetime.now() - timedelta(minutes=timeout_mins)
+
+    if ratelimit_key in history:
+        last_time_get = ciso8601.parse_datetime(history[ratelimit_key])
+        if last_time_get > timeout_time:
+            logger.info("[ratelimit] blocked for key={}", ratelimit_key)
+            update.message.reply_text(fail_message)
+            limited = True
+            return limited
+
+    history[ratelimit_key] = datetime.now()
+    bakchod.history = history
+    dao.insert_bakchod(bakchod)
+
+    return limited
