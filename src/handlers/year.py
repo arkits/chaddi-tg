@@ -6,8 +6,8 @@ import pytz
 import math
 
 FILLED_CHAR = "█"
-UNFILLED_CHAR = "-"
-MAX_LEN = 35
+UNFILLED_CHAR = "—"
+MAX_LEN = 23
 
 
 def handle(update, context):
@@ -79,11 +79,11 @@ def generate_progress_bar(percent):
     filled_bar_range = math.ceil(MAX_LEN * (percent / 100))
     unfilled_bar_range = math.ceil(MAX_LEN * (abs(percent - 100) / 100))
 
-    logger.info(
-        "filled_bar_range={} unfilled_bar_range={}",
-        filled_bar_range,
-        unfilled_bar_range,
-    )
+    # logger.info(
+    #     "filled_bar_range={} unfilled_bar_range={}",
+    #     filled_bar_range,
+    #     unfilled_bar_range,
+    # )
 
     for n in range(filled_bar_range):
 
