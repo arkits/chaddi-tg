@@ -19,9 +19,12 @@ def handle(update, context):
             update.message.reply_text("Reply to the message you want to translate!")
             return
 
-        if len(text_to_translate) > 14999:
-            update.message.reply_text("Message too long to tranlate!")
-            return
+        if len(text_to_translate) > 2000:
+            logger.debug(
+                "[translate] text_to_translate is too long ({})... trimming to 2000!",
+                len(text_to_translate),
+            )
+            text_to_translate = text_to_translate[:2000]
 
         if util.ratelimit_user(
             update, "translate", "Translator off-duty... come back later!", 2
