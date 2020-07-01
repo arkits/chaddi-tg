@@ -41,8 +41,7 @@ def handle(update, context):
                     "-i",
                     "resources/webm_conversions/" + str(document.file_id) + ".webm",
                     "resources/webm_conversions/" + str(document.file_id) + ".mp4",
-                ],
-                capture_output=True,
+                ]
             )
 
             if ffmpeg_conversion.returncode != 0:
