@@ -1,0 +1,9 @@
+version: '3'
+
+services:
+  chaddi-tg:
+    build: docker/
+    restart: on-failure
+    environment:
+      - BOT_USERNAME=chaddibot
+      - WEBHOOK_ENABLED=0

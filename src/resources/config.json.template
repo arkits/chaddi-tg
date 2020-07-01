@@ -1,0 +1,10 @@
+{
+  "bot_username": "${BOT_USERNAME}",
+  "tg_bot_token": "${TG_TOKEN}",
+  "good_morning_channels": [${GM_CHANNELS}],
+  "hi_response_whitelist": [${HI_RESPONSE}],
+  "webhook": {
+    "enabled": ${WEBHOOK_ENABLED},
+    "url": "${WEBHOOK_URL}"
+  }
+}
