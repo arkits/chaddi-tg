@@ -6,6 +6,7 @@ import pytz
 
 import handlers
 from domain import jobs
+from domain import metrics
 
 # Get application config
 chaddi_config = config.get_config()
@@ -68,6 +69,9 @@ def main():
     else:
         updater.start_polling()
         logger.info("Started Bot with Polling...")
+
+    if chaddi_config["metrics"]["enabled"]:
+        metrics.serve_metrics()
 
     # Run the bot until you press Ctrl-C or the process receives SIGINT,
     # SIGTERM or SIGABRT. This should be used most of the time, since
