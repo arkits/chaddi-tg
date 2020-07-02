@@ -7,20 +7,20 @@
 
 # Features
 
-ChaddiBot has a variety of features to make your Telegram experience a whole lot more fun! Some of them are -
+Chaddi Bot has a variety of features to make your Telegram experience a whole lot more fun! Some of them are -
 
 - WebM to MP4 Converter
-- `/mom` insults your mom.
-- `/quotes` fetches a random quote
-- `/rokda` displays your message count in the chat as a currency.
-- `/gamble` lets you win or lose some of your internet points.
-- `/choose` makes a random selection if you're confused about two or more things.
+- `/mom` - insults your mom.
+- `/quotes` - fetches a random quote
+- `/rokda` - displays your message count in the chat as a currency.
+- `/gamble` - lets you win or lose some of your internet points.
+- `/choose` - makes a random selection if you're confused about two or more things.
 
 ## Requirements and Dependencies
 
 - A node to run Chaddi 24*7
   - Your node needs to be publicly accessible over the internet if you want to setup Webhook Connectivity.
-- Python 3
+- Python 3.7
 - ffmpeg (For WebM Conversion)
 
 ## Setup and Deployment
