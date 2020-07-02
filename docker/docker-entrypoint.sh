@@ -34,7 +34,8 @@ function check_config() {
 		${TG_TOKEN}
 		${GM_CHANNELS}
 		${HI_RESPONSE}
-		${ENABLE_WEBHOOK}' < /bot/resources/config.json.template > /bot/resources/config.json
+		${ENABLE_WEBHOOK}
+		${WEBHOOK_URL}' < /bot/resources/config.json.template > /bot/resources/config.json
 	fi
 }
 
