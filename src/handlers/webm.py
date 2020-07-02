@@ -3,6 +3,9 @@ from util import util
 import traceback
 import datetime
 import subprocess
+import os
+
+WEBM_RESOURCES_DIR = "resources/webm_conversions/"
 
 
 def handle(update, context):
@@ -13,34 +16,37 @@ def handle(update, context):
 
         document = update.message.document
 
+        # return if the document isn't a webm
         if not document.file_name.endswith(".webm"):
             return
 
-        # conversion_inform_message = update.message.reply_text(
-        #     text="ヾ(＾-＾)ノ starting webm conversion!"
-        # )
-
         try:
 
+            # Count time taken for webm conversion
             time_start = datetime.datetime.now()
 
             # Download the webm file
-            webm_file = context.bot.get_file(document.file_id)
-
             logger.info(
                 "[webm] Starting webm download - " + str(document.file_id) + ".webm"
             )
-            webm_file.download(
-                "resources/webm_conversions/" + str(document.file_id) + ".webm"
+            webm_file = context.bot.get_file(document.file_id)
+            webm_file.download(WEBM_RESOURCES_DIR + str(document.file_id) + ".webm")
+            logger.info(
+                "[webm] Finished downloading webm - " + str(document.file_id) + ".webm"
             )
-            logger.info("[webm] Downloaded webm - " + str(document.file_id) + ".webm")
 
+            # Webm to mp4 conversion via ffmpeg
+            logger.info(
+                "[webm] Starting webm conversion with ffmpeg - "
+                + str(document.file_id)
+                + ".webm"
+            )
             ffmpeg_conversion = subprocess.run(
                 [
                     "ffmpeg",
                     "-i",
-                    "resources/webm_conversions/" + str(document.file_id) + ".webm",
-                    "resources/webm_conversions/" + str(document.file_id) + ".mp4",
+                    WEBM_RESOURCES_DIR + str(document.file_id) + ".webm",
+                    WEBM_RESOURCES_DIR + str(document.file_id) + ".mp4",
                 ]
             )
 
@@ -50,8 +56,12 @@ def handle(update, context):
                     str(document.file_id),
                     ffmpeg_conversion,
                 )
+                update.message.reply_text(
+                    text="(｡•́︿•̀｡) webm conversion failed (｡•́︿•̀｡)"
+                )
                 return
 
+            # Calculate time taken to convert
             time_end = datetime.datetime.now()
             diff = time_end - time_start
             pretty_diff = util.pretty_time_delta(diff.seconds)
@@ -66,18 +76,22 @@ def handle(update, context):
                 update.message.from_user
             )
 
-            caption = "{} converted your webm to mp4 in {}".format(
-                original_sender, pretty_diff
-            )
+            caption = random_webm_caption(original_sender, pretty_diff)
 
+            logger.info(
+                "[webm] sending converted video webm={} caption={}",
+                str(document.file_id),
+                caption,
+            )
             context.bot.send_video(
                 chat_id=update.message.chat_id,
-                video=open(
-                    "resources/webm_conversions/" + str(document.file_id) + ".mp4", "rb"
-                ),
+                video=open(WEBM_RESOURCES_DIR + str(document.file_id) + ".mp4", "rb"),
                 timeout=5000,
                 caption=caption,
             )
+
+            delete_file(WEBM_RESOURCES_DIR + str(document.file_id) + ".webm")
+            delete_file(WEBM_RESOURCES_DIR + str(document.file_id) + ".mp4")
 
         except Exception as e:
             logger.error(
@@ -88,3 +102,28 @@ def handle(update, context):
         logger.error(
             "Caught Error in webm.handle - {} \n {}", e, traceback.format_exc(),
         )
+
+
+def delete_file(file):
+    if os.path.exists(file):
+        os.remove(file)
+        logger.info("[webm] deleted file! - {}", file)
+    else:
+        logger.warn("[webm] file does not exist - {}", file)
+
+
+def random_webm_caption(original_sender, pretty_diff):
+
+    captions = [
+        "{} converted your webm to mp4 in {}".format(original_sender, pretty_diff),
+        "{} bhaak bsdk webm post karte hai bc... {} lage convert karne mein".format(
+            original_sender, pretty_diff
+        ),
+        "haaaaat {}... kal se webm cancel! {} lage convert karne mein".format(
+            original_sender, pretty_diff
+        ),
+    ]
+
+    random_caption = util.choose_random_element_from_list(captions)
+
+    return random_caption
