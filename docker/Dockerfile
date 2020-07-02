@@ -1,5 +1,7 @@
 FROM bitnami/python:3.7-prod
 
+ENV PYTHONUNBUFFERED 1
+
 RUN useradd -ms /bin/bash chaddi
 RUN install_packages ffmpeg gcc libc-dev jq
 
