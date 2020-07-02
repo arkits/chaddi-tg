@@ -13,14 +13,14 @@ function check_config() {
 		fi
 
 		if [[ -z "$GM_CHANNELS" ]]; then
-			export GM_CHANNELS=[]
+			export GM_CHANNELS=()
 		fi
 
 		if [[ -z "$HI_RESPONSE" ]]; then
-			export HI_RESPONSE=[]
+			export HI_RESPONSE=()
 		fi
 
-		if [[ "$ENABLE_WEBHOOK:0" -eq 0 ]]; then
+		if [[ "$ENABLE_WEBHOOK" -eq 0 ]]; then
 			export ENABLE_WEBHOOK=0
 		else
 			export ENABLE_WEBHOOK=1
@@ -30,14 +30,20 @@ function check_config() {
 			fi
 		fi
 
-		envsubst '${BOT_USERNAME}
-		${TG_TOKEN}
-		${GM_CHANNELS}
-		${HI_RESPONSE}
-		${ENABLE_WEBHOOK}
-		${WEBHOOK_URL}' < /bot/resources/config.json.template > /bot/resources/config.json
+		declare -a GM_CHANNELS="$GM_CHANNELS"
+		declare -a HI_RESPONSE="$HI_RESPONSE"
+
+		read -r -d '' configuration << EOF
+{"bot_username": "${BOT_USERNAME}",
+"tg_bot_token": "${TG_TOKEN}",
+"good_morning_channels": $(printf "%s\n" "${GM_CHANNELS[@]}" | jq -R . | jq -s .),
+"hi_response_whitelist": $(printf "%s\n" ${HI_RESPONSE[@]} | jq -R . | jq -s .),
+"webhook": {"enabled": ${ENABLE_WEBHOOK}, "url": "${WEBHOOK_URL}"}}
+EOF
+		echo "$configuration" | jq . > /bot/resources/config.json
 	fi
 }
 
 check_config
-exec "$a"
+python -m nltk.downloader stopwords
+exec "$@"
