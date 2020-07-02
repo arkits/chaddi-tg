@@ -1,7 +1,7 @@
 FROM bitnami/python:3.7-prod
 
 RUN useradd -ms /bin/bash chaddi
-RUN install_packages ffmpeg
+RUN install_packages ffmpeg gcc libc-dev
 
 RUN pip3 install --upgrade pip
 
