@@ -3,6 +3,7 @@ version: '3'
 services:
   chaddi-tg:
     build: docker/
+    context: .
     restart: on-failure
     environment:
       - BOT_USERNAME=chaddibot
