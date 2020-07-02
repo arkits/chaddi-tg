@@ -5,10 +5,11 @@ ENV PYTHONUNBUFFERED 1
 RUN useradd -ms /bin/bash chaddi
 RUN install_packages ffmpeg gcc libc-dev jq
 
-RUN pip3 install --upgrade pip
+RUN pip install --upgrade pip
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+RUN apt purge -y --auto-remove gcc libc-dev && apt auto-remove -y
 
 COPY docker/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN ln -s /usr/local/bin/docker-entrypoint.sh /
