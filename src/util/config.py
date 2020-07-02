@@ -1,8 +1,7 @@
 import json
-from loguru import logger
 
-config_file = open("resources/config.json", "r")
-config = json.loads(config_file.read())
+with open("resources/config.json") as config:
+    config = json.load(config)
 
 
 def get_config():
