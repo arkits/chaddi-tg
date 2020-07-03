@@ -10,6 +10,12 @@ message_counter = Counter(
     "chaddi_messages_count", "chaddi_messages_count", ["group_id"]
 )
 
+rolls_started = Counter("chaddi_rolls_started", "chaddi_rolls_started")
+
+rolls_won = Counter("chaddi_rolls_won", "chaddi_rolls_won")
+
+rolls_attempted = Counter("chaddi_rolls_attempted", "rolls_attempted")
+
 
 def serve_metrics():
     logger.info("Serving Metrics on port={}", chaddi_config["metrics"]["port"])

@@ -1,13 +1,18 @@
 from loguru import logger
+
 from util import util, config
 from db import dao
+from models.bakchod import Bakchod
+from domain import metrics
+
 import random
 import traceback
 import datetime
-import ciso8601
-from models.bakchod import Bakchod
-import telegram
 import math
+
+import ciso8601
+import telegram
+
 
 chaddi_config = config.get_config()
 
@@ -85,6 +90,8 @@ def handle(update, context):
                 if roll is None:
                     update.message.reply_text(text="Couldn't start a new roll :(")
                     return
+
+                metrics.rolls_started.inc()
 
                 pretty_roll = generate_pretty_roll(roll)
                 response = "<b>Started new roulette!</b> " + pretty_roll
@@ -167,6 +174,8 @@ def handle_dice_rolls(dice_value, update, context):
 
     try:
 
+        metrics.rolls_attempted.inc()
+
         logger.info("[roll] handle_dice_rolls dice_value={}", dice_value)
 
         # Extract Group ID
@@ -221,6 +230,8 @@ def handle_dice_rolls(dice_value, update, context):
         roll_number = int(current_roll["roll_number"])
 
         if dice_value == roll_number:
+
+            metrics.rolls_won.inc()
 
             # Handle roll winrar
             winrar_bakchod = dao.get_bakchod_by_id(update.message.from_user.id)
