@@ -20,7 +20,7 @@ def all(update, context):
 
     try:
 
-        metrics.inc_message_count()
+        metrics.inc_message_count(update)
 
         # Update Bakchod DB
         bakchod = dao.get_bakchod_by_id(update.message.from_user.id)

@@ -6,7 +6,9 @@ from loguru import logger
 chaddi_config = config.get_config()
 
 
-message_counter = Counter("chaddi_messages_count", "chaddi_messages_count")
+message_counter = Counter(
+    "chaddi_messages_count", "chaddi_messages_count", ["group_id"]
+)
 
 
 def serve_metrics():
@@ -15,6 +17,6 @@ def serve_metrics():
     return
 
 
-def inc_message_count():
-    message_counter.inc()
+def inc_message_count(update):
+    message_counter.labels(group_id=update.message.chat.id).inc()
     return
