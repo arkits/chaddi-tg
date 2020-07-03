@@ -8,5 +8,9 @@
   "webhook": {
     "enabled": false,
     "url": ""
+  },
+  "metrics": {
+    "enabled": false,
+    "port": 4208
   }
 }
