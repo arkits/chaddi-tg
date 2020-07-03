@@ -3,12 +3,15 @@ from db import dao
 from models.bakchod import Bakchod
 from models.group import Group
 from domain import bakchod as bakchod_domain
+from handlers import bestie, hi, roll, mom
+from util import util, config
+from domain import metrics
+
+import random
 import time
 import datetime
-from handlers import bestie, hi, roll, mom
 import traceback
-from util import util, config
-import random
+
 
 chaddi_config = config.get_config()
 
@@ -16,6 +19,8 @@ chaddi_config = config.get_config()
 def all(update, context):
 
     try:
+
+        metrics.inc_message_count()
 
         # Update Bakchod DB
         bakchod = dao.get_bakchod_by_id(update.message.from_user.id)
