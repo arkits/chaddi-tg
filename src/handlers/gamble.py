@@ -1,15 +1,20 @@
 from loguru import logger
 from util import util
 from db import dao
+from models.bakchod import Bakchod
+from domain import metrics
+
+import ciso8601
+
 import datetime
 import random
-from models.bakchod import Bakchod
-import ciso8601
 
 
 def handle(update, context):
 
     util.log_chat("gamble", update)
+
+    metrics.inc_gamble_count(update)
 
     response = gamble(update.message.from_user["id"], update.message.chat["id"], update)
 
