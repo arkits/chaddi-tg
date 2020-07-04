@@ -25,6 +25,14 @@ Chaddi Bot has a variety of features to make your Telegram experience a whole lo
 
 ## Setup and Deployment
 
+### Docker deployment
+
+Copy `env-example` to `.env` and change all values. Then you may run:
+
+```bash
+$ docker-compose -p <project-name> up -d --build
+```
+
 ### Setup your Telegram Bot
 * Create your bot with [@BotFather](https://telegram.me/botfather).   
     * Refer to Telegram's [documentation](https://core.telegram.org/bots#3-how-do-i-create-a-bot) for more help on creating bots.

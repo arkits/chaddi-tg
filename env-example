@@ -1,0 +1,6 @@
+BOT_USERNAME=chaddibot
+TG_TOKEN=replace-token
+GM_CHANNELS=('channel1' 'channel2')
+HI_RESPONSE=('username1' 'username2')
+ENABLE_WEBHOOK=0
+WEBHOOK_URL=
