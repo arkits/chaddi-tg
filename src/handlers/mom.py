@@ -1,5 +1,6 @@
 from loguru import logger
 from util import util, config
+from domain import metrics
 from db import dao
 import spacy
 import json
@@ -44,6 +45,14 @@ def handle(update, context):
             else:
                 riposte = joke_mom(update.message.text, og_sender_name)
                 respond_to = og_sender_name
+
+            metrics.mom_invoker_counter.labels(
+                user_id=update.message.from_user["id"]
+            ).inc()
+
+            metrics.mom_victim_counter.labels(
+                user_id=update.message.reply_to_message.from_user["id"]
+            ).inc()
 
             if respond_to not in mom_response_blacklist:
                 if random.random() > 0.10:

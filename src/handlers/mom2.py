@@ -1,5 +1,6 @@
 from loguru import logger
 from util import util
+from domain import metrics
 import traceback
 from rake_nltk import Rake
 import json
@@ -34,6 +35,10 @@ def handle(update, context):
             )
             return
 
+        metrics.mom2_invoker_counter.labels(
+            user_id=update.message.from_user["id"]
+        ).inc()
+
         protagonist = util.extract_pretty_name_from_tg_user(update.message.from_user)
 
         message = extract_target_message(update)
@@ -47,6 +52,9 @@ def handle(update, context):
 
         if update.message.reply_to_message:
             update.message.reply_to_message.reply_text(response)
+            metrics.mom2_victim_counter.labels(
+                user_id=update.message.reply_to_message.from_user["id"]
+            ).inc()
             return
         else:
             update.message.reply_text(response)
