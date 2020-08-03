@@ -25,102 +25,138 @@ def handle(update, context):
 
         util.log_chat("mom", update)
 
-        # Get Telegram user id
-        og_sender_id = update.message.from_user["id"]
+        initiator_id = update.message.from_user["id"]
+        if initiator_id is None:
+            logger.error("[mom] initiator_id was None!")
+            return
 
         # Check if Bakchod has enough rokda to do a /mom...
-        if util.paywall_user(og_sender_id, COMMAND_COST):
-
-            # Get sender's name
-            og_sender_name = util.extract_pretty_name_from_tg_user(
-                update.message.from_user
-            )
-
-            # Get recipient's name
-            if update.message.reply_to_message:
-                riposte = joke_mom(update.message.reply_to_message.text, og_sender_name)
-                respond_to = util.extract_pretty_name_from_tg_user(
-                    update.message.reply_to_message.from_user
-                )
-            else:
-                riposte = joke_mom(update.message.text, og_sender_name)
-                respond_to = og_sender_name
-
-            metrics.mom_invoker_counter.labels(
-                user_id=update.message.from_user["id"]
-            ).inc()
-
-            metrics.mom_victim_counter.labels(
-                user_id=update.message.reply_to_message.from_user["id"]
-            ).inc()
-
-            if respond_to not in mom_response_blacklist:
-                if random.random() > 0.10:
-                    if update.message.reply_to_message:
-                        update.message.reply_to_message.reply_text(riposte)
-                    else:
-                        update.message.reply_text(riposte)
-                else:
-                    # User has chance to get protected
-                    update.message.reply_text(
-                        respond_to + " is protected by a 👁️ Nazar Raksha Kavach"
-                    )
-            else:
-                if respond_to == BOT_USERNAME:
-                    # Don't insult Chaddi!
-                    sticker_to_send = "CAADAQADrAEAAp6M4Ahtgp9JaiLJPxYE"
-                    update.message.reply_sticker(sticker=sticker_to_send)
-                else:
-                    # Protect the users in the blacklist
-                    update.message.reply_text(
-                        respond_to + " is protected by a 👁️ Nazar Raksha Kavach"
-                    )
-
-        else:
-            # Bakchod doesn't have enough rokda :(
+        if not util.paywall_user(initiator_id, COMMAND_COST):
             update.message.reply_text(
                 "Sorry! You don't have enough ₹okda! Each /mom costs {} ₹okda.".format(
                     COMMAND_COST
                 )
             )
+            return
+
+        # Extract the protagonist - the protagonist <verb> your <victim> last night
+        protagonist = util.extract_pretty_name_from_tg_user(update.message.from_user)
+
+        # Extract the protagonist - user who shall receive the insult
+        recipient = extract_recipient(update)
+        if recipient is None:
+            logger.info("[mom] recipient was None!")
+            sticker_to_send = "CAADAQADrAEAAp6M4Ahtgp9JaiLJPxYE"
+            update.message.reply_sticker(sticker=sticker_to_send)
+            return
+
+        # Check if recipient is in the backlist
+        if recipient in mom_response_blacklist:
+            if recipient == BOT_USERNAME:
+                # Don't insult Chaddi!
+                sticker_to_send = "CAADAQADrAEAAp6M4Ahtgp9JaiLJPxYE"
+                update.message.reply_sticker(sticker=sticker_to_send)
+                return
+            else:
+                # Protect the users in the blacklist
+                update.message.reply_text(
+                    recipient + " is protected by a 👁️ Nazar Raksha Kavach"
+                )
+                return
+
+        # Extract the message for base the insult on
+        message = extract_target_message(update)
+        if message is None:
+            logger.info("[mom] message was None!")
+            sticker_to_send = "CAADAQADrAEAAp6M4Ahtgp9JaiLJPxYE"
+            update.message.reply_sticker(sticker=sticker_to_send)
+            return
+
+        # Generate the response
+        response = joke_mom(message, protagonist)
+
+        if random.random() > 0.05:
+            if update.message.reply_to_message:
+                update.message.reply_to_message.reply_text(response)
+            else:
+                update.message.reply_text(response)
+        else:
+            # User has chance to get protected
+            update.message.reply_text(
+                recipient + " is protected by a 👁️ Nazar Raksha Kavach"
+            )
+
+        # Update metrics
+        metrics.mom_invoker_counter.labels(user_id=update.message.from_user["id"]).inc()
+
+        return
 
     except Exception as e:
         logger.error(
             "Caught Error in mom.handle - {} \n {}", e, traceback.format_exc(),
         )
+        return
+
+
+def extract_recipient(update):
+    if update.message.reply_to_message.from_user:
+        return util.extract_pretty_name_from_tg_user(
+            update.message.reply_to_message.from_user
+        )
+    else:
+        return None
+
+
+def extract_target_message(update):
+
+    target_message = None
+
+    if update.message.reply_to_message:
+        # The invoker invoked the command by replying to a message
+        if update.message.reply_to_message.text:
+            target_message = update.message.reply_to_message.text
+
+        elif update.message.reply_to_message.caption:
+            target_message = update.message.reply_to_message.caption
+
+    else:
+
+        target_message = update.message.text
+
+    return target_message
 
 
 # !! SEXISM !!
 # make a bad joke about it
-def joke_mom(sentence, victim, force=False):
+def joke_mom(sentence, protagonist, force=False):
 
     random.seed(datetime.datetime.now())
 
-    protagonist = "your mom"
+    target = "your mom"
 
     if not force:
         # flip the joke 20% of times
         if random.random() > 0.8:
-            protagonist, victim = victim, protagonist
+            target, protagonist = protagonist, target
 
     # extract parts of speech and generate insults
     if sentence is not None:
         verb = get_verb(sentence)
         if verb != 0:
-            return "{} {} {} last night".format(victim, verb, protagonist)
+            return "{} {} {} last night".format(protagonist, verb, target)
         else:
             adjective = get_POS(sentence, "ADJ")
             if adjective != 0:
-                return "{} is nice but you are {}".format(victim, adjective)
+                return "{} is nice but you are {}".format(protagonist, adjective)
             else:
                 propn = get_POS(sentence, "PROPN")
                 if propn != 0:
                     past = get_verb_past(propn)
-                    return "{} {} {} last night".format(victim, past, protagonist)
+                    return "{} {} {} last night".format(protagonist, past, target)
                 else:
-                    return random_reply(victim)
+                    return random_reply(protagonist)
     else:
-        return "{}, please link your aadhaar to continue".format(victim)
+        return "{}, please link your aadhaar to continue".format(protagonist)
 
 
 # return the first relevant part of speech tag
@@ -182,10 +218,10 @@ def get_verb_past(verb):
     return verbPast
 
 
-def random_reply(victim):
+def random_reply(protagonist):
 
     replies = [
-        "{} should get a life".format(victim),
+        "{} should get a life".format(protagonist),
         "haaaaaaaaaaaaaaaat",
         "bhaaaaaaaaaaaaaaak",
         "arrey isko hatao re",
