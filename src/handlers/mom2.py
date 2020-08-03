@@ -71,8 +71,15 @@ def extract_target_message(update):
     target_message = None
 
     if update.message.reply_to_message:
-        target_message = update.message.reply_to_message.text
+        # The invoker invoked the command by replying to a message
+        if update.message.reply_to_message.text:
+            target_message = update.message.reply_to_message.text
+
+        elif update.message.reply_to_message.caption:
+            target_message = update.message.reply_to_message.caption
+
     else:
+
         target_message = update.message.text
 
     return target_message
