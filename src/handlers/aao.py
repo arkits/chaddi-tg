@@ -6,9 +6,9 @@ import json
 import random
 import datetime
 import traceback
+from handlers import mom
 
 chaddi_config = config.get_config()
-
 
 BOT_USERNAME = "@" + chaddi_config["bot_username"]
 
@@ -36,7 +36,7 @@ def handle(update, context):
             )
             return
 
-        target_message = extract_target_message(update)
+        target_message = mom.extract_target_message(update)
         if target_message is None:
             logger.info("[aao] target_message was None!")
             return
@@ -64,25 +64,6 @@ def handle(update, context):
         logger.error(
             "Caught Error in aao.handle - {} \n {}", e, traceback.format_exc(),
         )
-
-
-def extract_target_message(update):
-
-    target_message = None
-
-    if update.message.reply_to_message:
-        # The invoker invoked the command by replying to a message
-        if update.message.reply_to_message.text:
-            target_message = update.message.reply_to_message.text
-
-        elif update.message.reply_to_message.caption:
-            target_message = update.message.reply_to_message.caption
-
-    else:
-
-        target_message = update.message.text
-
-    return target_message
 
 
 def extract_magic_word(target_message):

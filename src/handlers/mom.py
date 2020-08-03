@@ -7,6 +7,7 @@ import json
 import random
 import datetime
 import traceback
+from rake_nltk import Rake
 
 chaddi_config = config.get_config()
 
@@ -15,6 +16,12 @@ BOT_USERNAME = "@" + chaddi_config["bot_username"]
 mom_response_blacklist = [BOT_USERNAME]
 
 COMMAND_COST = 100
+
+rake = Rake()
+
+preposition_to_verb_map = json.loads(
+    open("resources/preposition_to_verb_map.json", "r").read()
+)
 
 
 def handle(update, context):
@@ -73,7 +80,20 @@ def handle(update, context):
             return
 
         # Generate the response
-        response = joke_mom(message, protagonist)
+        if random.random() > 0.50:
+            logger.info(
+                "[mom] generating response with rake - protagonist={} message={}",
+                protagonist,
+                message,
+            )
+            response = rake_joke(message, protagonist)
+        else:
+            logger.info(
+                "[mom] generating response with spacy - protagonist={} message={}",
+                protagonist,
+                message,
+            )
+            response = spacy_joke(message, protagonist)
 
         if random.random() > 0.05:
             if update.message.reply_to_message:
@@ -98,15 +118,6 @@ def handle(update, context):
         return
 
 
-def extract_recipient(update):
-    if update.message.reply_to_message.from_user:
-        return util.extract_pretty_name_from_tg_user(
-            update.message.reply_to_message.from_user
-        )
-    else:
-        return None
-
-
 def extract_target_message(update):
 
     target_message = None
@@ -124,6 +135,41 @@ def extract_target_message(update):
         target_message = update.message.text
 
     return target_message
+
+
+def extract_recipient(update):
+    if update.message.reply_to_message.from_user:
+        return util.extract_pretty_name_from_tg_user(
+            update.message.reply_to_message.from_user
+        )
+    else:
+        return None
+
+
+def rake_joke(message, protagonist):
+
+    # Extract a phrase from the message
+    rake.extract_keywords_from_text(message)
+    phrase = rake.get_ranked_phrases()[0]
+
+    # Extract a random verb from the phrase
+    random_verb = extract_random_verb(phrase)
+
+    # Derive a preposition that goes along
+    if random_verb in preposition_to_verb_map:
+        # This will be an array
+        prepositions = preposition_to_verb_map.get(random_verb)
+    else:
+        prepositions = ["in", "on", "with"]
+
+    # Extract a random preposition
+    preposition = random.choice(prepositions)
+
+    return f"{protagonist} {phrase} {preposition} your mom last night"
+
+
+def spacy_joke(message, protagonist):
+    return joke_mom(message, protagonist)
 
 
 # !! SEXISM !!
@@ -233,3 +279,20 @@ def random_reply(protagonist):
     random_int = random.randint(0, len(replies) - 1)
 
     return replies[random_int]
+
+
+# Extracts a random verb from the sentence
+def extract_random_verb(sentence):
+
+    doc = util.get_nlp()(sentence)
+
+    verbs = []
+
+    for token in doc:
+        if token.pos_ == "VERB":
+            verbs.append(str(token.lemma_))
+
+    if len(verbs) > 0:
+        return random.choice(verbs)
+    else:
+        return "played"
