@@ -304,7 +304,12 @@ def handle_dice_rolls(dice_value, update, context):
                         text="BYEEEEEEEEEEEE "
                         + util.extract_pretty_name_from_bakchod(victim),
                     )
-                    context.bot.kick_chat_member(group_id, victim.id)
+
+                    # refer to https://python-telegram-bot.readthedocs.io/en/stable/telegram.bot.html#telegram.Bot.kick_chat_member
+                    ban_until = datetime.datetime.now() + datetime.timedelta(seconds=31)
+                    context.bot.kick_chat_member(
+                        chat_id=group_id, user_id=victim.id, until_date=ban_until
+                    )
 
                 except Exception as e:
                     logger.error(
