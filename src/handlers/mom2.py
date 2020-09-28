@@ -39,7 +39,7 @@ def handle(update, context):
             logger.info("[mom2] message was None!")
             return
 
-        response = mom.rake_joke(protagonist, message)
+        response = mom.rake_joke(message, protagonist)
 
         logger.info("[mom2] generated response={}", response)
 
