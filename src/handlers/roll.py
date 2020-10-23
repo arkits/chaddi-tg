@@ -311,6 +311,11 @@ def handle_dice_rolls(dice_value, update, context):
                         chat_id=group_id, user_id=victim.id, until_date=ban_until
                     )
 
+                    # remove the victim from group members list
+                    group = dao.get_group_by_id(group_id)
+                    group.members.remove(victim.id)
+                    dao.insert_group(group)
+
                 except Exception as e:
                     logger.error(
                         "[roll] Caught Error in kick Bakchod - {} \n {}",
