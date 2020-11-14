@@ -3,6 +3,7 @@ from loguru import logger
 from util import util, config
 from db import dao
 from models.bakchod import Bakchod
+from models.roll import Roll
 from domain import metrics
 
 import random
@@ -52,41 +53,7 @@ def handle(update, context):
 
             if create_new_roll:
 
-                # Create new roll...
-
-                # Set roll rule type
-                rule = get_random_roll_type()
-
-                # Set the number to required to win
-                roll_number = random.randint(1, 6)
-
-                # Extract victim from command param...
-                victim = None
-                parsed_victim_username = extract_param_from_update(update)
-                if parsed_victim_username is not None:
-                    victim = dao.get_bakchod_by_username(parsed_victim_username)
-                    if victim is not None:
-                        logger.info(
-                            "[roll] Found passed Bakchod username={} in DB",
-                            parsed_victim_username,
-                        )
-
-                # Or else get a Random Bakchod
-                if victim is None:
-                    victim = get_random_bakchod(group_id)
-
-                if victim is None:
-                    update.message.reply_text(text="Couldn't get a random Bakchod :(")
-                    return
-
-                # Set the roll winrar to None
-                winrar = None
-
-                expiry = datetime.datetime.now() + datetime.timedelta(hours=1)
-
-                dao.insert_roll(group_id, rule, roll_number, victim.id, winrar, expiry)
-
-                roll = dao.get_roll_by_id(group_id)
+                roll = generate_new_roll(update, group_id)
                 if roll is None:
                     update.message.reply_text(text="Couldn't start a new roll :(")
                     return
@@ -168,6 +135,47 @@ def handle(update, context):
         logger.error(
             "Caught Error in roll.handle - {} \n {}", e, traceback.format_exc(),
         )
+
+
+def generate_new_roll(update, group_id):
+
+    roll = Roll()
+
+    params = extract_params_from_update(update)
+
+    if len(params) >= 4:
+
+        param_rule = params[2]
+        if param_rule in ROLL_TYPES:
+            roll.rule = param_rule
+
+        param_victim_username = params[3]
+        victim = dao.get_bakchod_by_username(param_victim_username)
+        if victim is not None:
+            roll.victim_id = victim.id
+
+    if roll.rule is None:
+        roll.rule = get_random_roll_type()
+
+    if roll.roll_number is None:
+        roll.roll_number = random.randint(1, 6)
+
+    if roll.victim_id is None:
+        victim = get_random_bakchod(group_id)
+        roll.victim_id = victim.id
+
+    if roll.expiry is None:
+        roll.expiry = datetime.datetime.now() + datetime.timedelta(hours=1)
+
+    logger.debug("[roll] generated roll={}", roll.__dict__)
+
+    dao.insert_roll(
+        group_id, roll.rule, roll.roll_number, roll.victim_id, None, roll.expiry
+    )
+
+    roll = dao.get_roll_by_id(group_id)
+
+    return roll
 
 
 def handle_dice_rolls(dice_value, update, context):
@@ -508,30 +516,20 @@ def extract_command_from_update(update):
     return command
 
 
-def extract_param_from_update(update):
+def extract_params_from_update(update):
 
-    param = None
+    params = None
 
     try:
         # Extract query...
         query = update.message.text
         query = query.lower()
-        query = query.split(" ")
-
-        try:
-            param = query[2:]
-            param = "".join(param)
-
-            if param[0] == "@":
-                param = param[1:]
-
-        except:
-            param = None
+        params = query.split(" ")
 
     except Exception as e:
         pass
 
-    return param
+    return params
 
 
 def get_group_id_from_update(update):
