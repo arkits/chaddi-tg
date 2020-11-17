@@ -3,6 +3,7 @@ prod_config.json
 logs
 src/resources/db/*
 src/resources/webm_conversions/*
+src/resources/quote_pics/*
 *.db
 
 # Dev

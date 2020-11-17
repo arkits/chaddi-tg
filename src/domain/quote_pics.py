@@ -32,35 +32,9 @@ def generate_quote_pic(quote, update):
 
     draw = ImageDraw.Draw(img)
 
-    wrapped_caption = generate_wrapped_caption(quote_caption)
+    draw, caption_height = add_quote_caption(draw, quote_caption, img_width, img_height)
 
-    caption_width, caption_height = draw.textsize(wrapped_caption, font=FONT_CAPTION)
-
-    caption_x, caption_y = (
-        0.5 * (img_width - caption_width),
-        0.5 * img_height - caption_height,
-    )
-
-    draw.text(
-        (caption_x, caption_y), wrapped_caption, fill="white", font=FONT_CAPTION,
-    )
-
-    subtitle = quote_author
-
-    subtitle_text_width, subtitle_text_height = draw.textsize(
-        subtitle, font=FONT_AUTHOR
-    )
-
-    draw.text(
-        (
-            (img_width - subtitle_text_width) / 2,
-            ((img_height - subtitle_text_height) / 2) + subtitle_text_height,
-        ),
-        subtitle,
-        fill="white",
-        font=FONT_AUTHOR,
-        align="center",
-    )
+    draw = add_quote_author(draw, quote_author, caption_height, img_width)
 
     img = img.convert("RGB")
     img.save(QUOTE_PICS_RESOURCES_DIR + quote_id + JPEG_EXTENSION)
@@ -114,3 +88,46 @@ def generate_wrapped_caption(quote_caption):
     caption_new += word_list[-1]
 
     return caption_new
+
+
+def add_quote_caption(draw, quote_caption, img_width, img_height):
+
+    wrapped_caption = generate_wrapped_caption(quote_caption)
+
+    caption_width, caption_height = draw.textsize(wrapped_caption, font=FONT_CAPTION)
+
+    caption_x, caption_y = (
+        0.5 * (img_width - caption_width),
+        0.5 * img_height - caption_height,
+    )
+
+    if caption_x < 0:
+        caption_x = 0
+
+    if caption_y < 0:
+        caption_y = 10
+
+    draw.text(
+        (caption_x, caption_y), wrapped_caption, fill="white", font=FONT_CAPTION,
+    )
+
+    return draw, caption_height
+
+
+def add_quote_author(draw, quote_author, caption_height, img_width):
+
+    subtitle = quote_author
+
+    subtitle_text_width, subtitle_text_height = draw.textsize(
+        subtitle, font=FONT_AUTHOR
+    )
+
+    draw.text(
+        ((img_width - subtitle_text_width) / 2, caption_height + 10),
+        subtitle,
+        fill="white",
+        font=FONT_AUTHOR,
+        align="center",
+    )
+
+    return draw
