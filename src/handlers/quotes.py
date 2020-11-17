@@ -255,6 +255,9 @@ def get_random_quote(group_id):
     if len(all_quotes_ids) > 0:
 
         random.seed(datetime.datetime.now())
+
+        random.shuffle(all_quotes_ids)
+
         random_quote_id = random.choice(all_quotes_ids)
 
         random_quote = dao.get_quote_by_id(random_quote_id)
