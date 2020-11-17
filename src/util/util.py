@@ -6,6 +6,7 @@ import random
 import en_core_web_sm
 from db import dao
 import ciso8601
+import os
 
 chaddi_config = config.get_config()
 
@@ -185,3 +186,11 @@ def ratelimit_user(update, ratelimit_key, fail_message, timeout_mins):
     dao.insert_bakchod(bakchod)
 
     return limited
+
+
+def delete_file(file):
+    if os.path.exists(file):
+        os.remove(file)
+        logger.info("[util] deleted file! - {}", file)
+    else:
+        logger.warn("[util] file does not exist - {}", file)

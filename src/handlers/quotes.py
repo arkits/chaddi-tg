@@ -1,3 +1,4 @@
+from logging import log
 from loguru import logger
 from util import util, config
 from db import dao
@@ -153,6 +154,11 @@ def handle(update, context):
             try:
                 quote_pics.generate_quote_pic(random_quote, update)
             except Exception as e:
+                logger.error(
+                    "Caught error in generate_quote_pic - {} \n {}",
+                    e,
+                    traceback.format_exc(),
+                )
                 pretty_quote = generate_pretty_quote(random_quote)
                 update.message.reply_text(
                     text=pretty_quote, parse_mode=ParseMode.MARKDOWN

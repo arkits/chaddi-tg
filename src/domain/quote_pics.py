@@ -4,6 +4,7 @@ from PIL import ImageDraw
 import textwrap
 import requests
 from loguru import logger
+from util import util
 
 
 QUOTE_PICS_RESOURCES_DIR = "resources/quote_pics/"
@@ -36,7 +37,7 @@ def generate_quote_pic(quote, update):
 
     draw, caption_height = add_quote_caption(draw, quote_caption, img_width, img_height)
 
-    draw = add_quote_author(draw, quote_author, caption_height, img_width, img_height)
+    draw = add_quote_author(draw, quote_author, img_width, img_height)
 
     img = img.convert("RGB")
     img.save(QUOTE_PICS_RESOURCES_DIR + quote_id + JPEG_EXTENSION)
@@ -46,6 +47,8 @@ def generate_quote_pic(quote, update):
         photo=open(QUOTE_PICS_RESOURCES_DIR + quote_id + JPEG_EXTENSION, "rb"),
         timeout=5000,
     )
+
+    util.delete_file(QUOTE_PICS_RESOURCES_DIR + quote_id + JPEG_EXTENSION)
 
     return
 
