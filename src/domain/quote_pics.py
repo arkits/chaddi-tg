@@ -11,7 +11,8 @@ import ciso8601
 QUOTE_PICS_RESOURCES_DIR = "resources/quote_pics/"
 JPEG_EXTENSION = ".jpeg"
 
-FONT_CAPTION = ImageFont.truetype("resources/fonts/Kalam-Regular.ttf", 86)
+FONT_CAPTION_86 = ImageFont.truetype("resources/fonts/Kalam-Regular.ttf", 86)
+FONT_CAPTION_64 = ImageFont.truetype("resources/fonts/Kalam-Regular.ttf", 64)
 FONT_AUTHOR = ImageFont.truetype("resources/fonts/Montserrat-Medium.ttf", 50)
 FONT_DATE = ImageFont.truetype("resources/fonts/Montserrat-Medium.ttf", 32)
 
@@ -88,7 +89,7 @@ def generate_wrapped_caption(quote_caption):
 
     caption_new = ""
 
-    wrapper = textwrap.TextWrapper(width=50)
+    wrapper = textwrap.TextWrapper(width=40)
     word_list = wrapper.wrap(text=quote_caption)
 
     for ii in word_list[:-1]:
@@ -103,7 +104,12 @@ def add_quote_caption(draw, quote_caption, img_width, img_height):
 
     wrapped_caption = generate_wrapped_caption(quote_caption)
 
-    caption_width, caption_height = draw.textsize(wrapped_caption, font=FONT_CAPTION)
+    if len(quote_caption) < 350:
+        font_to_use = FONT_CAPTION_86
+    else:
+        font_to_use = FONT_CAPTION_64
+
+    caption_width, caption_height = draw.textsize(wrapped_caption, font=font_to_use)
 
     caption_x, caption_y = (
         0.5 * (img_width - caption_width),
@@ -117,7 +123,7 @@ def add_quote_caption(draw, quote_caption, img_width, img_height):
         caption_y = PADDING_PX
 
     draw.text(
-        (caption_x, caption_y), wrapped_caption, fill="white", font=FONT_CAPTION,
+        (caption_x, caption_y), wrapped_caption, fill="white", font=font_to_use,
     )
 
     return draw
