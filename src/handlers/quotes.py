@@ -1,13 +1,13 @@
 from loguru import logger
 from util import util, config
 from db import dao
-import json
 import random
 import datetime
 import shortuuid
 from telegram import ParseMode
 import traceback
 import ciso8601
+from domain import quote_pics
 
 chaddi_config = config.get_config()
 
@@ -158,8 +158,11 @@ def handle(update, context):
                 return
 
             logger.info("[quotes] Got a random quote '{}", random_quote)
-            pretty_quote = generate_pretty_quote(random_quote)
-            update.message.reply_text(text=pretty_quote, parse_mode=ParseMode.MARKDOWN)
+            # pretty_quote = generate_pretty_quote(random_quote)
+            # update.message.reply_text(text=pretty_quote, parse_mode=ParseMode.MARKDOWN)
+
+            quote_pics.generate_quote_pic(random_quote, update)
+
             return
 
     except Exception as e:
