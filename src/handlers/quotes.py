@@ -128,15 +128,6 @@ def handle(update, context):
 
             two_min_ago = datetime.datetime.now() - datetime.timedelta(minutes=2)
 
-            if "random_quote_get" in history:
-                last_time_get = ciso8601.parse_datetime(history["random_quote_get"])
-                if last_time_get > two_min_ago:
-                    logger.info("[quotes] request random quote too soon... skipping")
-                    update.message.reply_text(
-                        "Quotes ki dukan band hai... come back later!"
-                    )
-                    return
-
             history["random_quote_get"] = datetime.datetime.now()
             bakchod.history = history
             dao.insert_bakchod(bakchod)
@@ -158,10 +149,14 @@ def handle(update, context):
                 return
 
             logger.info("[quotes] Got a random quote '{}", random_quote)
-            # pretty_quote = generate_pretty_quote(random_quote)
-            # update.message.reply_text(text=pretty_quote, parse_mode=ParseMode.MARKDOWN)
 
-            quote_pics.generate_quote_pic(random_quote, update)
+            try:
+                quote_pics.generate_quote_pic(random_quote, update)
+            except Exception as e:
+                pretty_quote = generate_pretty_quote(random_quote)
+                update.message.reply_text(
+                    text=pretty_quote, parse_mode=ParseMode.MARKDOWN
+                )
 
             return
 

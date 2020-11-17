@@ -41,7 +41,7 @@ def generate_quote_pic(quote, update):
     img = img.convert("RGB")
     img.save(QUOTE_PICS_RESOURCES_DIR + quote_id + JPEG_EXTENSION)
 
-    logger.info("[quote-pics] uploading result")
+    logger.info("[quote-pics] Uploading result")
     update.message.reply_photo(
         photo=open(QUOTE_PICS_RESOURCES_DIR + quote_id + JPEG_EXTENSION, "rb"),
         timeout=5000,
@@ -52,15 +52,15 @@ def generate_quote_pic(quote, update):
 
 def download_background_picture(quote_id):
 
-    logger.info("[quote-pics] downloading file")
+    logger.info("[quote-pics] Downloading background picture")
 
-    url = "https://source.unsplash.com/collection/190727/"
+    url = "https://source.unsplash.com/collection/898543/"
 
     r = requests.get(url, allow_redirects=True)
 
     open(QUOTE_PICS_RESOURCES_DIR + quote_id + JPEG_EXTENSION, "wb").write(r.content)
 
-    logger.info("[quote-pics] finished downloading file")
+    logger.info("[quote-pics] Finished downloading background picture")
 
     return
 
