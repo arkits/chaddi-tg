@@ -5,6 +5,7 @@ import textwrap
 import requests
 from loguru import logger
 from util import util
+import ciso8601
 
 
 QUOTE_PICS_RESOURCES_DIR = "resources/quote_pics/"
@@ -12,6 +13,7 @@ JPEG_EXTENSION = ".jpeg"
 
 FONT_CAPTION = ImageFont.truetype("resources/fonts/Kalam-Regular.ttf", 86)
 FONT_AUTHOR = ImageFont.truetype("resources/fonts/Montserrat-Medium.ttf", 50)
+FONT_DATE = ImageFont.truetype("resources/fonts/Montserrat-Medium.ttf", 32)
 
 PADDING_PX = 20
 
@@ -21,7 +23,7 @@ def generate_quote_pic(quote, update):
     quote_id = str(quote["id"])
     quote_caption = '"' + sanitize_quote_message(quote["message"][0]["message"]) + '"'
     quote_author = "- " + quote["user"]
-    quote_date = quote["date"]
+    quote_date = generate_pretty_quote_date(quote["date"])
 
     download_background_picture(quote_id)
 
@@ -35,9 +37,11 @@ def generate_quote_pic(quote, update):
 
     draw = ImageDraw.Draw(img)
 
-    draw, caption_height = add_quote_caption(draw, quote_caption, img_width, img_height)
+    draw = add_quote_caption(draw, quote_caption, img_width, img_height)
 
-    draw = add_quote_author(draw, quote_author, img_width, img_height)
+    draw, e_height = add_quote_date(draw, quote_date, img_width, img_height)
+
+    draw = add_quote_author(draw, quote_author, img_width, img_height, e_height)
 
     img = img.convert("RGB")
     img.save(QUOTE_PICS_RESOURCES_DIR + quote_id + JPEG_EXTENSION)
@@ -116,10 +120,10 @@ def add_quote_caption(draw, quote_caption, img_width, img_height):
         (caption_x, caption_y), wrapped_caption, fill="white", font=FONT_CAPTION,
     )
 
-    return draw, caption_height
+    return draw
 
 
-def add_quote_author(draw, quote_author, img_width, img_height):
+def add_quote_author(draw, quote_author, img_width, img_height, e_height):
 
     subtitle_text_width, subtitle_text_height = draw.textsize(
         quote_author, font=FONT_AUTHOR
@@ -127,10 +131,38 @@ def add_quote_author(draw, quote_author, img_width, img_height):
 
     x = (img_width - subtitle_text_width) / 2
 
-    y = img_height - (subtitle_text_height + PADDING_PX)
+    y = img_height - (subtitle_text_height + e_height + PADDING_PX)
 
     draw.text(
         (x, y), quote_author, fill="white", font=FONT_AUTHOR, align="center",
     )
 
     return draw
+
+
+def add_quote_date(draw, quote_date, img_width, img_height):
+
+    subtitle_text_width, subtitle_text_height = draw.textsize(
+        quote_date, font=FONT_DATE
+    )
+
+    x = (img_width - subtitle_text_width) / 2
+
+    y = img_height - (subtitle_text_height + PADDING_PX)
+
+    draw.text(
+        (x, y), quote_date, fill="white", font=FONT_DATE, align="center",
+    )
+
+    return draw, subtitle_text_height
+
+
+def generate_pretty_quote_date(quote_date):
+
+    pretty_date = ""
+
+    d = ciso8601.parse_datetime(quote_date)
+
+    pretty_date = d.strftime("%d %B %Y")
+
+    return pretty_date

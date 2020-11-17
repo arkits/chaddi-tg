@@ -129,6 +129,15 @@ def handle(update, context):
 
             two_min_ago = datetime.datetime.now() - datetime.timedelta(minutes=2)
 
+            if "random_quote_get" in history:
+                last_time_get = ciso8601.parse_datetime(history["random_quote_get"])
+                if last_time_get > two_min_ago:
+                    logger.info("[quotes] request random quote too soon... skipping")
+                    update.message.reply_text(
+                        "Quotes ki dukan band hai... come back later!"
+                    )
+                    return
+
             history["random_quote_get"] = datetime.datetime.now()
             bakchod.history = history
             dao.insert_bakchod(bakchod)
