@@ -32,7 +32,7 @@ def generate_quote_pic(quote, update):
     img = img.resize((1920, 1080))
     img_width, img_height = img.size
 
-    overlay = Image.new("RGBA", img.size, (0, 0, 0, 200))
+    overlay = Image.new("RGBA", img.size, (0, 0, 0, 180))
     img = Image.alpha_composite(img, overlay)
 
     draw = ImageDraw.Draw(img)
