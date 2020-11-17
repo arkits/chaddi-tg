@@ -12,6 +12,8 @@ JPEG_EXTENSION = ".jpeg"
 FONT_CAPTION = ImageFont.truetype("resources/fonts/Kalam-Regular.ttf", 86)
 FONT_AUTHOR = ImageFont.truetype("resources/fonts/Montserrat-Medium.ttf", 50)
 
+PADDING_PX = 20
+
 
 def generate_quote_pic(quote, update):
 
@@ -34,7 +36,7 @@ def generate_quote_pic(quote, update):
 
     draw, caption_height = add_quote_caption(draw, quote_caption, img_width, img_height)
 
-    draw = add_quote_author(draw, quote_author, caption_height, img_width)
+    draw = add_quote_author(draw, quote_author, caption_height, img_width, img_height)
 
     img = img.convert("RGB")
     img.save(QUOTE_PICS_RESOURCES_DIR + quote_id + JPEG_EXTENSION)
@@ -105,7 +107,7 @@ def add_quote_caption(draw, quote_caption, img_width, img_height):
         caption_x = 0
 
     if caption_y < 0:
-        caption_y = 10
+        caption_y = PADDING_PX
 
     draw.text(
         (caption_x, caption_y), wrapped_caption, fill="white", font=FONT_CAPTION,
@@ -114,20 +116,18 @@ def add_quote_caption(draw, quote_caption, img_width, img_height):
     return draw, caption_height
 
 
-def add_quote_author(draw, quote_author, caption_height, img_width):
-
-    subtitle = quote_author
+def add_quote_author(draw, quote_author, img_width, img_height):
 
     subtitle_text_width, subtitle_text_height = draw.textsize(
-        subtitle, font=FONT_AUTHOR
+        quote_author, font=FONT_AUTHOR
     )
 
+    x = (img_width - subtitle_text_width) / 2
+
+    y = img_height - (subtitle_text_height + PADDING_PX)
+
     draw.text(
-        ((img_width - subtitle_text_width) / 2, caption_height + 10),
-        subtitle,
-        fill="white",
-        font=FONT_AUTHOR,
-        align="center",
+        (x, y), quote_author, fill="white", font=FONT_AUTHOR, align="center",
     )
 
     return draw
