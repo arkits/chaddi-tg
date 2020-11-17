@@ -6,6 +6,7 @@ import requests
 from loguru import logger
 from util import util
 import ciso8601
+from telegram import ParseMode
 
 
 QUOTE_PICS_RESOURCES_DIR = "resources/quote_pics/"
@@ -19,7 +20,7 @@ FONT_DATE = ImageFont.truetype("resources/fonts/Montserrat-Medium.ttf", 32)
 PADDING_PX = 20
 
 
-def generate_quote_pic(quote, update):
+def generate_quote_pic(quote, update, pretty_quote):
 
     quote_id = str(quote["id"])
     quote_caption = '"' + sanitize_quote_message(quote["message"][0]["message"]) + '"'
@@ -51,6 +52,8 @@ def generate_quote_pic(quote, update):
     update.message.reply_photo(
         photo=open(QUOTE_PICS_RESOURCES_DIR + quote_id + JPEG_EXTENSION, "rb"),
         timeout=5000,
+        caption=pretty_quote,
+        parse_mode=ParseMode.MARKDOWN,
     )
 
     util.delete_file(QUOTE_PICS_RESOURCES_DIR + quote_id + JPEG_EXTENSION)

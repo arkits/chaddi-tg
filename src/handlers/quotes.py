@@ -160,15 +160,16 @@ def handle(update, context):
 
             logger.info("[quotes] Got a random quote '{}", random_quote)
 
+            pretty_quote = generate_pretty_quote(random_quote)
+
             try:
-                quote_pics.generate_quote_pic(random_quote, update)
+                quote_pics.generate_quote_pic(random_quote, update, pretty_quote)
             except Exception as e:
                 logger.error(
                     "Caught error in generate_quote_pic - {} \n {}",
                     e,
                     traceback.format_exc(),
                 )
-                pretty_quote = generate_pretty_quote(random_quote)
                 update.message.reply_text(
                     text=pretty_quote, parse_mode=ParseMode.MARKDOWN
                 )
