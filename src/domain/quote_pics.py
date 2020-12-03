@@ -21,7 +21,7 @@ PADDING_PX = 20
 
 # Setting up the image and quote
 def generate_quote_pic(quote, update, pretty_quote):
-
+    """Gets the quote from the chaddi API"""
     quote_id = str(quote["id"])
     quote_caption = '"' + sanitize_quote_message(quote["message"][0]["message"]) + '"'
     quote_author = "- " + quote["user"]
