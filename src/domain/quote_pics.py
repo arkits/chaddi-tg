@@ -19,9 +19,9 @@ FONT_DATE = ImageFont.truetype("resources/fonts/Montserrat-Medium.ttf", 32)
 
 PADDING_PX = 20
 
-
+# Setting up the image and quote
 def generate_quote_pic(quote, update, pretty_quote):
-
+    """Gets the quote from the chaddi API"""
     quote_id = str(quote["id"])
     quote_caption = '"' + sanitize_quote_message(quote["message"][0]["message"]) + '"'
     quote_author = "- " + quote["user"]
@@ -60,7 +60,7 @@ def generate_quote_pic(quote, update, pretty_quote):
 
     return
 
-
+# Downloads the image from unsplash.com
 def download_background_picture(quote_id):
 
     logger.info("[quote-pics] Downloading background picture")
@@ -102,7 +102,7 @@ def generate_wrapped_caption(quote_caption):
 
     return caption_new
 
-
+# Aligning the caption on the image
 def add_quote_caption(draw, quote_caption, img_width, img_height):
 
     wrapped_caption = generate_wrapped_caption(quote_caption)
@@ -131,7 +131,7 @@ def add_quote_caption(draw, quote_caption, img_width, img_height):
 
     return draw
 
-
+# Aligning the author name on the image
 def add_quote_author(draw, quote_author, img_width, img_height, e_height):
 
     subtitle_text_width, subtitle_text_height = draw.textsize(
@@ -148,7 +148,7 @@ def add_quote_author(draw, quote_author, img_width, img_height, e_height):
 
     return draw
 
-
+# Aligning the date on the image
 def add_quote_date(draw, quote_date, img_width, img_height):
 
     subtitle_text_width, subtitle_text_height = draw.textsize(
@@ -165,7 +165,7 @@ def add_quote_date(draw, quote_date, img_width, img_height):
 
     return draw, subtitle_text_height
 
-
+# Adding timestamp
 def generate_pretty_quote_date(quote_date):
 
     pretty_date = ""
