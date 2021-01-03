@@ -53,6 +53,7 @@ def main():
     dp.add_handler(CommandHandler("year", handlers.year.handle))
     dp.add_handler(CommandHandler("translate", handlers.translate.handle))
     dp.add_handler(CommandHandler("mom2", handlers.mom2.handle))
+    dp.add_handler(CommandHandler("day", handlers.day.handle))
 
     dp.add_handler(MessageHandler(Filters.status_update, handlers.default.status_update))
     dp.add_handler(MessageHandler(Filters.document.category("video"), handlers.webm.handle))
