@@ -25,13 +25,13 @@ def generate_response():
     ist = pytz.timezone("Asia/Kolkata")
 
     today = datetime.datetime.now()
+    today = ist.localize(today)
 
     last_day_of_the_year = datetime.datetime(year=today.year, month=12, day=31)
-
-    localized_today = ist.localize(today)
+    last_day_of_the_year = ist.localize(last_day_of_the_year)
 
     response = "<b>Day:</b> <pre>{}/{}</pre>".format(
-        localized_today.strftime("%j"), last_day_of_the_year.strftime("%j")
+        today.strftime("%j"), last_day_of_the_year.strftime("%j")
     )
 
     return response
