@@ -129,3 +129,5 @@ src/resources/converted.mp4
 src/resources/to_convert.webm
 .DS_Store
 src/resources/baniyan_dev.json
+dev.ini
+docker-data
