@@ -1,11 +1,17 @@
+from util import config
+
 from peewee import *
 from playhouse.postgres_ext import *
 
-import logging
+app_config = config.get_config()
 
-logger = logging.getLogger("peewee")
-logger.addHandler(logging.StreamHandler())
-# logger.setLevel(logging.DEBUG)
+
+if app_config.get("DB", "VERBOSE_LOGGING") == "true":
+    import logging
+
+    logger = logging.getLogger("peewee")
+    logger.addHandler(logging.StreamHandler())
+    logger.setLevel(logging.DEBUG)
 
 # db = SqliteDatabase("chaddi.db")
 db = PostgresqlExtDatabase("chaddi_tg")
@@ -30,7 +36,7 @@ class Bakchod(BaseModel):
 
 class Message(BaseModel):
     id = AutoField()
-    message_id = IntegerField()
+    message_id = CharField()
     time_sent = DateTimeField()
     from_bakchod = ForeignKeyField(Bakchod, backref="messages")
     to_id = CharField()
@@ -38,5 +44,17 @@ class Message(BaseModel):
     update = BinaryJSONField()
 
 
+class Group(BaseModel):
+    group_id = CharField(unique=True, primary_key=True)
+    name = CharField(null=True)
+    created = DateTimeField()
+    updated = DateTimeField()
+
+
+class GroupMember(BaseModel):
+    bakchod = ForeignKeyField(Bakchod, backref="group_member")
+    group = ForeignKeyField(Group, backref="group_member")
+
+
 db.connect()
-db.create_tables([Bakchod, Message])
+db.create_tables([Bakchod, Message, Group, GroupMember])
