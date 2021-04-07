@@ -1,0 +1,23 @@
+{% extends "base.html" %} {% block title %}Bakchods{% endblock %} {% block head
+%} {{ super() }} {% endblock %} {% block content %}
+<div class="container-lg">
+  <h1>Bakchods</h1>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th>id</th>
+        <th>username</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for bakchod in bakchods %}
+      <tr>
+        <th>{{bakchod.id}}</th>
+        <td>{{bakchod.username}}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

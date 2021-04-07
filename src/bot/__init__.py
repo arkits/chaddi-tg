@@ -23,6 +23,9 @@ def run_telegram_bot():
 
     dispatcher.add_handler(MessageHandler(Filters.all, handlers.basics.all))
 
+    # Log all errors
+    dispatcher.add_error_handler(handlers.errors.log_error)
+
     # Start the Bot
     logger.info("Starting Telegram Bot with Polling")
     updater.start_polling()

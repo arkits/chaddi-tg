@@ -1,17 +1,23 @@
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from db import Bakchod
 
 router = APIRouter()
 
 templates = Jinja2Templates(directory="templates")
 
 
-@router.get("/")
-def index():
-    return {"name": "chaddi-tg", "version": "0.0.1"}
+@router.get("/", response_class=HTMLResponse)
+async def index(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
 
-@router.get("/items/{id}", response_class=HTMLResponse)
-async def read_item(request: Request, id: str):
-    return templates.TemplateResponse("item.html", {"request": request, "id": id})
+@router.get("/bakchods", response_class=HTMLResponse)
+async def get_bakchods(request: Request):
+
+    bakchods = Bakchod.select()
+
+    return templates.TemplateResponse(
+        "bakchods.html", {"request": request, "bakchods": bakchods}
+    )
