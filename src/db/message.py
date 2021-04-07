@@ -14,6 +14,7 @@ def log_message_from_update(update: Update):
         from_id=update.message.from_user.id,
         to_id=update.message.chat.id,
         text=update.message.text,
+        update=update.to_dict(),
     )
 
     return

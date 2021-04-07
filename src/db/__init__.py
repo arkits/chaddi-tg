@@ -1,4 +1,5 @@
 from peewee import *
+from playhouse.postgres_ext import *
 
 import logging
 
@@ -7,7 +8,7 @@ logger.addHandler(logging.StreamHandler())
 # logger.setLevel(logging.DEBUG)
 
 # db = SqliteDatabase("chaddi.db")
-db = PostgresqlDatabase("chaddi_tg")
+db = PostgresqlExtDatabase("chaddi_tg")
 
 # model definitions -- the standard "pattern" is to define a base model class
 # that specifies which database to use.  then, any subclasses will automatically
@@ -34,6 +35,7 @@ class Message(BaseModel):
     from_id = CharField()
     to_id = CharField()
     text = TextField(null=True)
+    update = BinaryJSONField()
 
 
 db.connect()
