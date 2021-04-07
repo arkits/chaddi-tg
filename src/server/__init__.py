@@ -37,7 +37,7 @@ app.include_router(routes.router, prefix="/chaddi")
 def run_server():
 
     logger.info(
-        "Starting Server on http://localhost:{}/chaddi",
+        "[server] Starting Server on http://localhost:{}/chaddi",
         app_config.get("SERVER", "PORT"),
     )
     uvicorn.run(

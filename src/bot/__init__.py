@@ -27,7 +27,7 @@ def run_telegram_bot():
     dispatcher.add_error_handler(handlers.errors.log_error)
 
     # Start the Bot
-    logger.info("Starting Telegram Bot with Polling")
+    logger.info("[tg] Starting Telegram Bot with Polling")
     updater.start_polling()
 
     # Run the bot until you press Ctrl-C or the process receives SIGINT,

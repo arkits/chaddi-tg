@@ -32,7 +32,7 @@ class Message(BaseModel):
     id = AutoField()
     message_id = IntegerField()
     time_sent = DateTimeField()
-    from_id = CharField()
+    from_bakchod = ForeignKeyField(Bakchod, backref="messages")
     to_id = CharField()
     text = TextField(null=True)
     update = BinaryJSONField()
