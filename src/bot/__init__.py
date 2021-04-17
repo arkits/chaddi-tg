@@ -21,6 +21,7 @@ def run_telegram_bot():
     dispatcher.add_handler(CommandHandler("start", handlers.start.handle))
     dispatcher.add_handler(CommandHandler("help", handlers.help.handle))
     dispatcher.add_handler(CommandHandler("hi", handlers.hi.handle))
+    dispatcher.add_handler(CommandHandler("about", handlers.about.handle))
 
     dispatcher.add_handler(MessageHandler(Filters.all, handlers.defaults.all))
 
