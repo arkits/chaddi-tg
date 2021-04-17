@@ -22,7 +22,7 @@ def run_telegram_bot():
     dispatcher.add_handler(CommandHandler("help", handlers.help.handle))
     dispatcher.add_handler(CommandHandler("hi", handlers.hi.handle))
 
-    dispatcher.add_handler(MessageHandler(Filters.all, handlers.basics.all))
+    dispatcher.add_handler(MessageHandler(Filters.all, handlers.defaults.all))
 
     # Log all errors
     dispatcher.add_error_handler(handlers.errors.log_error)
