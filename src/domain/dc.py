@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 from loguru import logger
 from telegram import Update
 from db import bakchod, group, message
@@ -24,7 +24,8 @@ def sync_persistence_data(update: Update):
     b = bakchod.get_bakchod_from_update(update)
 
     # Update lastseen of Bakchod
-    b.lastseen = datetime.datetime.now()
+    b.lastseen = datetime.now()
+    b.updated = datetime.now()
     b.save()
 
     message.log_message_from_update(update)
