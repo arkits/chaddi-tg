@@ -2,7 +2,7 @@ import threading
 import os
 from loguru import logger
 
-from util import logger as logger_util
+# from domain import logger as domain_logger
 
 from server import run_server
 from bot import run_telegram_bot
@@ -14,7 +14,7 @@ def main():
     logger.debug("cwd is {}", os.getcwd())
 
     # Uncomment to intercept debug logs from other libs
-    # logger_util.intercept_logs_with_loguru()
+    # domain_logger.intercept_logs_with_loguru()
 
     server_thread = threading.Thread(target=run_server)
     server_thread.start()

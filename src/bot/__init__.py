@@ -5,7 +5,7 @@ from telegram.ext import (
     MessageHandler,
     Filters,
 )
-import handlers
+from . import handlers
 from domain import config
 
 
@@ -20,6 +20,7 @@ def run_telegram_bot():
 
     dispatcher.add_handler(CommandHandler("start", handlers.basics.start))
     dispatcher.add_handler(CommandHandler("help", handlers.basics.help_command))
+    dispatcher.add_handler(CommandHandler("hi", handlers.hi.handle))
 
     dispatcher.add_handler(MessageHandler(Filters.all, handlers.basics.all))
 
