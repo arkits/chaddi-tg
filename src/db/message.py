@@ -19,6 +19,8 @@ def log_message_from_update(update: Update):
         update=update.to_dict(),
     )
 
-    logger.debug("[db] saved Message - id={}", m.message_id)
+    logger.debug(
+        "[db] saved Message - id={} from={}", m.message_id, from_bakchod.username
+    )
 
     return

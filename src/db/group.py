@@ -39,6 +39,6 @@ def log_group_from_update(update: Update):
     except DoesNotExist:
         groupmember = GroupMember.create(group=group, bakchod=bakchod)
 
-    logger.debug("[db] updated Group - id={}", group.name)
+    # logger.debug("[db] updated Group - id={}", group.name)
 
     return

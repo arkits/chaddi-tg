@@ -6,7 +6,7 @@ from . import hi, bestie
 
 
 def all(update: Update, context: CallbackContext) -> None:
-    dc.update_persistance_data(update)
+    dc.sync_persistence_data(update)
 
 
 def handle_message_matching(update, context):
