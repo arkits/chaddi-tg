@@ -6,7 +6,7 @@ from telegram.ext import (
     Filters,
 )
 import handlers
-from util import config
+from domain import config
 
 
 app_config = config.get_config()

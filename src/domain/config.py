@@ -1,7 +1,11 @@
 import configparser
+import os
 from loguru import logger
 
-profile_name = "dev"
+profile_name = os.getenv("CHADDI_BOT_PROFILE")
+if profile_name is None:
+    # Default to dev profile - intended for local dev
+    profile_name = "dev"
 
 config = configparser.ConfigParser()
 

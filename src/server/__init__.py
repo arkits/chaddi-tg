@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from starlette_exporter import PrometheusMiddleware, handle_metrics
 
-from util import config
+from domain import config
 from server import routes
 
 # Initialize the config

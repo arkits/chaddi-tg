@@ -1,4 +1,4 @@
-from util import config
+from domain import config
 
 from peewee import *
 from playhouse.postgres_ext import *
