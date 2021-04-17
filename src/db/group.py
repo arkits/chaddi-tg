@@ -7,7 +7,7 @@ import datetime
 
 def log_group_from_update(update: Update):
 
-    logger.debug("[log] Building Group based on update={}", update.to_json())
+    # logger.debug("[log] Building Group based on update={}", update.to_json())
 
     try:
 
@@ -38,5 +38,7 @@ def log_group_from_update(update: Update):
         )
     except DoesNotExist:
         groupmember = GroupMember.create(group=group, bakchod=bakchod)
+
+    logger.debug("[db] updated Group - id={}", group.name)
 
     return

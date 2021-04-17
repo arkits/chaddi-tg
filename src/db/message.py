@@ -6,11 +6,11 @@ import datetime
 
 def log_message_from_update(update: Update):
 
-    logger.debug("[log] Building Message based on update={}", update.to_json())
+    # logger.debug("[log] Building Message based on update={}", update.to_json())
 
     from_bakchod = Bakchod.get_by_id(update.message.from_user.id)
 
-    Message.create(
+    m = Message.create(
         message_id=update.message.message_id,
         time_sent=datetime.datetime.now(),
         from_bakchod=from_bakchod,
@@ -18,5 +18,7 @@ def log_message_from_update(update: Update):
         text=update.message.text,
         update=update.to_dict(),
     )
+
+    logger.debug("[db] saved Message - id={}", m.message_id)
 
     return

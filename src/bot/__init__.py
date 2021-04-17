@@ -18,8 +18,8 @@ def run_telegram_bot():
 
     dispatcher = updater.dispatcher
 
-    dispatcher.add_handler(CommandHandler("start", handlers.basics.start))
-    dispatcher.add_handler(CommandHandler("help", handlers.basics.help_command))
+    dispatcher.add_handler(CommandHandler("start", handlers.start.handle))
+    dispatcher.add_handler(CommandHandler("help", handlers.help.handle))
     dispatcher.add_handler(CommandHandler("hi", handlers.hi.handle))
 
     dispatcher.add_handler(MessageHandler(Filters.all, handlers.basics.all))

@@ -6,7 +6,7 @@ import traceback
 
 def log_error(update: Update, context: CallbackContext):
     logger.error(
-        "Caught Fatal Error! error={} \n update={} \n context={} {}",
+        "Caught Fatal Error! error={} \n \nupdate={} \n \ncontext={} \n \ntraceback={}",
         context.error,
         update.to_json(),
         context.__dict__,

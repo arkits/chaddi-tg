@@ -14,7 +14,7 @@ def get_bakchod_from_update(update: Update) -> Bakchod:
     try:
 
         exists_in_db = Bakchod.get(Bakchod.tg_id == tg_id)
-        logger.info("[db] tg_id={} exists_in_db={}", tg_id, exists_in_db)
+        # logger.debug("[db] tg_id={} exists_in_db={}", tg_id, exists_in_db)
 
         if exists_in_db is not None:
             return exists_in_db

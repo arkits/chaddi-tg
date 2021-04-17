@@ -1,6 +1,6 @@
 from loguru import logger
 from telegram import Update
-from domain import util, config
+from domain import dc, config
 import random
 import datetime
 
@@ -12,7 +12,7 @@ admin_ids = app_config.get("TELEGRAM", "TG_ADMIN_USERS")
 def handle(update: Update, context):
 
     if str(update.message.from_user.id) in admin_ids:
-        util.log_chat("hi", update)
+        dc.log_command_usage("hi", update)
         update.message.reply_text(random_reply())
 
 
