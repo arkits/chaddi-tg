@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from db import Bakchod, Group
+from db import Bakchod, Group, Message
 
 router = APIRouter()
 
@@ -30,4 +30,15 @@ async def get_groups(request: Request):
 
     return templates.TemplateResponse(
         "groups.html", {"request": request, "groups": groups}
+    )
+
+
+@router.get("/messages", response_class=HTMLResponse)
+async def get_groups(request: Request):
+
+    # Get the last X messages
+    messages = Message.select().limit(100).order_by(Message.time_sent.desc())
+
+    return templates.TemplateResponse(
+        "messages.html", {"request": request, "messages": messages}
     )
