@@ -4,18 +4,16 @@ from telegram.user import User
 import os
 import random
 from datetime import datetime
-
-from db import Bakchod
+from db import Bakchod, Group, GroupMember
 
 
 def extract_pretty_name_from_tg_user(user: User) -> str:
-
-    if user.first_name is not None:
+    if user.username is not None:
+        return "@" + user.username
+    elif user.first_name is not None:
         return user.first_name
     elif user.full_name is not None:
         return user.full_name
-    elif user.username is not None:
-        return "@" + user.username
     elif user.id:
         return str(user.id)
 
@@ -38,11 +36,8 @@ def delete_file(file):
 
 
 def choose_random_element_from_list(input_list):
-
     random.seed(datetime.now())
-
     random_int = random.randint(0, len(input_list) - 1)
-
     return input_list[random_int]
 
 
@@ -59,3 +54,17 @@ def pretty_time_delta(seconds):
         return "%dm %ds" % (minutes, seconds)
     else:
         return "%ds" % (seconds,)
+
+
+def get_random_bakchod_from_group(group_id: str, bakchod_id_to_avoid: str) -> Bakchod:
+
+    groupmembers = (
+        GroupMember.select().where(GroupMember.group_id == group_id).execute()
+    )
+
+    random_groupmember = choose_random_element_from_list(groupmembers)
+
+    random_bakchod = Bakchod.get_by_id(random_groupmember.bakchod_id)
+    logger.info("random_bakchod={}", random_bakchod.username)
+
+    return random_bakchod

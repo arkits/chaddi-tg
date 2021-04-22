@@ -2,6 +2,7 @@ from domain import config
 
 from peewee import *
 from playhouse.postgres_ext import *
+import json
 
 app_config = config.get_config()
 
@@ -29,6 +30,10 @@ class BaseModel(Model):
         database = db
 
 
+EMPTY_JSON = "{}"
+EMPTY_JSON = json.loads(EMPTY_JSON)
+
+
 class Bakchod(BaseModel):
     tg_id = CharField(unique=True, primary_key=True)
     username = CharField(null=True)
@@ -37,6 +42,7 @@ class Bakchod(BaseModel):
     lastseen = DateTimeField(null=True)
     created = DateTimeField(null=True)
     updated = DateTimeField(null=True)
+    metadata = BinaryJSONField(default=EMPTY_JSON)
 
 
 class Message(BaseModel):

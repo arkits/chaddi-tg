@@ -6,3 +6,5 @@ from . import help
 from . import about
 from . import rokda
 from . import webm
+from . import superpower
+from . import gamble

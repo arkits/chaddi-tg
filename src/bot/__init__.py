@@ -23,6 +23,8 @@ def run_telegram_bot():
     dispatcher.add_handler(CommandHandler("hi", handlers.hi.handle))
     dispatcher.add_handler(CommandHandler("about", handlers.about.handle))
     dispatcher.add_handler(CommandHandler("rokda", handlers.rokda.handle))
+    dispatcher.add_handler(CommandHandler("superpower", handlers.superpower.handle))
+    dispatcher.add_handler(CommandHandler("gamble", handlers.gamble.handle))
 
     dispatcher.add_handler(MessageHandler(Filters.status_update, handlers.defaults.status_update))
     dispatcher.add_handler(MessageHandler(Filters.document.category("video"), handlers.webm.handle))
