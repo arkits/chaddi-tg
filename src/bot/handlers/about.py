@@ -9,11 +9,6 @@ def handle(update: Update, context):
 
     dc.log_command_usage("about", update)
 
-    if update.message.reply_to_message:
-        bakchod_id = update.message.reply_to_message.from_user.id
-    else:
-        bakchod_id = update.message.from_user.id
-
     b = bakchod.get_bakchod_from_update(update)
 
     update.message.reply_text(
