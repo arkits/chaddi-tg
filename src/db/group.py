@@ -42,3 +42,19 @@ def log_group_from_update(update: Update):
     # logger.debug("[db] updated Group - id={}", group.name)
 
     return
+
+
+def get_group_from_update(update: Update) -> Group:
+
+    try:
+
+        return Group.get(Group.group_id == update.message.chat.id)
+
+    except DoesNotExist:
+
+        return Group.create(
+            group_id=update.message.chat.id,
+            name=update.message.chat.title,
+            created=datetime.datetime.now(),
+            updated=datetime.datetime.now(),
+        )

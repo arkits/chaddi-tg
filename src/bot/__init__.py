@@ -24,6 +24,8 @@ def run_telegram_bot():
     dispatcher.add_handler(CommandHandler("about", handlers.about.handle))
     dispatcher.add_handler(CommandHandler("rokda", handlers.rokda.handle))
 
+    dispatcher.add_handler(MessageHandler(Filters.status_update, handlers.defaults.status_update))
+    dispatcher.add_handler(MessageHandler(Filters.document.category("video"), handlers.webm.handle))
     dispatcher.add_handler(MessageHandler(Filters.all, handlers.defaults.all))
 
     # Log all errors
