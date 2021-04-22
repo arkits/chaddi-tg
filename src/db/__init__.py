@@ -14,7 +14,12 @@ if app_config.get("DB", "VERBOSE_LOGGING") == "true":
     logger.setLevel(logging.DEBUG)
 
 # db = SqliteDatabase("chaddi.db")
-db = PostgresqlExtDatabase("chaddi_tg")
+db = PostgresqlExtDatabase(
+    "chaddi_tg",
+    user=str(app_config.get("DB", "USER")),
+    password=str(app_config.get("DB", "PASSWORD")),
+    host=str(app_config.get("DB", "HOST")),
+)
 
 # model definitions -- the standard "pattern" is to define a base model class
 # that specifies which database to use.  then, any subclasses will automatically
