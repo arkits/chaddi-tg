@@ -1,6 +1,6 @@
 from loguru import logger
 from telegram import Update
-from domain import dc, util, config
+from src.domain import dc, util, config
 from telegram import ParseMode
 import traceback
 from . import mom
@@ -53,8 +53,6 @@ def handle(update: Update, context):
         else:
             update.message.reply_text(response)
             return
-
-        return
 
     except Exception as e:
         logger.error(

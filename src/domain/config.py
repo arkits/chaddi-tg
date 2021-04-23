@@ -9,6 +9,7 @@ if profile_name is None:
 
 config = configparser.ConfigParser()
 
+logger.debug("cwd is {}", os.getcwd())
 logger.info("Loading config - {}", profile_name)
 config.read("config/{}.ini".format(profile_name))
 

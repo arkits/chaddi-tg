@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from db import Bakchod, Group, Message
+from src.db import Bakchod, Group, Message
 
 router = APIRouter()
 

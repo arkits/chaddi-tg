@@ -1,7 +1,7 @@
 from loguru import logger
 from telegram import Update
-from db import Bakchod, bakchod
-from domain import dc, util
+from src.db import Bakchod, bakchod
+from src.domain import dc, util
 import datetime
 import random
 import ciso8601

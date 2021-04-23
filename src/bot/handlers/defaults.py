@@ -3,8 +3,8 @@ from loguru import logger
 from peewee import DoesNotExist
 from telegram import Update
 from telegram.ext import CallbackContext
-from domain import dc
-from db import Group, GroupMember, bakchod, group
+from src.domain import dc
+from src.db import GroupMember, bakchod, group
 from . import hi, bestie
 
 

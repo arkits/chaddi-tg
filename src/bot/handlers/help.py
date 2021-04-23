@@ -1,7 +1,7 @@
 from loguru import logger
 from telegram import Update
 from telegram.ext import CallbackContext
-from domain import dc
+from src.domain import dc
 
 
 def handle(update: Update, context: CallbackContext) -> None:

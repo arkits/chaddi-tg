@@ -3,7 +3,7 @@ from telegram.user import User
 import os
 import random
 from datetime import datetime
-from db import Bakchod, GroupMember
+from src.db import Bakchod, GroupMember
 import en_core_web_sm
 from . import config
 import json

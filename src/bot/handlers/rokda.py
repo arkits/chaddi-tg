@@ -1,7 +1,7 @@
 from loguru import logger
 from peewee import Update
-from domain import dc, util
-from db import Bakchod, bakchod
+from src.domain import dc, util
+from src.db import Bakchod, bakchod
 from telegram import ParseMode
 
 

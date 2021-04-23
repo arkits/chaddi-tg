@@ -1,11 +1,10 @@
-from domain import config
+from src.domain import config
 
 from peewee import *
 from playhouse.postgres_ext import *
 import json
 
 app_config = config.get_config()
-
 
 if app_config.get("DB", "VERBOSE_LOGGING") == "true":
     import logging
@@ -21,6 +20,7 @@ db = PostgresqlExtDatabase(
     password=str(app_config.get("DB", "PASSWORD")),
     host=str(app_config.get("DB", "HOST")),
 )
+
 
 # model definitions -- the standard "pattern" is to define a base model class
 # that specifies which database to use.  then, any subclasses will automatically

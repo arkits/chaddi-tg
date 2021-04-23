@@ -1,8 +1,8 @@
 from typing import List
 from loguru import logger
 from telegram.user import User
-from db import Bakchod
-from domain import util, dc
+from src.db import Bakchod
+from src.domain import util, dc
 from telegram import ParseMode
 from telegram import Update
 

@@ -1,6 +1,6 @@
 from loguru import logger
 from telegram import Update
-from domain import dc, util, config
+from src.domain import dc, util, config
 from telegram import ParseMode
 import json
 import random

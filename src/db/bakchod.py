@@ -3,7 +3,7 @@ from telegram import Update, User
 from . import Bakchod
 from loguru import logger
 import datetime
-from domain import util
+from src.domain import util
 
 
 def get_bakchod_from_update(update: Update) -> Bakchod:

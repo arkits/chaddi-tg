@@ -1,6 +1,6 @@
 from loguru import logger
 from telegram import Update
-from domain import dc, util
+from src.domain import dc, util
 import random
 import datetime
 

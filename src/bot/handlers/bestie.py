@@ -1,5 +1,5 @@
 from loguru import logger
-from domain import dc
+from src.domain import dc
 
 import random
 import datetime

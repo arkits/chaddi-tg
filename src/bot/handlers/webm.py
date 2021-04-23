@@ -1,6 +1,6 @@
 from loguru import logger
 from peewee import Update
-from domain import dc, util
+from src.domain import dc, util
 import datetime
 import subprocess
 import traceback
