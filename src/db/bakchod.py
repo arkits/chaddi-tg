@@ -22,7 +22,7 @@ def get_bakchod_from_update(update: Update) -> Bakchod:
 
     except DoesNotExist:
 
-        logger.info("[db] tg_id={} DoesNotExist", tg_id)
+        logger.info("[db] tg_id={} DoesNotExist... Creating new!", tg_id)
 
         return Bakchod.create(
             tg_id=tg_id,
@@ -50,7 +50,7 @@ def get_or_create_bakchod_from_tg_user(user: User) -> Bakchod:
 
     except DoesNotExist:
 
-        logger.info("[db] tg_id={} DoesNotExist", tg_id)
+        logger.info("[db] tg_id={} DoesNotExist... Creating new!", tg_id)
 
         return Bakchod.create(
             tg_id=tg_id,
