@@ -5,10 +5,13 @@ import random
 import datetime
 
 
-def handle(update: Update, context):
+def handle(update: Update, context, log_to_dc=True):
 
     if util.is_admin_tg_user(update.message.from_user):
-        dc.log_command_usage("hi", update)
+
+        if log_to_dc:
+            dc.log_command_usage("hi", update)
+
         update.message.reply_text(random_reply())
 
 

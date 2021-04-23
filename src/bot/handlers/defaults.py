@@ -1,4 +1,5 @@
 from datetime import datetime
+from re import U
 from loguru import logger
 from peewee import DoesNotExist
 from telegram import Update
@@ -17,8 +18,10 @@ def all(update: Update, context: CallbackContext) -> None:
     b.updated = datetime.now()
     b.save()
 
+    handle_message_matching(update, context)
 
-def handle_message_matching(update, context):
+
+def handle_message_matching(update: Update, context: CallbackContext):
 
     message_text = update.message.text
 
@@ -26,11 +29,11 @@ def handle_message_matching(update, context):
 
         # Handle 'hi' messages
         if "hi" == message_text.lower():
-            hi.handle(update, context)
+            hi.handle(update, context, log_to_dc=False)
 
         # Handle bestie messages
         if "bestie" in message_text.lower():
-            bestie.handle(update, context)
+            bestie.handle(update, context, log_to_dc=False)
 
     return
 

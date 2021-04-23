@@ -5,12 +5,15 @@ import random
 import datetime
 
 
-def handle(update, context):
+def handle(update, context, log_to_dc=True):
 
     bestie_response_whitelist = [222021705, 148933790]
 
     if update.message.from_user["id"] in bestie_response_whitelist:
-        dc.log_command_usage("bestie", update)
+
+        if log_to_dc:
+            dc.log_command_usage("bestie", update)
+
         update.message.reply_text(random_reply())
 
 
