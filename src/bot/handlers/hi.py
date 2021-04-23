@@ -1,17 +1,13 @@
 from loguru import logger
 from telegram import Update
-from domain import dc, config
+from domain import dc, util
 import random
 import datetime
-
-app_config = config.get_config()
-
-admin_ids = app_config.get("TELEGRAM", "TG_ADMIN_USERS")
 
 
 def handle(update: Update, context):
 
-    if str(update.message.from_user.id) in admin_ids:
+    if util.is_admin_tg_user(update.message.from_user):
         dc.log_command_usage("hi", update)
         update.message.reply_text(random_reply())
 
