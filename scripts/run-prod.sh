@@ -1,5 +1,5 @@
 #!/bin/bash
-# run_prod.sh
+# run-prod.sh
 
 # Stop if there is an error
 set -e

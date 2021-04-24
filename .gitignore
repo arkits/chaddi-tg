@@ -131,3 +131,4 @@ src/resources/baniyan_dev.json
 dev.ini
 prod.ini
 docker-data
+scripts/deploy-constants.sh
