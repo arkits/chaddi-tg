@@ -29,6 +29,7 @@ def run_telegram_bot():
     dispatcher.add_handler(CommandHandler("mom2", handlers.mom2.handle))
     dispatcher.add_handler(CommandHandler("set", handlers.setter.handle))
     dispatcher.add_handler(CommandHandler("chutiya", handlers.setter.handle))
+    dispatcher.add_handler(CommandHandler("aao", handlers.aao.handle))
 
     dispatcher.add_handler(
         MessageHandler(Filters.status_update, handlers.defaults.status_update)

@@ -10,7 +10,6 @@ from rake_nltk import Rake
 
 app_config = config.get_config()
 
-
 BOT_USERNAME = app_config.get("TELEGRAM", "BOT_USERNAME")
 
 mom_response_blacklist = [BOT_USERNAME]
