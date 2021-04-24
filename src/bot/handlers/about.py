@@ -3,11 +3,17 @@ from src.domain import dc, util
 from src.db import Bakchod, bakchod
 from telegram import ParseMode
 
+
 def handle(update: Update, context):
 
     dc.log_command_usage("about", update)
 
-    b = bakchod.get_bakchod_from_update(update)
+    if update.message.reply_to_message:
+        b = bakchod.get_or_create_bakchod_from_tg_user(
+            update.message.reply_to_message.from_user
+        )
+    else:
+        b = bakchod.get_or_create_bakchod_from_tg_user(update.message.from_user)
 
     update.message.reply_text(
         text=generate_about_response(b), parse_mode=ParseMode.MARKDOWN
