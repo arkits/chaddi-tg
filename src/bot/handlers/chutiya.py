@@ -5,9 +5,7 @@ from src.domain import dc, util, config
 from telegram import ParseMode
 import traceback
 
-
 app_config = config.get_config()
-
 
 BOT_USERNAME = app_config.get("TELEGRAM", "BOT_USERNAME")
 
@@ -48,7 +46,7 @@ def handle(update: Update, context):
 
     except Exception as e:
         logger.error(
-            "Caught Error in mom.handle - {} \n {}",
+            "Caught Error in chutiya.handle - {} \n {}",
             e,
             traceback.format_exc(),
         )
