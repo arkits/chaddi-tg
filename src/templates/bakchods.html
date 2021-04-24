@@ -3,27 +3,7 @@
 <div class="container-lg">
   <h1>Bakchods</h1>
 
-  <table class="table">
-    <thead>
-      <tr>
-        <th>id</th>
-        <th>username</th>
-        <th>pretty_name</th>
-        <th>rokda</th>
-        <th>lastseen</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for bakchod in bakchods %}
-      <tr>
-        <th>{{bakchod.tg_id}}</th>
-        <td>{{bakchod.username}}</td>
-        <td>{{bakchod.pretty_name}}</td>
-        <td>{{bakchod.rokda}}</td>
-        <td>{{bakchod.lastseen}}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  {% with bakchods=bakchods %} {% include "partials/bakchods_table.html" %} {%
+  endwith %}
 </div>
 {% endblock %}

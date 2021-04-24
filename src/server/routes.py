@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from src.db import Bakchod, Group, Message
+from src.db import Bakchod, Group, Message, group
+from loguru import logger
 
 router = APIRouter()
 
@@ -41,4 +42,47 @@ async def get_groups(request: Request):
 
     return templates.TemplateResponse(
         "messages.html", {"request": request, "messages": messages}
+    )
+
+
+@router.get("/details/group", response_class=HTMLResponse)
+async def get_details_group(request: Request, group_id: str = "unset"):
+
+    g = Group.get_by_id(group_id)
+
+    return templates.TemplateResponse(
+        "details_group.html", {"request": request, "group": g}
+    )
+
+
+@router.get("/details/members", response_class=HTMLResponse)
+async def get_details_group_members(request: Request, group_id: str = "unset"):
+
+    g = Group.get_by_id(group_id)
+
+    groupmembers = group.get_all_groupmembers_by_group_id(group_id)
+
+    return templates.TemplateResponse(
+        "details_group_members.html",
+        {"request": request, "group": g, "groupmembers": groupmembers},
+    )
+
+
+@router.get("/details/messages", response_class=HTMLResponse)
+async def get_details_group_messages(request: Request, group_id: str = "unset"):
+
+    g = Group.get_by_id(group_id)
+
+    message_count = Message.select().count()
+
+    messages = group.get_all_messages_by_group_id(group_id, 5)
+
+    return templates.TemplateResponse(
+        "details_group_messages.html",
+        {
+            "request": request,
+            "group": g,
+            "messages": messages,
+            "message_count": message_count,
+        },
     )

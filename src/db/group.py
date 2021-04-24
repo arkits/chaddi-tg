@@ -1,6 +1,6 @@
 from peewee import DoesNotExist
 from telegram import Update
-from . import Bakchod, Group, GroupMember
+from . import Bakchod, Group, GroupMember, Message
 from loguru import logger
 import datetime
 
@@ -58,3 +58,25 @@ def get_group_from_update(update: Update) -> Group:
             created=datetime.datetime.now(),
             updated=datetime.datetime.now(),
         )
+
+
+def get_all_groupmembers_by_group_id(group_id: str):
+
+    groupmembers = (
+        GroupMember.select().where(GroupMember.group_id == group_id).execute()
+    )
+
+    return groupmembers
+
+
+def get_all_messages_by_group_id(group_id: str, limit: int):
+
+    messages = (
+        Message.select()
+        .limit(limit)
+        .order_by(Message.time_sent.desc())
+        .where(Message.to_id == group_id)
+        .execute()
+    )
+
+    return messages
