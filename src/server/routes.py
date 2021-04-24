@@ -75,7 +75,7 @@ async def get_details_group_messages(request: Request, group_id: str = "unset"):
 
     message_count = Message.select().count()
 
-    messages = group.get_all_messages_by_group_id(group_id, 5)
+    messages = group.get_all_messages_by_group_id(group_id, 100)
 
     return templates.TemplateResponse(
         "details_group_messages.html",

@@ -1,9 +1,8 @@
 <table class="table">
   <thead>
     <tr>
-      <th>pk</th>
-      <th>time_sent</th>
       <th>message_id</th>
+      <th>time_sent</th>
       <th>from_bakchod</th>
       <th>to_id</th>
       <th>text</th>
@@ -12,9 +11,8 @@
   <tbody>
     {% for message in messages %}
     <tr>
-      <th>{{message.id}}</th>
-      <td>{{message.time_sent}}</td>
-      <th>{{message.message_id}}</th>
+      <td class="text-right">{{message.message_id}}</td>
+      <td >{{message.time_sent}}</td>
       <td>{{message.from_bakchod.username}}</td>
       <td>{{message.to_id}}</td>
       <td>{{message.text}}</td>
