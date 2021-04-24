@@ -14,3 +14,4 @@ from . import setter
 from . import chutiya
 from . import aao
 from . import daan
+from . import version
