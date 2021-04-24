@@ -2,7 +2,6 @@ from loguru import logger
 from peewee import Update
 from src.domain import dc, util
 from src.db import Bakchod, bakchod
-from telegram import ParseMode
 
 
 def handle(update: Update, context):
@@ -16,9 +15,7 @@ def handle(update: Update, context):
     else:
         b = bakchod.get_or_create_bakchod_from_tg_user(update.message.from_user)
 
-    update.message.reply_text(
-        text=generate_rokda_response(b), parse_mode=ParseMode.MARKDOWN
-    )
+    update.message.reply_text(text=generate_rokda_response(b))
 
 
 def generate_rokda_response(bakchod: Bakchod):
