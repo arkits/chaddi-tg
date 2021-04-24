@@ -3,6 +3,7 @@ from loguru import logger
 from telegram import Update
 from src.db import bakchod, group, message
 from . import util
+from . import metrics
 
 
 def log_command_usage(command_name: str, update: Update):
@@ -15,6 +16,8 @@ def log_command_usage(command_name: str, update: Update):
     )
 
     sync_persistence_data(update)
+
+    metrics.inc_command_usage_count(command_name, update)
 
     return
 
