@@ -1,7 +1,16 @@
 {% extends "base.html" %} {% block title %}Group Details{% endblock %} {% block
 head %} {{ super() }} {% endblock %} {% block content %}
 <div class="container-lg">
-  <h4>/ details / group</h4>
+  <br />
+  <nav>
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/chaddi">details</a></li>
+      <li class="breadcrumb-item active" aria-current="page">
+        <a>group</a>
+      </li>
+    </ul>
+  </nav>
+  <br />
   <h1>{{group.name}}</h1>
 
   <table class="table">
