@@ -12,7 +12,7 @@ if [ -d "chaddi-tg" ]; then
     git pull
     cd scripts
     echo ">>> triggering kill-chaddi.sh"
-    # ./kill-chaddi.sh
+    ./kill-chaddi.sh
     echo ">>> starting new chaddi"
     ./run-prod.sh
 else
