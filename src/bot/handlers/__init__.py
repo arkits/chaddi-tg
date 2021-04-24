@@ -15,3 +15,4 @@ from . import chutiya
 from . import aao
 from . import daan
 from . import version
+from . import quotes

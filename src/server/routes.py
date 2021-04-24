@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from src.db import Bakchod, Group, Message, group
+from src.db import Bakchod, Group, Message, Quote, group
 from loguru import logger
 
 router = APIRouter()
@@ -85,4 +85,15 @@ async def get_details_group_messages(request: Request, group_id: str = "unset"):
             "messages": messages,
             "message_count": message_count,
         },
+    )
+
+
+@router.get("/quotes", response_class=HTMLResponse)
+async def get_groups(request: Request):
+
+    # Get the last X messages
+    quotes = Quote.select().limit(100).order_by(Quote.created.desc())
+
+    return templates.TemplateResponse(
+        "quotes.html", {"request": request, "quotes": quotes}
     )

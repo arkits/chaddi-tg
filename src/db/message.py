@@ -2,7 +2,7 @@ from telegram import Update
 from . import Bakchod, Message
 from loguru import logger
 import datetime
-from src.domain import metrics
+from src.domain import metrics, util
 
 
 def log_message_from_update(update: Update):
@@ -21,7 +21,9 @@ def log_message_from_update(update: Update):
     )
 
     logger.debug(
-        "[db] saved Message - id={} from={}", m.message_id, from_bakchod.username
+        "[db] saved Message - id={} from={}",
+        m.message_id,
+        util.extract_pretty_name_from_bakchod(from_bakchod),
     )
 
     metrics.inc_message_count(update)

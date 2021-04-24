@@ -1,0 +1,22 @@
+<table class="table">
+  <thead>
+    <tr>
+      <th>quote_id</th>
+      <th>author_bakchod</th>
+      <th>quote_capture_bakchod</th>
+      <th>quoted_in_group</th>
+      <th>text</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for quote in quotes %}
+    <tr>
+      <td class="text-right">{{quote.quote_id}}</td>
+      <td>{{quote.author_bakchod.username}}</td>
+      <td>{{quote.quote_capture_bakchod.username}}</td>
+      <td>{{quote.quoted_in_group.name}}</td>
+      <td>{{quote.text}}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>

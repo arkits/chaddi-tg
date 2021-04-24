@@ -67,5 +67,16 @@ class GroupMember(BaseModel):
     group = ForeignKeyField(Group, backref="group_member")
 
 
+class Quote(BaseModel):
+    quote_id = CharField(unique=True, primary_key=True)
+    message_id = CharField()
+    created = DateTimeField()
+    author_bakchod = ForeignKeyField(Bakchod, backref="quotes")
+    quote_capture_bakchod = ForeignKeyField(Bakchod, backref="quotes_captured")
+    quoted_in_group = ForeignKeyField(Group, backref="quotes")
+    text = TextField(null=True)
+    update = BinaryJSONField()
+
+
 db.connect()
-db.create_tables([Bakchod, Message, Group, GroupMember])
+db.create_tables([Bakchod, Message, Group, GroupMember, Quote])

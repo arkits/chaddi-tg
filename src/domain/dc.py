@@ -24,11 +24,21 @@ def log_command_usage(command_name: str, update: Update):
 
 def sync_persistence_data(update: Update):
 
-    b = bakchod.get_bakchod_from_update(update)
+    from_user = update.message.from_user
+
+    b = bakchod.get_or_create_bakchod_from_tg_user(from_user)
+
+    # Update username
+    b.username = from_user.username
+
+    # Update prettyname
+    b.pretty_name = util.extract_pretty_name_from_tg_user(from_user)
 
     # Update lastseen of Bakchod
     b.lastseen = datetime.now()
+
     b.updated = datetime.now()
+
     b.save()
 
     message.log_message_from_update(update)

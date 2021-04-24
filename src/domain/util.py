@@ -1,4 +1,5 @@
 from loguru import logger
+from telegram import update
 from telegram.user import User
 import os
 import random
@@ -114,3 +115,20 @@ def paywall_user(bakchod_id: str, cost):
             return True
     else:
         return False
+
+
+def get_group_id_from_update(update: update):
+
+    group_id = None
+
+    try:
+        if (
+            update.message.chat.id is not None
+            and update.message.chat.type == "group"
+            or update.message.chat.type == "supergroup"
+        ):
+            group_id = update.message.chat.id
+    except Exception as e:
+        pass
+
+    return group_id

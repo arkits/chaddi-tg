@@ -32,6 +32,8 @@ def run_telegram_bot():
     dispatcher.add_handler(CommandHandler("aao", handlers.aao.handle))
     dispatcher.add_handler(CommandHandler("daan", handlers.daan.handle))
     dispatcher.add_handler(CommandHandler("version", handlers.version.handle))
+    dispatcher.add_handler(CommandHandler("quote", handlers.quotes.handle))
+    dispatcher.add_handler(CommandHandler("quotes", handlers.quotes.handle))
 
     dispatcher.add_handler(
         MessageHandler(Filters.status_update, handlers.defaults.status_update)

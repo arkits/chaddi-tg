@@ -1,8 +1,25 @@
 from peewee import DoesNotExist
 from telegram import Update
-from . import Bakchod, Group, GroupMember, Message
+from telegram.chat import Chat
+from src.db import Bakchod, Group, GroupMember, Message
 from loguru import logger
 import datetime
+
+
+def get_or_create_group_from_chat(chat: Chat) -> Group:
+
+    try:
+
+        return Group.get(Group.group_id == chat.id)
+
+    except DoesNotExist:
+
+        return Group.create(
+            group_id=chat.id,
+            name=chat.title,
+            created=datetime.datetime.now(),
+            updated=datetime.datetime.now(),
+        )
 
 
 def log_group_from_update(update: Update):
