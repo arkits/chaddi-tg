@@ -24,7 +24,11 @@ def log_command_usage(command_name: str, update: Update):
 
 def sync_persistence_data(update: Update):
 
-    from_user = update.message.from_user
+    if hasattr(update.message, "from_user"):
+        from_user = update.message.from_user
+    else:
+        logger.debug("[dc] update had no message.from_user... fast failing")
+        return
 
     b = bakchod.get_or_create_bakchod_from_tg_user(from_user)
 

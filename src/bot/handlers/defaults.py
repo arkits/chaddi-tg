@@ -12,8 +12,15 @@ from . import hi, bestie
 def all(update: Update, context: CallbackContext) -> None:
     dc.sync_persistence_data(update)
 
+    # If the update was related to a message send from a user...
+    if hasattr(update.message, "from_user"):
+        from_user = update.message.from_user
+    else:
+        logger.debug("[all] update had no message.from_user... fast failing")
+        return
+
     # Reward rokda to Bakchod
-    b = bakchod.get_bakchod_from_update(update)
+    b = bakchod.get_or_create_bakchod_from_tg_user(from_user)
     b.rokda = reward_rokda(b.rokda)
     b.updated = datetime.now()
     b.save()
