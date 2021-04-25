@@ -82,7 +82,7 @@
         "current": true,
         "max": true,
         "min": false,
-        "rightSide": true,
+        "rightSide": false,
         "show": true,
         "total": false,
         "values": true
@@ -188,7 +188,7 @@
         "orientation": "horizontal",
         "reduceOptions": {
           "calcs": [
-            "lastNotNull"
+            "mean"
           ],
           "fields": "",
           "values": false
@@ -199,7 +199,8 @@
       "pluginVersion": "7.5.4",
       "targets": [
         {
-          "expr": "http_request_duration_seconds_sum",
+          "exemplar": true,
+          "expr": "http_request_duration_seconds_sum{path!=\"/chaddi/metrics\"}",
           "interval": "",
           "legendFormat": "{{method}} {{path}}",
           "refId": "A"
@@ -559,7 +560,8 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(http_requests_total[1m])) by (path, method)",
+          "exemplar": true,
+          "expr": "sum(rate(http_requests_total{path!=\"/chaddi/metrics\"}[1m])) by (path, method)",
           "interval": "",
           "legendFormat": "{{method}} - {{path}}",
           "refId": "A"
@@ -717,12 +719,12 @@
     "list": []
   },
   "time": {
-    "from": "now-6h",
+    "from": "now-1h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "chaddi-tg",
   "uid": "kY7_MW_Gz",
-  "version": 10
+  "version": 14
 }
