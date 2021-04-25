@@ -1,10 +1,10 @@
 import threading
 from loguru import logger
 
-# from domain import logger as domain_logger
+# from src.domain import logger as domain_logger
 
-from server import run_server
-from bot import run_telegram_bot
+from src.server import run_server
+from src.bot import run_telegram_bot
 
 
 def main():

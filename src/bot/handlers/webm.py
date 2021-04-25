@@ -12,13 +12,13 @@ def handle(update: Update, context):
 
     try:
 
-        dc.log_command_usage("webm", update)
-
         document = update.message.document
 
         # return if the document isn't a webm
         if not document.file_name.endswith(".webm"):
             return
+
+        dc.log_command_usage("webm", update)
 
         try:
 
