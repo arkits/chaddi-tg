@@ -47,7 +47,7 @@ def parse_request(
             response = "Please include rokda to set - `/set rokda 1337`"
             return response
 
-        if math.isnan(rokda_to_set):
+        if not math.isfinite(rokda_to_set):
             response = set_bakchod_rokda(0, og_bakchod)
             return "Yeh dekho chutiyapa chal ra hai. " + response
 

@@ -89,7 +89,7 @@ def handle(update: Update, context):
             update.message.reply_text("Kitna ₹okda be???")
             return
 
-        if math.isnan(daan):
+        if not math.isfinite(daan):
             update.message.reply_text(
                 "Yeh dekho chutiyapa chal ra hai. Setting {}'s rokda to 0!".format(
                     util.extract_pretty_name_from_bakchod(sender)
