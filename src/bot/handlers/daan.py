@@ -1,5 +1,5 @@
-import random
-from src.db import Bakchod, bakchod
+import math
+from src.db import bakchod
 from loguru import logger
 from telegram import Update
 from src.domain import dc, util, config
@@ -19,7 +19,7 @@ def handle(update: Update, context):
 
     try:
 
-        dc.log_command_usage("chutiya", update)
+        dc.log_command_usage("daan", update)
 
         # Extract query...
         query = update.message.text
@@ -87,6 +87,16 @@ def handle(update: Update, context):
             daan = abs(daan)
         except Exception as e:
             update.message.reply_text("Kitna ₹okda be???")
+            return
+
+        if math.isnan(daan):
+            update.message.reply_text(
+                "Yeh dekho chutiyapa chal ra hai. Setting {}'s rokda to 0!".format(
+                    util.extract_pretty_name_from_bakchod(sender)
+                )
+            )
+            sender.rokda = 0
+            sender.save()
             return
 
         logger.info(

@@ -1,3 +1,4 @@
+import math
 from typing import List
 from loguru import logger
 from telegram.user import User
@@ -23,6 +24,8 @@ def handle(update: Update, context):
 
     response = parse_request(message, for_bakchod, og_bakchod, update)
 
+    logger.info("[set] returning response='{}'", response)
+
     update.message.reply_text(text=response, parse_mode=ParseMode.MARKDOWN)
 
 
@@ -44,18 +47,19 @@ def parse_request(
             response = "Please include rokda to set - `/set rokda 1337`"
             return response
 
+        if math.isnan(rokda_to_set):
+            response = set_bakchod_rokda(0, og_bakchod)
+            return "Yeh dekho chutiyapa chal ra hai. " + response
+
         if util.is_admin_tg_user(og_bakchod):
-            set_reponse = set_bakchod_rokda(rokda_to_set, for_bakchod)
-            response = set_reponse
+            set_response = set_bakchod_rokda(rokda_to_set, for_bakchod)
+            return set_response
         else:
-            response = "❌ Not allowed to set rokda."
+            return "❌ Not allowed to set rokda."
 
     else:
 
-        response = "❌ Can't set that."
-
-    logger.info("[set] returning response='{}'", response)
-    return response
+        return "❌ Can't set that."
 
 
 def set_bakchod_rokda(rokda_to_set: float, bakchod_user: User):
