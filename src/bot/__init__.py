@@ -28,7 +28,7 @@ def run_telegram_bot():
     dispatcher.add_handler(CommandHandler("mom", handlers.mom.handle))
     dispatcher.add_handler(CommandHandler("mom2", handlers.mom2.handle))
     dispatcher.add_handler(CommandHandler("set", handlers.setter.handle))
-    dispatcher.add_handler(CommandHandler("chutiya", handlers.setter.handle))
+    dispatcher.add_handler(CommandHandler("chutiya", handlers.chutiya.handle))
     dispatcher.add_handler(CommandHandler("aao", handlers.aao.handle))
     dispatcher.add_handler(CommandHandler("daan", handlers.daan.handle))
     dispatcher.add_handler(CommandHandler("version", handlers.version.handle))
