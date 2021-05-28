@@ -7,6 +7,8 @@ echo ">>> hostscript running as $(whoami)@$(hostname)"
 echo ">>> deploying chaddi-tg to $(pwd)"
 echo ""
 
+cd ~
+
 if [ -d "chaddi-tg" ]; then
 
     echo ">>> chaddi-tg was present"
