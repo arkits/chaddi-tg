@@ -18,7 +18,7 @@ Chaddi Bot has a variety of features to make your Telegram experience a whole lo
 
 ## Getting Started
 
-### Requirments
+### Requirements
 
 - Python 3.9
 - PostgreSQL
