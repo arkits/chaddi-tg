@@ -1,5 +1,6 @@
 from loguru import logger
 from peewee import Update
+from telegram import ParseMode
 from src.domain import dc, util
 import datetime
 import subprocess
@@ -41,16 +42,19 @@ def handle(update: Update, context):
                 + str(document.file_id)
                 + ".webm"
             )
-            ffmpeg_conversion = subprocess.run(
-                [
-                    "ffmpeg",
-                    "-i",
-                    WEBM_RESOURCES_DIR + str(document.file_id) + ".webm",
-                    WEBM_RESOURCES_DIR + str(document.file_id) + ".mp4",
-                ]
+
+            ffmpeg_conversion = subprocess.call(
+                "ffmpeg -i "
+                + WEBM_RESOURCES_DIR
+                + str(document.file_id)
+                + '.webm -vcodec libx264 -crf 28 -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" '
+                + WEBM_RESOURCES_DIR
+                + str(document.file_id)
+                + ".mp4",
+                shell=True,
             )
 
-            if ffmpeg_conversion.returncode != 0:
+            if ffmpeg_conversion != 0:
                 logger.error(
                     "[webm] ffmpeg conversion had a non-zero return code! webm={} ffmpeg_conversion={}",
                     str(document.file_id),
@@ -76,7 +80,9 @@ def handle(update: Update, context):
                 update.message.from_user
             )
 
-            caption = random_webm_caption(original_sender, pretty_diff)
+            caption = random_webm_caption(
+                original_sender, pretty_diff, document.file_name
+            )
 
             logger.info(
                 "[webm] sending converted video webm={} caption={}",
@@ -108,16 +114,12 @@ def handle(update: Update, context):
         )
 
 
-def random_webm_caption(original_sender, pretty_diff):
+def random_webm_caption(original_sender, pretty_diff, file_name):
 
     captions = [
-        "{} converted your webm to mp4 in {}".format(original_sender, pretty_diff),
-        "{} bhaak bsdk webm post karte hai bc... {} lage convert karne mein".format(
-            original_sender, pretty_diff
-        ),
-        "haaaaat {}... kal se webm cancel! {} lage convert karne mein".format(
-            original_sender, pretty_diff
-        ),
+        "{} uploaded \"{}\" | converted in {}".format(
+            original_sender, file_name, pretty_diff
+        )
     ]
 
     random_caption = util.choose_random_element_from_list(captions)
