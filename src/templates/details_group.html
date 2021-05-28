@@ -1,0 +1,55 @@
+{% extends "base.html" %} {% block title %}Group Details{% endblock %} {% block
+head %} {{ super() }} {% endblock %} {% block content %}
+<div class="container-lg">
+  <br />
+  <nav>
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/chaddi">details</a></li>
+      <li class="breadcrumb-item active" aria-current="page">
+        <a>group</a>
+      </li>
+    </ul>
+  </nav>
+  <br />
+  <h1>{{group.name}}</h1>
+
+  <table class="table">
+    <tbody>
+      <tr>
+        <th class="text-right">ID:</th>
+        <td class="text-left">{{group.group_id}}</td>
+      </tr>
+      <tr>
+        <th class="text-right">Created:</th>
+        <td class="text-left">{{group.created}}</td>
+      </tr>
+      <tr>
+        <th class="text-right">Updated:</th>
+        <td class="text-left">{{group.updated}}</td>
+      </tr>
+      <tr>
+        <th class="text-right">Members:</th>
+        <td class="text-left">
+          <a
+            href="/chaddi/details/members?group_id={{group.group_id}}"
+            class="btn btn-primary"
+            role="button"
+            >View Members</a
+          >
+        </td>
+      </tr>
+      <tr>
+        <th class="text-right">Messages:</th>
+        <td class="text-left">
+          <a
+            href="/chaddi/details/messages?group_id={{group.group_id}}"
+            class="btn btn-primary"
+            role="button"
+            >View Messages</a
+          >
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+{% endblock %}

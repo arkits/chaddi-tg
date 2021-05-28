@@ -1,25 +1,14 @@
-FROM bitnami/python:3.7-prod
+FROM python:3.9-alpine
 
-ENV PYTHONUNBUFFERED 1
-
-RUN useradd -s /bin/bash chaddi
-RUN install_packages ffmpeg gcc libc-dev jq
+RUN apk add gcc musl-dev libffi-dev openssl-dev cargo
 
 RUN pip install --upgrade pip
 
-COPY requirements.txt .
+WORKDIR /usr/src/chaddi-tg
+
+COPY requirements.txt requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
-RUN apt purge -y --auto-remove gcc libc-dev && apt auto-remove -y
 
-COPY docker/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN ln -s /usr/local/bin/docker-entrypoint.sh /
-RUN mkdir /logs
+COPY src src
 
-COPY src /bot
-WORKDIR /bot
-
-RUN chown -R chaddi:chaddi /bot /logs
-USER chaddi:chaddi
-
-ENTRYPOINT ["docker-entrypoint.sh"]
-CMD ["python", "/bot/chaddi_bot.py"]
+CMD [ "python", "src/chaddi.py" ]

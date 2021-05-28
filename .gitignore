@@ -1,6 +1,5 @@
 config.json
 prod_config.json
-logs
 src/resources/db/*
 src/resources/webm_conversions/*
 src/resources/quote_pics/*
@@ -129,3 +128,7 @@ src/resources/converted.mp4
 src/resources/to_convert.webm
 .DS_Store
 src/resources/baniyan_dev.json
+dev.ini
+prod.ini
+docker-data
+scripts/deploy-constants.sh

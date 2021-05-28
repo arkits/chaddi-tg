@@ -1,0 +1,61 @@
+{% extends "base.html" %} {% block title %}Group Details{% endblock %} {% block
+head %} {{ super() }} {% endblock %} {% block content %}
+<div class="container-lg">
+  <br />
+  <nav>
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/chaddi">details</a></li>
+      <li class="breadcrumb-item">
+        <a href="/chaddi/details/group?group_id={{group.group_id}}">group</a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">
+        <a>messages</a>
+      </li>
+    </ul>
+  </nav>
+  <br />
+  <h1>{{group.name}}</h1>
+
+  <table class="table">
+    <tbody>
+      <tr>
+        <th class="text-right">ID:</th>
+        <td class="text-left">{{group.group_id}}</td>
+      </tr>
+      <tr>
+        <th class="text-right">Number of Members:</th>
+        <td class="text-left">{{groupmembers|length}}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <br />
+  <hr />
+  <br />
+
+  <h4>Group Members</h4>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th>id</th>
+        <th>username</th>
+        <th>pretty_name</th>
+        <th>rokda</th>
+        <th>lastseen</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for groupmember in groupmembers %}
+      <tr>
+        <th>{{groupmember.bakchod.tg_id}}</th>
+        <td>{{groupmember.bakchod.username}}</td>
+        <td>{{groupmember.bakchod.pretty_name}}</td>
+        <td>{{groupmember.bakchod.rokda}}</td>
+        <td>{{groupmember.bakchod.lastseen}}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

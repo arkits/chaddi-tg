@@ -1,0 +1,22 @@
+<table class="table">
+  <thead>
+    <tr>
+      <th>message_id</th>
+      <th>time_sent</th>
+      <th>from_bakchod</th>
+      <th>to_id</th>
+      <th>text</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for message in messages %}
+    <tr>
+      <td class="text-right">{{message.message_id}}</td>
+      <td >{{message.time_sent}}</td>
+      <td>{{message.from_bakchod.username}}</td>
+      <td>{{message.to_id}}</td>
+      <td>{{message.text}}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>

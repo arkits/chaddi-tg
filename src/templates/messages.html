@@ -1,0 +1,9 @@
+{% extends "base.html" %} {% block title %}Messages{% endblock %} {% block head
+%} {{ super() }} {% endblock %} {% block content %}
+<div class="container-lg">
+  <h1>Messages</h1>
+
+  {% with messages=messages %} {% include "partials/messages_table.html" %} {%
+  endwith %}
+</div>
+{% endblock %}

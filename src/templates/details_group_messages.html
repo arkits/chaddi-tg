@@ -1,0 +1,42 @@
+{% extends "base.html" %} {% block title %}Group Details{% endblock %} {% block
+head %} {{ super() }} {% endblock %} {% block content %}
+<div class="container-lg">
+  <br />
+  <nav>
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/chaddi">details</a></li>
+      <li class="breadcrumb-item">
+        <a href="/chaddi/details/group?group_id={{group.group_id}}">group</a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">
+        <a>messages</a>
+      </li>
+    </ul>
+  </nav>
+  <br />
+
+  <h1>{{group.name}}</h1>
+
+  <table class="table">
+    <tbody>
+      <tr>
+        <th class="text-right">ID:</th>
+        <td class="text-left">{{group.group_id}}</td>
+      </tr>
+      <tr>
+        <th class="text-right">Number of Messages:</th>
+        <td class="text-left">{{message_count}}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <br />
+  <hr />
+  <br />
+
+  <h4>Group Messages</h4>
+
+  {% with messages=messages %} {% include "partials/messages_table.html" %} {%
+  endwith %}
+</div>
+{% endblock %}

@@ -1,0 +1,52 @@
+from telegram import Update
+from loguru import logger
+import datetime
+from src.db import Quote, bakchod, group
+from src.domain import metrics, util
+import shortuuid
+
+
+def add_quote_from_update(update: Update) -> Quote:
+
+    quoted_message = update.message.reply_to_message
+
+    if update.message.reply_to_message.forward_from:
+
+        # if the message is a forwarded message, then use the original author
+        author_bakchod = bakchod.get_or_create_bakchod_from_tg_user(
+            update.message.reply_to_message.forward_from
+        )
+    else:
+
+        # otherwise, use the author of the message
+        author_bakchod = bakchod.get_or_create_bakchod_from_tg_user(
+            quoted_message.from_user
+        )
+
+    quote_capture_bakchod = bakchod.get_or_create_bakchod_from_tg_user(
+        update.message.from_user
+    )
+
+    quoted_in_group = group.get_or_create_group_from_chat(quoted_message.chat)
+
+    q = Quote.create(
+        quote_id=shortuuid.uuid(),
+        message_id=quoted_message.message_id,
+        created=datetime.datetime.now(),
+        author_bakchod=author_bakchod,
+        quote_capture_bakchod=quote_capture_bakchod,
+        quoted_in_group=quoted_in_group,
+        text=quoted_message.text,
+        update=update.to_dict(),
+    )
+
+    logger.debug(
+        "[db] saved Quote - id={} author_bakchod={} quote_capture_bakchod={}",
+        q.message_id,
+        util.extract_pretty_name_from_bakchod(author_bakchod),
+        util.extract_pretty_name_from_bakchod(quote_capture_bakchod),
+    )
+
+    metrics.inc_message_count(update)
+
+    return q

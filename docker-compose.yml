@@ -1,15 +1,36 @@
-version: '3'
+version: "3.7"
 
 services:
   chaddi-tg:
+    container_name: chaddi-tg
+    image: arkits/chaddi-tg
     build:
+      dockerfile: ./docker/Dockerfile
       context: .
-      dockerfile: docker/Dockerfile
-    restart: on-failure
+    ports:
+      - "5100:5100"
+
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    command: --config.file=/etc/prometheus/prometheus.yml
+    expose:
+      - 9090
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./docker-data/prometheus-data:/prometheus
+
+  grafana:
+    image: grafana/grafana:7.0.3-ubuntu
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      # - ./grafana.ini:/etc/grafana/grafana.ini
+      - ./docker-data/grafana-data:/var/lib/grafana
     environment:
-      - BOT_USERNAME=${BOT_USERNAME}
-      - TG_TOKEN=${TG_TOKEN}
-      - GM_CHANNELS=${GM_CHANNELS}
-      - HI_RESPONSE=${HI_RESPONSE}
-      - ENABLE_WEBHOOK=${ENABLE_WEBHOOK}
-      - WEBHOOK_URL=${WEBHOOK_URL}
+      - GF_AUTH_BASIC_ENABLED=false
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin

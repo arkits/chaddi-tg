@@ -1,0 +1,20 @@
+name: Deploy chaddi-tg
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Deploy chaddi-tg
+        uses: JimCronqvist/action-ssh@0.1.1
+        with:
+          hosts: ${{ secrets.SSH_TARGET }}
+          privateKey: ${{ secrets.SSH_PRIVATE_KEY }}
+          debug: false
+          command: |
+            /home/arkits/chaddi-tg/scripts/deploy-hostscript.sh
