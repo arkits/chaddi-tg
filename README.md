@@ -36,13 +36,29 @@ $ docker-compose up chaddi-tg
 **With Local Python**
 
 ```bash
+# Create a database for persistence
+$ psql -c "CREATE DATABASE chaddi_tg"
+
+# Setup Python virtualenv
 $ python3 -m venv .venv
 $ source .venv/bin/activate
+
+# Install the Python libs
 $ pip install -r requirments.txt
+
+# Run Chaddi!
 $ ./run.sh
 ```
 
 ### Troubleshooting
+
+**Setup your Telegram Bot**
+
+- Create your bot with [@BotFather](https://telegram.me/botfather).
+  - Refer to Telegram's [documentation](https://core.telegram.org/bots#3-how-do-i-create-a-bot) for more help on creating bots.
+  - Important settings in @BotFather -
+    - Enable `Allow Groups`.
+    - Disable `Privacy Mode`.
 
 **Cryptography**
 
