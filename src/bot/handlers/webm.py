@@ -1,6 +1,5 @@
 from loguru import logger
 from peewee import Update
-from telegram import ParseMode
 from src.domain import dc, util
 import datetime
 import subprocess
@@ -81,7 +80,7 @@ def handle(update: Update, context):
             )
 
             caption = random_webm_caption(
-                original_sender, pretty_diff, document.file_name
+                original_sender, pretty_diff, document.file_name, update.message.caption
             )
 
             logger.info(
@@ -114,14 +113,14 @@ def handle(update: Update, context):
         )
 
 
-def random_webm_caption(original_sender, pretty_diff, file_name):
-
-    captions = [
-        "{} uploaded \"{}\" | converted in {}".format(
-            original_sender, file_name, pretty_diff
-        )
+def random_webm_caption(original_sender, pretty_diff, file_name, caption_text):
+    strings = [
+        "{} uploaded {}".format(original_sender, file_name)
     ]
 
-    random_caption = util.choose_random_element_from_list(captions)
+    if caption_text is not None:
+        strings.append("\n------------------------------------\n{}\n------------------------------------".format(caption_text))
 
-    return random_caption
+    strings.append("\n(converted in {})".format(pretty_diff))
+
+    return " ".join(strings)
