@@ -7,7 +7,8 @@ RUN apt-get update && apt-get -y install \
     libssl-dev \
     cargo \
     g++ \
-    libpq-dev
+    libpq-dev \
+    git
 
 RUN pip install --upgrade pip
 
@@ -19,7 +20,10 @@ RUN pip install -r requirements.txt
 
 ENV PYTHONPATH "${PYTHONPATH}:/usr/src/chaddi-tg"
 
+ENV CHADDI_BOT_PROFILE "dockerized"
+
 COPY src src
+COPY .git .git
 
 WORKDIR /usr/src/chaddi-tg/src
 

@@ -23,7 +23,7 @@ services:
       - ./docker-data/prometheus-data:/prometheus
 
   grafana:
-    image: grafana/grafana:7.0.3-ubuntu
+    image: grafana/grafana
     container_name: grafana
     ports:
       - "3000:3000"
@@ -34,3 +34,15 @@ services:
       - GF_AUTH_BASIC_ENABLED=false
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+
+  postgres:
+    image: postgres
+    container_name: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./docker-data/postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/initdb.d:/docker-entrypoint-initdb.d
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password

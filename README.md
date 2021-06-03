@@ -29,8 +29,17 @@ Chaddi Bot has a variety of features to make your Telegram experience a whole lo
 **With Docker**
 
 ```bash
+# Start the postgres container
+$ docker-compose up -d postgres
+
+# Build the chaddi-tg Docker image
 $ docker-compose build chaddi-tg
-$ docker-compose up chaddi-tg
+
+# Run the chaddi-tg Docker image
+$ docker-compose up chaddi-tg --force-recreate
+
+# Optional: run the metrics stack
+$ docker-compose up -d grafana prometheus
 ```
 
 **With Local Python**
