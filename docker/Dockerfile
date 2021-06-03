@@ -1,14 +1,26 @@
-FROM python:3.9-alpine
+FROM python:3.9-slim
 
-RUN apk add gcc musl-dev libffi-dev openssl-dev cargo
+RUN apt-get update && apt-get -y install \
+    gcc \
+    musl-dev \
+    libffi-dev \
+    libssl-dev \
+    cargo \
+    g++ \
+    libpq-dev
 
 RUN pip install --upgrade pip
 
 WORKDIR /usr/src/chaddi-tg
 
+COPY freeze.txt freeze.txt
 COPY requirements.txt requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install -r requirements.txt
+
+ENV PYTHONPATH "${PYTHONPATH}:/usr/src/chaddi-tg"
 
 COPY src src
 
-CMD [ "python", "src/chaddi.py" ]
+WORKDIR /usr/src/chaddi-tg/src
+
+CMD [ "python", "chaddi.py" ]
