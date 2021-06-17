@@ -17,15 +17,13 @@ block head %} {{ super() }} {% endblock %} {% block content %}
   <br />
 
   {% if response_message %}
-  <div class="alert alert-success" role="alert">
+  <div class="alert {{response_message.alert_type}}" role="alert">
     <h4 class="alert-heading">{{response_message.title}}</h4>
     {{response_message.message}}
   </div>
   {% endif %}
 
   <h1>{{bakchod.pretty_name}}</h1>
-
-  {{info_message}}
 
   <table class="table">
     <tbody>

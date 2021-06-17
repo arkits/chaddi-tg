@@ -4,14 +4,25 @@ head %} {{ super() }} {% endblock %} {% block content %}
   <br />
   <nav>
     <ul class="breadcrumb">
-      <li class="breadcrumb-item"><a href="/chaddi">details</a></li>
-      <li class="breadcrumb-item active" aria-current="page">
-        <a>group</a>
+      <li class="breadcrumb-item active">
+        <a>groups-details</a>
+      </li>
+      <li class="breadcrumb-item" aria-current="page">
+        <a href="/chaddi/details/group?group_id={{group.group_id}}"
+          >{{group.group_id}}</a
+        >
       </li>
     </ul>
   </nav>
   <br />
   <h1>{{group.name}}</h1>
+
+  {% if response_message %}
+  <div class="alert {{response_message.alert_type}}" role="alert">
+    <h4 class="alert-heading">{{response_message.title}}</h4>
+    {{response_message.message}}
+  </div>
+  {% endif %}
 
   <table class="table">
     <tbody>
@@ -51,5 +62,18 @@ head %} {{ super() }} {% endblock %} {% block content %}
       </tr>
     </tbody>
   </table>
+
+  <h3>Message</h3>
+
+  <form method="POST" action="/chaddi/api/bot/send_message">
+    <input type="hidden" name="group_id" value="{{group.group_id}}" />
+    <input class="form-control" type="text" name="message" value="" /><br />
+    <input
+      class="btn btn-primary"
+      type="submit"
+      value="Send Message to Group"
+    />
+    <br />
+  </form>
 </div>
 {% endblock %}

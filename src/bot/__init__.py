@@ -11,8 +11,11 @@ from src.domain import config
 
 app_config = config.get_config()
 
+bot_instance = None
+
 
 def run_telegram_bot():
+
     # Create the Updater and pass it your bot's token.
     updater = Updater(app_config.get("TELEGRAM", "TG_BOT_TOKEN"))
 
@@ -50,7 +53,16 @@ def run_telegram_bot():
     logger.info("[tg] Starting Telegram Bot with Polling")
     updater.start_polling()
 
+    global bot_instance
+    bot_instance = updater.bot
+    logger.debug("Setting global bot_instance - bot_instance={}", bot_instance)
+
     # Run the bot until you press Ctrl-C or the process receives SIGINT,
     # SIGTERM or SIGABRT. This should be used most of the time, since
     # start_polling() is non-blocking and will stop the bot gracefully.
     updater.idle()
+
+
+def get_bot_instance():
+    global bot_instance
+    return bot_instance

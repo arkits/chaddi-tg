@@ -4,6 +4,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from src.db import Bakchod, Group, Message, Quote, group
 from loguru import logger
+from src import bot
 
 router = APIRouter()
 
@@ -47,7 +48,7 @@ async def get_groups(request: Request):
 
 
 @router.get("/details/bakchod", response_class=HTMLResponse)
-async def get_details_group(request: Request, tg_id: str = "unset"):
+async def get_details_bakchod(request: Request, tg_id: str = "unset"):
 
     b = Bakchod.get_by_id(tg_id)
 
@@ -123,6 +124,8 @@ async def post_update_bakchod_metadata(
         "alert_type": "alert-success",  # alert-success, alert-danger
     }
 
+    b = None
+
     try:
 
         if tg_id == "unset":
@@ -156,7 +159,7 @@ async def post_update_bakchod_metadata(
             "details_bakchod.html",
             {
                 "request": request,
-                "bakchod": None,
+                "bakchod": b,
                 "response_message": response_message,
             },
         )
@@ -164,4 +167,58 @@ async def post_update_bakchod_metadata(
     return templates.TemplateResponse(
         "details_bakchod.html",
         {"request": request, "bakchod": b, "response_message": response_message},
+    )
+
+
+@router.post("/api/bot/send_message", response_class=HTMLResponse)
+async def post_api_bot_send_message(
+    request: Request, message: str = Form("unset"), group_id: str = Form("unset")
+):
+
+    logger.info("post_api_bot_send_message group_id={} message={}", group_id, message)
+
+    response_message = {
+        "title": "Success",
+        "message": "Sent message successfully",
+        "alert_type": "alert-success",  # alert-success, alert-danger
+    }
+
+    g = None
+
+    try:
+
+        if group_id == "unset":
+            raise Exception("group_id was unset")
+
+        if message == "unset":
+            raise Exception("message was unset")
+
+        bot_instance = bot.get_bot_instance()
+        if bot_instance is None:
+            raise Exception("Failed to get_bot_instance")
+
+        bot_instance.send_message(chat_id=group_id, text=message)
+
+        g = Group.get_by_id(group_id)
+
+    except Exception as e:
+
+        logger.error("Caught Exception - e={}", e)
+
+        response_message["title"] = "Backend Error"
+        response_message["message"] = e
+        response_message["alert_type"] = "alert-danger"
+
+        return templates.TemplateResponse(
+            "details_group.html",
+            {
+                "request": request,
+                "group": g,
+                "response_message": response_message,
+            },
+        )
+
+    return templates.TemplateResponse(
+        "details_group.html",
+        {"request": request, "group": g, "response_message": response_message},
     )
