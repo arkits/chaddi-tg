@@ -1,11 +1,11 @@
 from datetime import datetime
-from re import U
+import json
 from loguru import logger
 from peewee import DoesNotExist
 from telegram import Update
 from telegram.ext import CallbackContext
 from src.domain import dc
-from src.db import GroupMember, bakchod, group
+from src.db import Bakchod, EMPTY_JSON, GroupMember, bakchod, group
 from . import hi, bestie
 
 
@@ -25,7 +25,43 @@ def all(update: Update, context: CallbackContext) -> None:
     b.updated = datetime.now()
     b.save()
 
+    handle_bakchod_metadata_effects(update, context, b)
+
     handle_message_matching(update, context)
+
+
+def handle_bakchod_metadata_effects(
+    update: Update, context: CallbackContext, bakchod: Bakchod
+):
+
+    if bakchod.metadata is None:
+        return
+
+    if bakchod.metadata == EMPTY_JSON:
+        return
+
+    try:
+
+        metadata = json.loads(bakchod.metadata)
+
+        for key in metadata:
+
+            if key == "route-messages":
+
+                rm = metadata[key]
+
+                for route_message_props in rm:
+
+                    context.bot.forward_message(
+                        chat_id=route_message_props["to_group"],
+                        from_chat_id=update.message.chat_id,
+                        message_id=update.message.message_id,
+                    )
+
+    except Exception as e:
+        logger.error("Caught Exception in handle_bakchod_metadata_effects - e={}", e)
+
+    return
 
 
 def handle_message_matching(update: Update, context: CallbackContext):
