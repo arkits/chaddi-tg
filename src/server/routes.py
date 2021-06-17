@@ -18,7 +18,7 @@ async def index(request: Request):
 @router.get("/bakchods", response_class=HTMLResponse)
 async def get_bakchods(request: Request):
 
-    bakchods = Bakchod.select()
+    bakchods = Bakchod.select().limit(100).order_by(Bakchod.lastseen.desc())
 
     return templates.TemplateResponse(
         "bakchods.html", {"request": request, "bakchods": bakchods}
@@ -28,7 +28,7 @@ async def get_bakchods(request: Request):
 @router.get("/groups", response_class=HTMLResponse)
 async def get_groups(request: Request):
 
-    groups = Group.select()
+    groups = Group.select().order_by(Group.updated.desc())
 
     return templates.TemplateResponse(
         "groups.html", {"request": request, "groups": groups}
