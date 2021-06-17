@@ -20,7 +20,7 @@ def log_message_from_update(update: Update):
         update=update.to_dict(),
     )
 
-    logger.debug(
+    logger.trace(
         "[db] saved Message - id={} from={}",
         m.message_id,
         util.extract_pretty_name_from_bakchod(from_bakchod),
