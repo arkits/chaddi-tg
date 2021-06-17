@@ -1,17 +1,31 @@
-{% extends "base.html" %} {% block title %}Group Details{% endblock %} {% block
-head %} {{ super() }} {% endblock %} {% block content %}
+{% extends "base.html" %} {% block title %}Bakchod Details{% endblock %} {%
+block head %} {{ super() }} {% endblock %} {% block content %}
 <div class="container-lg">
   <br />
   <nav>
     <ul class="breadcrumb">
-      <li class="breadcrumb-item"><a href="/chaddi">details</a></li>
-      <li class="breadcrumb-item active" aria-current="page">
-        <a>bakchod</a>
+      <li class="breadcrumb-item active">
+        <a>bakchod-details</a>
+      </li>
+      <li class="breadcrumb-item" aria-current="page">
+        <a href="/chaddi/details/bakchod?tg_id={{bakchod.tg_id}}"
+          >{{bakchod.tg_id}}</a
+        >
       </li>
     </ul>
   </nav>
   <br />
+
+  {% if response_message %}
+  <div class="alert alert-success" role="alert">
+    <h4 class="alert-heading">{{response_message.title}}</h4>
+    {{response_message.message}}
+  </div>
+  {% endif %}
+
   <h1>{{bakchod.pretty_name}}</h1>
+
+  {{info_message}}
 
   <table class="table">
     <tbody>
@@ -35,7 +49,26 @@ head %} {{ super() }} {% endblock %} {% block content %}
         <th class="text-right">Rokda:</th>
         <td class="text-left">{{bakchod.rokda}}</td>
       </tr>
+      <tr>
+        <th class="text-right">Metadata:</th>
+        <td class="text-left">{{bakchod.metadata}}</td>
+      </tr>
     </tbody>
   </table>
+
+  <h3>Metadata</h3>
+
+  <form method="POST" action="/chaddi/api/bakchod/metadata">
+    <input type="hidden" name="tg_id" value="{{bakchod.tg_id}}" />
+    <input
+      class="form-control"
+      type="text"
+      id="metadata"
+      name="metadata"
+      value="{{bakchod.metadata}}"
+    /><br />
+    <input class="btn btn-primary" type="submit" value="Update Metadata" />
+    <br />
+  </form>
 </div>
 {% endblock %}
