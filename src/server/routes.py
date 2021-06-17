@@ -44,6 +44,15 @@ async def get_groups(request: Request):
         "messages.html", {"request": request, "messages": messages}
     )
 
+@router.get("/details/bakchod", response_class=HTMLResponse)
+async def get_details_group(request: Request, tg_id: str = "unset"):
+
+    b = Bakchod.get_by_id(tg_id)
+
+    return templates.TemplateResponse(
+        "details_bakchod.html", {"request": request, "bakchod": b}
+    )
+
 
 @router.get("/details/group", response_class=HTMLResponse)
 async def get_details_group(request: Request, group_id: str = "unset"):

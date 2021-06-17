@@ -1,0 +1,41 @@
+{% extends "base.html" %} {% block title %}Group Details{% endblock %} {% block
+head %} {{ super() }} {% endblock %} {% block content %}
+<div class="container-lg">
+  <br />
+  <nav>
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/chaddi">details</a></li>
+      <li class="breadcrumb-item active" aria-current="page">
+        <a>bakchod</a>
+      </li>
+    </ul>
+  </nav>
+  <br />
+  <h1>{{bakchod.pretty_name}}</h1>
+
+  <table class="table">
+    <tbody>
+      <tr>
+        <th class="text-right">TG ID:</th>
+        <td class="text-left">{{bakchod.tg_id}}</td>
+      </tr>
+      <tr>
+        <th class="text-right">Username:</th>
+        <td class="text-left">{{bakchod.username}}</td>
+      </tr>
+      <tr>
+        <th class="text-right">Created:</th>
+        <td class="text-left">{{bakchod.created}}</td>
+      </tr>
+      <tr>
+        <th class="text-right">Updated:</th>
+        <td class="text-left">{{bakchod.updated}}</td>
+      </tr>
+      <tr>
+        <th class="text-right">Rokda:</th>
+        <td class="text-left">{{bakchod.rokda}}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+{% endblock %}

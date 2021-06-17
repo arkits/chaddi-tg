@@ -6,6 +6,7 @@
       <th>pretty_name</th>
       <th>rokda</th>
       <th>lastseen</th>
+      <td>details</td>
     </tr>
   </thead>
   <tbody>
@@ -16,6 +17,14 @@
       <td>{{bakchod.pretty_name}}</td>
       <td>{{bakchod.rokda}}</td>
       <td>{{bakchod.lastseen}}</td>
+      <td>
+        <a
+          href="/chaddi/details/bakchod?tg_id={{bakchod.tg_id}}"
+          class="btn btn-primary"
+          role="button"
+          >View Details</a
+        >
+      </td>
     </tr>
     {% endfor %}
   </tbody>

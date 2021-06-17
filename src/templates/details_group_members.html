@@ -53,6 +53,14 @@ head %} {{ super() }} {% endblock %} {% block content %}
         <td>{{groupmember.bakchod.pretty_name}}</td>
         <td>{{groupmember.bakchod.rokda}}</td>
         <td>{{groupmember.bakchod.lastseen}}</td>
+        <td>
+          <a
+            href="/chaddi/details/bakchod?tg_id={{groupmember.bakchod.tg_id}}"
+            class="btn btn-primary"
+            role="button"
+            >View Details</a
+          >
+        </td>
       </tr>
       {% endfor %}
     </tbody>
