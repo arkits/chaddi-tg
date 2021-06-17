@@ -52,6 +52,19 @@ def handle_bakchod_metadata_effects(
 
                 for route_message_props in rm:
 
+                    # if the message is posted to the same group, then ignore it
+                    if str(route_message_props["to_group"]) == str(
+                        update.message.chat_id
+                    ):
+
+                        logger.trace(
+                            "route-messages - posted in the same group - {} // {}",
+                            route_message_props["to_group"],
+                            update.message.chat_id,
+                        )
+
+                        continue
+
                     context.bot.forward_message(
                         chat_id=route_message_props["to_group"],
                         from_chat_id=update.message.chat_id,
