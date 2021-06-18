@@ -19,7 +19,7 @@ async def index(request: Request):
 @router.get("/bakchods", response_class=HTMLResponse)
 async def get_bakchods(request: Request):
 
-    bakchods = Bakchod.select().limit(100).order_by(Bakchod.lastseen.desc())
+    bakchods = Bakchod.select().order_by(Bakchod.lastseen.desc())
 
     return templates.TemplateResponse(
         "bakchods.html", {"request": request, "bakchods": bakchods}
