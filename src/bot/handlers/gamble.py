@@ -1,3 +1,4 @@
+import json
 from loguru import logger
 from telegram import Update
 from src.db import Bakchod, bakchod
@@ -93,7 +94,8 @@ def gamble(bakchod: Bakchod, update: Update):
 
     random_bakchod.save()
 
-    bakchod.metadata["gamble"] = datetime.datetime.now().isoformat()
+    # Update metadata
+    bakchod.metadata["last_time_gambled"] = datetime.datetime.now().isoformat()
     bakchod.save()
 
     logger.info(
@@ -111,11 +113,17 @@ def can_bakchod_gamble(bakchod: Bakchod):
     response = None
 
     if "last_time_gambled" in bakchod.metadata:
+
         last_time_gambled = ciso8601.parse_datetime(
             bakchod.metadata["last_time_gambled"]
         )
+
+        logger.info("[gamble] metadata['last_time_gambled']={}", last_time_gambled)
+
     else:
-        last_time_gambled = datetime.datetime.now()
+        logger.info("[gamble] metadata['last_time_gambled'] was not there")
+        can_gamble = True
+        return can_gamble, response
 
     one_min_ago = datetime.datetime.now() - datetime.timedelta(minutes=1)
 

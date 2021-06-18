@@ -42,13 +42,13 @@ def handle_bakchod_metadata_effects(
 
     try:
 
-        metadata = json.loads(bakchod.metadata)
-
-        for key in metadata:
+        for key in bakchod.metadata:
 
             if key == "route-messages":
 
-                rm = metadata[key]
+                rm = bakchod.metadata[key]
+
+                # logger.debug("route-messages metadata was set - {}", rm)
 
                 for route_message_props in rm:
 

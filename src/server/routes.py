@@ -126,7 +126,7 @@ async def post_update_bakchod_metadata(
 
         # Check if metadata is a JSON
         try:
-            json.loads(metadata)
+            metadata_json = json.loads(metadata)
         except Exception as e:
             raise Exception("Error during json.loads(metadata) :: " + str(e))
 
@@ -134,7 +134,7 @@ async def post_update_bakchod_metadata(
         if b is None:
             raise Exception("Unable to find Bakchod")
 
-        b.metadata = metadata
+        b.metadata = metadata_json
         b.save()
 
     except Exception as e:
