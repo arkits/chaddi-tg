@@ -14,6 +14,10 @@ def handle(update: Update, context):
 
         document = update.message.document
 
+        # return if there is no document associated with the message
+        if document is None:
+            return
+
         # return if the document isn't a webm
         if not document.file_name.endswith(".webm"):
             return
@@ -79,7 +83,7 @@ def handle(update: Update, context):
                 update.message.from_user
             )
 
-            caption = random_webm_caption(
+            caption = build_webm_conversion_response(
                 original_sender, pretty_diff, document.file_name, update.message.caption
             )
 
@@ -113,14 +117,23 @@ def handle(update: Update, context):
         )
 
 
-def random_webm_caption(original_sender, pretty_diff, file_name, caption_text):
-    strings = [
-        "{} uploaded {}".format(original_sender, file_name)
-    ]
+def build_webm_conversion_response(
+    original_sender, pretty_diff, file_name, caption_text
+):
+
+    responses = ["{} uploaded {}".format(original_sender, file_name)]
 
     if caption_text is not None:
-        strings.append("\n------------------------------------\n{}\n------------------------------------".format(caption_text))
 
-    strings.append("\n(converted in {})".format(pretty_diff))
+        c = """
+------------------------------------
+{}
+------------------------------------
+""".format(
+            caption_text
+        )
+        responses.append(c)
 
-    return " ".join(strings)
+    responses.append("(converted in {})".format(pretty_diff))
+
+    return "".join(responses)
