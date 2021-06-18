@@ -62,20 +62,10 @@ async def get_details_group(request: Request, group_id: str = "unset"):
 
     g = Group.get_by_id(group_id)
 
-    return templates.TemplateResponse(
-        "details_group.html", {"request": request, "group": g}
-    )
-
-
-@router.get("/details/members", response_class=HTMLResponse)
-async def get_details_group_members(request: Request, group_id: str = "unset"):
-
-    g = Group.get_by_id(group_id)
-
     groupmembers = group.get_all_groupmembers_by_group_id(group_id)
 
     return templates.TemplateResponse(
-        "details_group_members.html",
+        "details_group.html",
         {"request": request, "group": g, "groupmembers": groupmembers},
     )
 

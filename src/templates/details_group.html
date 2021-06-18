@@ -40,14 +40,7 @@ head %} {{ super() }} {% endblock %} {% block content %}
       </tr>
       <tr>
         <th class="text-right">Members:</th>
-        <td class="text-left">
-          <a
-            href="/chaddi/details/members?group_id={{group.group_id}}"
-            class="btn btn-primary"
-            role="button"
-            >View Members</a
-          >
-        </td>
+        <td class="text-left">{{groupmembers|length}}</td>
       </tr>
       <tr>
         <th class="text-right">Messages:</th>
@@ -75,5 +68,42 @@ head %} {{ super() }} {% endblock %} {% block content %}
     />
     <br />
   </form>
+
+  <br />
+  <br />
+  <br />
+
+  <h3>Group Members</h3>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th>id</th>
+        <th>username</th>
+        <th>pretty_name</th>
+        <th>rokda</th>
+        <th>lastseen</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for groupmember in groupmembers %}
+      <tr>
+        <th>{{groupmember.bakchod.tg_id}}</th>
+        <td>{{groupmember.bakchod.username}}</td>
+        <td>{{groupmember.bakchod.pretty_name}}</td>
+        <td>{{groupmember.bakchod.rokda}}</td>
+        <td>{{groupmember.bakchod.lastseen}}</td>
+        <td>
+          <a
+            href="/chaddi/details/bakchod?tg_id={{groupmember.bakchod.tg_id}}"
+            class="btn btn-primary"
+            role="button"
+            >View Details</a
+          >
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
 {% endblock %}
