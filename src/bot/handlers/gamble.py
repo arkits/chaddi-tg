@@ -1,7 +1,7 @@
 import json
 from loguru import logger
 from telegram import Update
-from src.db import Bakchod, bakchod
+from src.db import Bakchod, bakchod_dao
 from src.domain import dc, util
 import datetime
 import random
@@ -12,7 +12,7 @@ def handle(update: Update, context):
 
     dc.log_command_usage("gamble", update)
 
-    b = bakchod.get_or_create_bakchod_from_tg_user(update.message.from_user)
+    b = bakchod_dao.get_or_create_bakchod_from_tg_user(update.message.from_user)
 
     can_gamble, response = can_bakchod_gamble(b)
     if not can_gamble:

@@ -49,6 +49,8 @@ def extract_pretty_name_from_bakchod(bakchod: Bakchod) -> str:
         return bakchod.pretty_name
     elif bakchod.tg_id:
         return str(bakchod.tg_id)
+    else:
+        return None
 
 
 def delete_file(file):

@@ -16,3 +16,4 @@ from . import aao
 from . import daan
 from . import version
 from . import quotes
+from . import roll

@@ -60,3 +60,19 @@ def get_or_create_bakchod_from_tg_user(user: User) -> Bakchod:
             created=datetime.datetime.now(),
             updated=datetime.datetime.now(),
         )
+
+
+def get_bakchod_by_username(username: str) -> Bakchod:
+
+    try:
+
+        exists_in_db = Bakchod.get(Bakchod.username == username)
+
+        if exists_in_db is not None:
+            return exists_in_db
+
+    except DoesNotExist:
+
+        logger.warning("[db] username={} DoesNotExist", username)
+
+        return None

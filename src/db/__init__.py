@@ -78,5 +78,17 @@ class Quote(BaseModel):
     update = BinaryJSONField()
 
 
+class Roll(BaseModel):
+    roll_id = CharField(unique=True, primary_key=True)
+    created = DateTimeField()
+    updated = DateTimeField()
+    expiry = DateTimeField()
+    rule = CharField()
+    goal = CharField()
+    group = ForeignKeyField(Group, backref="roll")
+    victim = ForeignKeyField(Bakchod, backref="roll_victim", null=True)
+    winrar = ForeignKeyField(Bakchod, backref="roll_winrar", null=True)
+
+
 db.connect()
-db.create_tables([Bakchod, Message, Group, GroupMember, Quote])
+db.create_tables([Bakchod, Message, Group, GroupMember, Quote, Roll])

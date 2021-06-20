@@ -1,7 +1,7 @@
 from datetime import datetime
 from loguru import logger
 from telegram import Update
-from src.db import bakchod, group, message
+from src.db import bakchod_dao, group_dao, message_dao
 from . import util
 from . import metrics
 
@@ -30,7 +30,7 @@ def sync_persistence_data(update: Update):
         logger.debug("[dc] update had no message.from_user... fast failing")
         return
 
-    b = bakchod.get_or_create_bakchod_from_tg_user(from_user)
+    b = bakchod_dao.get_or_create_bakchod_from_tg_user(from_user)
 
     # Update username
     b.username = from_user.username
@@ -45,8 +45,8 @@ def sync_persistence_data(update: Update):
 
     b.save()
 
-    message.log_message_from_update(update)
+    message_dao.log_message_from_update(update)
 
-    group.log_group_from_update(update)
+    group_dao.log_group_from_update(update)
 
     return

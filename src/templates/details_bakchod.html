@@ -49,7 +49,9 @@ block head %} {{ super() }} {% endblock %} {% block content %}
       </tr>
       <tr>
         <th class="text-right">Metadata:</th>
-        <td class="text-left">{{bakchod.metadata}}</td>
+        <td>
+          <div><pre>{{bakchod.metadata | tojson_pretty}}</pre></div>
+        </td>
       </tr>
     </tbody>
   </table>
@@ -58,13 +60,13 @@ block head %} {{ super() }} {% endblock %} {% block content %}
 
   <form method="POST" action="/chaddi/api/bakchod/metadata">
     <input type="hidden" name="tg_id" value="{{bakchod.tg_id}}" />
-    <input
-      class="form-control"
-      type="text"
-      id="metadata"
-      name="metadata"
-      value="{{bakchod.metadata}}"
-    /><br />
+    <!-- Textarea -->
+    <div class="form-group">
+      <textarea class="form-control" id="metadata" name="metadata">
+{{bakchod.metadata | tojson_pretty}}
+      </textarea>
+    </div>
+
     <input class="btn btn-primary" type="submit" value="Update Metadata" />
     <br />
   </form>

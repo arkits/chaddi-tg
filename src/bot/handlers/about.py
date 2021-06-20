@@ -1,7 +1,7 @@
 from telegram import Update
 from telegram.parsemode import ParseMode
 from src.domain import dc, util
-from src.db import Bakchod, bakchod
+from src.db import Bakchod, bakchod_dao
 
 
 def handle(update: Update, context):
@@ -9,11 +9,11 @@ def handle(update: Update, context):
     dc.log_command_usage("about", update)
 
     if update.message.reply_to_message:
-        b = bakchod.get_or_create_bakchod_from_tg_user(
+        b = bakchod_dao.get_or_create_bakchod_from_tg_user(
             update.message.reply_to_message.from_user
         )
     else:
-        b = bakchod.get_or_create_bakchod_from_tg_user(update.message.from_user)
+        b = bakchod_dao.get_or_create_bakchod_from_tg_user(update.message.from_user)
 
     update.message.reply_text(
         text=generate_about_response(b), parse_mode=ParseMode.HTML

@@ -77,6 +77,17 @@ def get_group_from_update(update: Update) -> Group:
         )
 
 
+def get_group_by_id(group_id: str) -> Group:
+
+    try:
+
+        return Group.get(Group.group_id == group_id)
+
+    except DoesNotExist:
+
+        return None
+
+
 def get_all_groupmembers_by_group_id(group_id: str):
 
     groupmembers = (
@@ -97,3 +108,22 @@ def get_all_messages_by_group_id(group_id: str, limit: int):
     )
 
     return messages
+
+
+def remove_bakchod_from_group(bakchod: Bakchod, group_id: str):
+
+    try:
+
+        GroupMember.delete().where(
+            (GroupMember.group_id == group_id)
+            & (GroupMember.bakchod_id == bakchod.tg_id)
+        ).execute()
+
+    except Exception as e:
+
+        logger.warning(
+            "[group_dao] Caught Ex remove_bakchod_from_group - bakchod={} group_id={} e={}",
+            bakchod,
+            group_id,
+            e,
+        )

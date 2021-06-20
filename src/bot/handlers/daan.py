@@ -1,5 +1,5 @@
 import math
-from src.db import bakchod
+from src.db import bakchod_dao
 from loguru import logger
 from telegram import Update
 from src.domain import dc, util, config
@@ -33,14 +33,16 @@ def handle(update: Update, context):
             return
 
         # Extract Sender
-        sender = bakchod.get_or_create_bakchod_from_tg_user(update.message.from_user)
+        sender = bakchod_dao.get_or_create_bakchod_from_tg_user(
+            update.message.from_user
+        )
 
         # Extract Receiver
         receiver = None
 
         if update.message.reply_to_message:
             # Request is a reply to message... Extract receiver from ID
-            receiver = bakchod.get_or_create_bakchod_from_tg_user(
+            receiver = bakchod_dao.get_or_create_bakchod_from_tg_user(
                 update.message.reply_to_message.from_user
             )
 
@@ -52,7 +54,7 @@ def handle(update: Update, context):
             if update.message.entities:
                 for entity in update.message.entities:
                     if entity.type == "text_mention" and entity.user is not None:
-                        receiver = bakchod.get_or_create_bakchod_from_tg_user(
+                        receiver = bakchod_dao.get_or_create_bakchod_from_tg_user(
                             update.entity.user.id
                         )
 

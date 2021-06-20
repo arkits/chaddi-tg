@@ -2,13 +2,20 @@ import json
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from src.db import Bakchod, Group, Message, Quote, group
+from src.db import Bakchod, Group, Message, Quote, group_dao
 from loguru import logger
 from src import bot
 
 router = APIRouter()
 
 templates = Jinja2Templates(directory="templates")
+
+
+def to_pretty_json(value):
+    return json.dumps(value, sort_keys=True, indent=4, separators=(",", ": "))
+
+
+templates.env.filters["tojson_pretty"] = to_pretty_json
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -62,7 +69,7 @@ async def get_details_group(request: Request, group_id: str = "unset"):
 
     g = Group.get_by_id(group_id)
 
-    groupmembers = group.get_all_groupmembers_by_group_id(group_id)
+    groupmembers = group_dao.get_all_groupmembers_by_group_id(group_id)
 
     return templates.TemplateResponse(
         "details_group.html",
@@ -77,7 +84,7 @@ async def get_details_group_messages(request: Request, group_id: str = "unset"):
 
     message_count = Message.select().count()
 
-    messages = group.get_all_messages_by_group_id(group_id, 100)
+    messages = group_dao.get_all_messages_by_group_id(group_id, 100)
 
     return templates.TemplateResponse(
         "details_group_messages.html",
