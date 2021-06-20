@@ -1,10 +1,11 @@
+import math
 import traceback
 from loguru import logger
 import shortuuid
 from telegram import Update, ParseMode
 from telegram.ext import CallbackContext
 from src.domain import config, dc, util
-from src.db import Bakchod, Roll, bakchod_dao, group_dao, roll_dao
+from src.db import Bakchod, Group, Roll, bakchod_dao, group_dao, roll_dao
 import random
 import datetime
 import ciso8601
@@ -544,19 +545,25 @@ def reset_roll_effects(context: CallbackContext):
 
 def _get_random_bakchod_from_group(group_id: str) -> Bakchod:
 
-    all_groupmembers = group_dao.get_all_groupmembers_by_group_id(group_id=group_id)
+    group = Group.get_by_id(group_id)
 
-    random_groupmember = util.choose_random_element_from_list(all_groupmembers)
+    groupmembers = group.group_member
 
-    keep_searching = True
+    bakchods = []
 
-    while keep_searching:
+    for groupmember in groupmembers:
+        bakchods.append(groupmember.bakchod)
 
-        if random_groupmember.bakchod.username != BOT_USERNAME:
-            keep_searching = False
-        else:
-            logger.debug("[roll] random_bakchod returned Bot... trying again")
-            keep_searching = False
-            random_groupmember = util.choose_random_element_from_list(all_groupmembers)
+    # sort the bakchods by lastseen
+    bakchods.sort(key=lambda r: r.lastseen, reverse=True)
 
-    return random_groupmember.bakchod
+    # only care about the x% of the lastseen
+    relevant_section = math.ceil(0.50 * len(bakchods))
+    logger.debug("[roll] relevant_section={}", relevant_section)
+
+    # pick a random bakchod from the relevant section
+    index = random.randint(0, relevant_section)
+
+    random_bakchod = bakchods[index]
+
+    return random_bakchod
