@@ -3,7 +3,7 @@ from loguru import logger
 import shortuuid
 from telegram import Update, ParseMode
 from telegram.ext import CallbackContext
-from src.domain import dc, util
+from src.domain import config, dc, util
 from src.db import Bakchod, Roll, bakchod_dao, group_dao, roll_dao
 import random
 import datetime
@@ -12,6 +12,9 @@ import ciso8601
 ROLL_TYPES = ["mute_user", "auto_mom", "kick_user"]
 PRETTY_ROLL_MAPPING = {"mute_user": "mute", "auto_mom": "/mom", "kick_user": "kick"}
 DEBUG = False
+
+app_config = config.get_config()
+BOT_USERNAME = app_config.get("TELEGRAM", "BOT_USERNAME")
 
 
 def handle(update: Update, context: CallbackContext):
@@ -544,5 +547,16 @@ def _get_random_bakchod_from_group(group_id: str) -> Bakchod:
     all_groupmembers = group_dao.get_all_groupmembers_by_group_id(group_id=group_id)
 
     random_groupmember = util.choose_random_element_from_list(all_groupmembers)
+
+    keep_searching = True
+
+    while keep_searching:
+
+        if random_groupmember.bakchod.username != BOT_USERNAME:
+            keep_searching = False
+        else:
+            logger.debug("[roll] random_bakchod returned Bot... trying again")
+            keep_searching = False
+            random_groupmember = util.choose_random_element_from_list(all_groupmembers)
 
     return random_groupmember.bakchod
