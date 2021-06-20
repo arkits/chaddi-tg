@@ -14,7 +14,19 @@ Chaddi Bot has a variety of features to make your Telegram experience a whole lo
 
 ## Features
 
-- WebM to MP4 Converter
+- Utils
+  - WebM to MP4 Converter
+  - `/translate` - translates any message into English
+- Economy
+  - Take part in Chaddi's internal economy with ₹okda
+  - `/rokda` - tells you how much ₹okda you have
+  - `/daan` - give ₹okda to someone-else in need
+  - `/gamble` - try your luck at the Chaddi Casino!
+- Fun and Games
+  - `/roll` - starts a dice roll game
+  - `/quotes` - showcase the important messages in your Group
+- Monitoring
+  - Inbuilt and rich monitoring and metrics web UI and Grafana dashboard
 
 ## Getting Started
 
