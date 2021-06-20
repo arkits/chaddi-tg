@@ -2,7 +2,7 @@ import json
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from src.db import Bakchod, Group, Message, Quote, group_dao
+from src.db import Bakchod, Group, Message, Quote, Roll, group_dao
 from loguru import logger
 from src import bot
 
@@ -20,7 +20,24 @@ templates.env.filters["tojson_pretty"] = to_pretty_json
 
 @router.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+
+    bakchods_count = Bakchod.select().count()
+    groups_count = Group.select().count()
+    messages_count = Message.select().count()
+    quotes_count = Quote.select().count()
+    roll_count = Roll.select().count()
+
+    return templates.TemplateResponse(
+        "index.html",
+        {
+            "request": request,
+            "bakchods_count": bakchods_count,
+            "groups_count": groups_count,
+            "messages_count": messages_count,
+            "quotes_count": quotes_count,
+            "roll_count": roll_count,
+        },
+    )
 
 
 @router.get("/bakchods", response_class=HTMLResponse)
