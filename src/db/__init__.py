@@ -88,6 +88,7 @@ class Roll(BaseModel):
     group = ForeignKeyField(Group, backref="roll")
     victim = ForeignKeyField(Bakchod, backref="roll_victim", null=True)
     winrar = ForeignKeyField(Bakchod, backref="roll_winrar", null=True)
+    prize = CharField(null=True)
 
 
 db.connect()

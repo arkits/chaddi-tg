@@ -10,7 +10,11 @@ import random
 import datetime
 import ciso8601
 
-ROLL_TYPES = ["mute_user", "auto_mom", "kick_user"]
+ROLL_TYPES = [
+    "mute_user",
+    "auto_mom",
+    "kick_user",
+]
 PRETTY_ROLL_MAPPING = {"mute_user": "mute", "auto_mom": "/mom", "kick_user": "kick"}
 DEBUG = False
 
@@ -201,6 +205,7 @@ def handle_dice_rolls(dice_value, update, context):
         # Check roll outcome
         roll_number = int(current_roll.goal)
 
+        # WINRAR!!!!!
         if dice_value == roll_number:
 
             logger.info(
@@ -216,7 +221,11 @@ def handle_dice_rolls(dice_value, update, context):
             # Update roll in DB
             current_roll.save()
 
-            # Add roll effect to victims modifiers
+            # Award roller with prize
+            roller.rokda = roller.rokda + current_roll.prize
+            roller.save()
+
+            # Add roll effect to victims metadata
             victim = current_roll.victim
             victim_metadata = victim.metadata
 
@@ -321,6 +330,7 @@ def generate_new_roll(update, group_id):
     roll_group = group_dao.get_group_by_id(group_id)
     victim = None
     goal = None
+    prize = None
 
     params = _extract_params_from_update(update)
 
@@ -345,6 +355,9 @@ def generate_new_roll(update, group_id):
     if victim is None:
         victim = _get_random_bakchod_from_group(group_id)
 
+    if prize is None:
+        prize = random.randint(500, 800)
+
     created = datetime.datetime.now()
     updated = datetime.datetime.now()
     expiry = datetime.datetime.now() + datetime.timedelta(hours=1)
@@ -362,6 +375,7 @@ def generate_new_roll(update, group_id):
             group=roll_group,
             victim=victim,
             winrar=None,
+            prize=prize,
         )
     else:
         r.created = created
@@ -372,6 +386,7 @@ def generate_new_roll(update, group_id):
         r.group = roll_group
         r.victim = victim
         r.winrar = None
+        r.prize = prize
 
         r.save()
 
@@ -450,30 +465,67 @@ def _generate_pretty_roll_description(roll: Roll) -> str:
 
         if roll.winrar is None:
 
-            pretty_roll = "Roll a {} on a 🎲 to {} {}!".format(
+            # Ongoing roll
+
+            pretty_roll = """
+Roll a {} to {} {}!
+
+<b>Rules:</b>
+- Roll a <b>{}</b> by posting a 🎲  <pre>:dice:</pre>
+- Only one roll per 5 mins
+
+<b>Prizes:</b>
+- {} gets {}'d 
+- 💵 YOU WIN {} {} 🎉
+""".format(
                 roll.goal,
                 _pretty_roll_rule(roll.rule),
                 util.extract_pretty_name_from_bakchod(roll.victim),
+                roll.goal,
+                util.extract_pretty_name_from_bakchod(roll.victim),
+                _pretty_roll_rule(roll.rule),
+                roll.prize,
+                util.ROKDA_STRING,
             )
 
         else:
+
+            # Finished roll
 
             now = datetime.datetime.now()
             td = roll.expiry - now
 
             if roll.rule == "kick_user":
-                pretty_roll = "{} won by rolling a {}! {} has been kicked from this group!".format(
+
+                pretty_roll = """
+{} won the current roll by rolling a {}! 
+
+- 👋 {} has been kicked from this group!
+- 💵 {} received {}{}!
+""".format(
                     util.extract_pretty_name_from_bakchod(roll.winrar),
                     roll.goal,
                     util.extract_pretty_name_from_bakchod(roll.victim),
+                    util.extract_pretty_name_from_bakchod(roll.winrar),
+                    roll.prize,
+                    util.ROKDA_STRING,
                 )
             else:
-                pretty_roll = "{} won by rolling a {}! {} is now {} for {}".format(
+
+                pretty_roll = """
+{} won the current roll by rolling a {}! 
+
+- 🤪 {} is now {} for {}!
+- 💵 {} received {}{}!
+""".format(
                     util.extract_pretty_name_from_bakchod(roll.winrar),
                     roll.goal,
                     util.extract_pretty_name_from_bakchod(roll.victim),
                     _pretty_roll_rule(roll.rule),
                     util.pretty_time_delta(td.total_seconds()),
+                    util.extract_pretty_name_from_bakchod(roll.winrar),
+                    roll.prize,
+                    util.ROKDA_STRING,
                 )
 
     except Exception as e:

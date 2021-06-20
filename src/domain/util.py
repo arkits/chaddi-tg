@@ -18,6 +18,9 @@ ADMIN_IDS = app_config.get("TELEGRAM", "TG_ADMIN_USERS")
 nlp = en_core_web_sm.load()
 
 
+ROKDA_STRING = "₹okda"
+
+
 # Read verbLookupTable on startup
 verb_past_lookup_file = open("resources/verb-past-lookup.json", "r")
 verb_past_lookup = json.loads(verb_past_lookup_file.read())
