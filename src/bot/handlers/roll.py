@@ -449,7 +449,7 @@ def _generate_pretty_roll_description(roll: Roll) -> str:
 
         if roll.winrar is None:
 
-            pretty_roll = "Roll a {} to {} {}!".format(
+            pretty_roll = "Roll a {} on a 🎲 to {} {}!".format(
                 roll.goal,
                 _pretty_roll_rule(roll.rule),
                 util.extract_pretty_name_from_bakchod(roll.victim),
