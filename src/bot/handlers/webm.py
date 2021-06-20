@@ -18,6 +18,9 @@ def handle(update: Update, context):
         if document is None:
             return
 
+        if document.file_name is None:
+            return
+
         # return if the document isn't a webm
         if not document.file_name.endswith(".webm"):
             return
