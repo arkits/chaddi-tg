@@ -67,8 +67,7 @@ def handle(update: Update, context):
                 if receiver_username.startswith("@"):
                     receiver_username = receiver_username[1:]
 
-                # TODO: implement this...
-                # receiver = dao.get_bakchod_by_username(receiver_username)
+                receiver = bakchod_dao.get_bakchod_by_username(receiver_username)
 
             # Donation can be the rest of the message
             donation = query[2:]
