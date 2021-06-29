@@ -14,7 +14,7 @@ app_config = config.get_config()
 
 app = FastAPI()
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/chaddi/static", StaticFiles(directory="static"), name="static")
 
 
 app.add_middleware(
