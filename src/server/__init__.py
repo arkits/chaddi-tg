@@ -6,7 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette_exporter import PrometheusMiddleware, handle_metrics
 
 from src.domain import config
-from . import routes
+from src.server.routes import api_routes
+from src.server.routes import ui_routes
 
 # Initialize the config
 app_config = config.get_config()
@@ -31,7 +32,9 @@ app.add_middleware(
 )
 app.add_route("/chaddi/metrics", handle_metrics)
 
-app.include_router(routes.router, prefix="/chaddi")
+app.include_router(api_routes.router, prefix="/chaddi/api")
+
+app.include_router(ui_routes.router, prefix="/chaddi")
 
 
 def run_server():
