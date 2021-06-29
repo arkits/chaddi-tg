@@ -32,5 +32,33 @@
       </div>
     </div>
   </div>
+
+  <div class="card">
+    <h2 class="card-title">Version Info</h2>
+
+    <table class="table">
+      <tbody>
+        <tr>
+          <td class="text-right">chaddi-tg version</td>
+          <td class="text-left">{{version_info.semver}}</td>
+        </tr>
+
+        <tr>
+          <td class="text-right">Git Commit ID</td>
+          <td class="text-left">{{version_info.git_commit_id}}</td>
+        </tr>
+
+        <tr>
+          <td class="text-right">Git Commit Time</td>
+          <td class="text-left">{{version_info.git_commit_time}}</td>
+        </tr>
+
+        <tr>
+          <td class="text-right">Uptime</td>
+          <td class="text-left">{{version_info.pretty_uptime}}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 {% endblock %}

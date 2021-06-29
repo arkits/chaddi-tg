@@ -5,6 +5,7 @@ from fastapi.templating import Jinja2Templates
 from src.db import Bakchod, Group, Message, Quote, Roll, group_dao
 from loguru import logger
 from src import bot
+from src.domain import version
 
 router = APIRouter()
 
@@ -27,6 +28,8 @@ async def index(request: Request):
     quotes_count = Quote.select().count()
     roll_count = Roll.select().count()
 
+    v = version.get_version()
+
     return templates.TemplateResponse(
         "index.html",
         {
@@ -36,6 +39,7 @@ async def index(request: Request):
             "messages_count": messages_count,
             "quotes_count": quotes_count,
             "roll_count": roll_count,
+            "version_info": v,
         },
     )
 

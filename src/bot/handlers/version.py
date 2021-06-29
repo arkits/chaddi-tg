@@ -1,34 +1,6 @@
-from datetime import datetime
 from loguru import logger
 from telegram import Update, ParseMode
-from src.domain import dc, util
-import subprocess
-
-CHADDI_TG_VERSION = "3.0.0"
-
-GIT_COMMIT_ID = (
-    subprocess.check_output(["git", "rev-parse", "--short", "HEAD"])
-    .strip()
-    .decode("utf-8")
-)
-
-GIT_COMMIT_TIME = datetime.utcfromtimestamp(
-    int(
-        subprocess.check_output(["git", "show", "-s", "--format=%ct"])
-        .strip()
-        .decode("utf-8")
-    )
-)
-
-TIME_BOT_STARTED = datetime.now()
-
-
-logger.info(
-    "[version] parsed GIT_COMMIT_ID={} GIT_COMMIT_TIME={} TIME_BOT_STARTED={}",
-    GIT_COMMIT_ID,
-    GIT_COMMIT_TIME,
-    TIME_BOT_STARTED,
-)
+from src.domain import dc, util, version
 
 
 def handle(update: Update, context, log_to_dc=True):
@@ -46,8 +18,7 @@ def handle(update: Update, context, log_to_dc=True):
 
 def get_chaddi_version():
 
-    now = datetime.now()
-    uptime = now - TIME_BOT_STARTED
+    v = version.get_version()
 
     response = """
 <b>chaddi-tg version {}</b>
@@ -57,11 +28,11 @@ def get_chaddi_version():
 <b>Time Started:</b> {}
 <b>Uptime:</b> {}
 """.format(
-        CHADDI_TG_VERSION,
-        GIT_COMMIT_ID,
-        GIT_COMMIT_TIME,
-        TIME_BOT_STARTED,
-        util.pretty_time_delta(uptime.seconds),
+        v["semver"],
+        v["git_commit_id"],
+        v["git_commit_time"],
+        v["time_service_started"],
+        v["pretty_uptime"],
     )
 
     return response
