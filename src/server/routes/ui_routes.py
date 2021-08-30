@@ -90,11 +90,18 @@ async def get_details_group(request: Request, group_id: str = "unset"):
 
     g = Group.get_by_id(group_id)
 
+    message_count = Message.select().where(Message.to_id == group_id).count()
+
     groupmembers = group_dao.get_all_groupmembers_by_group_id(group_id)
 
     return templates.TemplateResponse(
         "details_group.html",
-        {"request": request, "group": g, "groupmembers": groupmembers},
+        {
+            "request": request,
+            "group": g,
+            "message_count": message_count,
+            "groupmembers": groupmembers,
+        },
     )
 
 
@@ -103,7 +110,7 @@ async def get_details_group_messages(request: Request, group_id: str = "unset"):
 
     g = Group.get_by_id(group_id)
 
-    message_count = Message.select().count()
+    message_count = Message.select().where(Message.to_id == group_id).count()
 
     messages = group_dao.get_all_messages_by_group_id(group_id, 100)
 

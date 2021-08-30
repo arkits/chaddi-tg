@@ -45,11 +45,12 @@ head %} {{ super() }} {% endblock %} {% block content %}
       <tr>
         <th class="text-right">Messages:</th>
         <td class="text-left">
+          {{message_count}}
           <a
             href="/chaddi/details/messages?group_id={{group.group_id}}"
             class="btn btn-primary"
             role="button"
-            >View Messages</a
+            >View</a
           >
         </td>
       </tr>
