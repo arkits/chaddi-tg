@@ -132,3 +132,4 @@ dev.ini
 prod.ini
 docker-data
 scripts/deploy-constants.sh
+src/resources/mlai/*

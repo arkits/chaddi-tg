@@ -40,6 +40,7 @@ def run_telegram_bot():
     dispatcher.add_handler(CommandHandler("roll", handlers.roll.handle))
     dispatcher.add_handler(CommandHandler("translate", handlers.translate.handle))
     dispatcher.add_handler(CommandHandler("mlai", handlers.mlai.handle))
+    dispatcher.add_handler(CommandHandler("ocr", handlers.mlai.handle_ocr))
 
     dispatcher.add_handler(
         MessageHandler(Filters.status_update, handlers.defaults.status_update)

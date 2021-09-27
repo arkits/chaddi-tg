@@ -13,40 +13,93 @@ MLAI_RESOURCE_DIR = "resources/mlai/"
 JPG_EXTENSION = ".jpg"
 
 
+def handle_ocr(update: Update, context):
+
+    try:
+
+        reply_text = """
+*chaddi-ai OCR \n*
+"""
+
+        dc.log_command_usage("mlai-ocr", update)
+
+        file = acquire_file(update, context)
+
+        logger.info("[mlai] Running rekognition on file_id={}", file["file_id"])
+        with open(
+            MLAI_RESOURCE_DIR + file["file_id"] + file["extension"], "rb"
+        ) as photo_file:
+            response = rekognition_client.detect_text(
+                Image={"Bytes": photo_file.read()}
+            )
+            logger.debug("[mlai] response={}", response)
+
+        text_detections = response["TextDetections"]
+        reply_text += "- Elements detected: {} \n \n".format(len(text_detections))
+
+        for idx, text in enumerate(text_detections):
+
+            if text["Type"] != "WORD":
+                continue
+
+            reply_text += "{} ".format(text["DetectedText"])
+
+        reply_text = reply_text[:4096]
+        update.message.reply_text(reply_text, parse_mode=ParseMode.MARKDOWN)
+        return
+
+    except Exception as e:
+        logger.error(
+            "Caught Error in mlai.handle_ocr - {} \n {}",
+            e,
+            traceback.format_exc(),
+        )
+
+
+def acquire_file(update: Update, context):
+
+    # Extract file ID from update
+    file_id = str(
+        update.message.reply_to_message.photo[-1].file_id
+    )  # TODO: handle video and gifs?
+
+    logger.info("[mlai] Starting file download file_id={}", file_id)
+    file_handle = context.bot.get_file(file_id)
+    file_handle.download(MLAI_RESOURCE_DIR + file_id + JPG_EXTENSION)
+
+    return {"file_id": file_id, "extension": JPG_EXTENSION}
+
+
+def build_file_path(file):
+    return MLAI_RESOURCE_DIR + file["file_id"] + file["extension"]
+
+
 def handle(update: Update, context):
 
     try:
 
-        # Count time taken
-        time_start = datetime.datetime.now()
-
         dc.log_command_usage("mlai", update)
 
         reply_text = """
-*chaddi-ai analysis \n*
+*chaddi-ai Facial Analysis \n*
 """
 
-        # Extract file ID from update
-        file_id = update.message.reply_to_message.photo[-1].file_id
+        file = acquire_file(update, context)
 
-        logger.info("[mlai] Starting file download file_id={}", file_id)
-        file_handle = context.bot.get_file(file_id)
-        file_handle.download(MLAI_RESOURCE_DIR + str(file_id) + JPG_EXTENSION)
-
-        logger.info("[mlai] Running rekognition on file_id={}", file_id)
-        with open(MLAI_RESOURCE_DIR + str(file_id) + JPG_EXTENSION, "rb") as photo_file:
+        logger.info("[mlai] Running rekognition on file_id={}", file["file_id"])
+        with open(
+            MLAI_RESOURCE_DIR + file["file_id"] + file["extension"], "rb"
+        ) as photo_file:
             response = rekognition_client.detect_faces(
                 Image={"Bytes": photo_file.read()}, Attributes=["ALL"]
             )
-
-        logger.debug("[mlai] response={}", response)
+            logger.debug("[mlai] response={}", response)
 
         # Draw bounding boxes on the image
-        image = Image.open(MLAI_RESOURCE_DIR + str(file_id) + JPG_EXTENSION)
+        image = Image.open(build_file_path(file))
         img_width, img_height = image.size
         draw = ImageDraw.Draw(image)
 
-        reply_text += "*Facial Analysis* \n"
         reply_text += "- Number of Faces detected: {} \n".format(
             len(response["FaceDetails"])
         )
@@ -83,10 +136,10 @@ def handle(update: Update, context):
             )
             draw.line(points, fill="#00d400", width=2)
 
-        image.save(MLAI_RESOURCE_DIR + str(file_id) + "_mlai" + JPG_EXTENSION)
+        image.save(MLAI_RESOURCE_DIR + file["file_id"] + "_mlai" + JPG_EXTENSION)
 
         with open(
-            MLAI_RESOURCE_DIR + str(file_id) + "_mlai" + JPG_EXTENSION, "rb"
+            MLAI_RESOURCE_DIR + file["file_id"] + "_mlai" + JPG_EXTENSION, "rb"
         ) as photo_to_upload:
             update.message.reply_photo(
                 photo=photo_to_upload,
