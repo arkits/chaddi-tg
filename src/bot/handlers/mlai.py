@@ -44,7 +44,7 @@ def handle_ocr(update: Update, context):
 
             reply_text += "{} ".format(text["DetectedText"])
 
-        reply_text = reply_text[:4096]
+        reply_text = reply_text[:4096]  # truncate to Telegram's max size
         update.message.reply_text(reply_text, parse_mode=ParseMode.MARKDOWN)
         return
 
@@ -118,25 +118,16 @@ def handle(update: Update, context):
                 face_detail["AgeRange"]["Low"],
                 face_detail["AgeRange"]["High"],
                 face_detail["Smile"]["Value"],
-                face_detail["Emotions"][0]["Type"],
+                list_out_emotions(face_detail["Emotions"]),
             )
 
             box = face_detail["BoundingBox"]
-            left = img_width * box["Left"]
-            top = img_height * box["Top"]
-            width = img_width * box["Width"]
-            height = img_height * box["Height"]
 
-            points = (
-                (left, top),
-                (left + width, top),
-                (left + width, top + height),
-                (left, top + height),
-                (left, top),
-            )
-            draw.line(points, fill="#00d400", width=2)
+            draw_bounding_box(draw, box, img_width, img_height)
 
         image.save(MLAI_RESOURCE_DIR + file["file_id"] + "_mlai" + JPG_EXTENSION)
+
+        reply_text = reply_text[:4096]  # truncate to Telegram's max size
 
         with open(
             MLAI_RESOURCE_DIR + file["file_id"] + "_mlai" + JPG_EXTENSION, "rb"
@@ -153,3 +144,35 @@ def handle(update: Update, context):
             e,
             traceback.format_exc(),
         )
+
+
+def list_out_emotions(emotions):
+
+    toReturn = ""
+
+    for emotion in emotions:
+        toReturn += "{} ({}%); ".format(
+            emotion["Type"], round(emotion["Confidence"], 2)
+        )
+
+    return toReturn
+
+
+def draw_bounding_box(draw, box, img_width, img_height):
+
+    left = img_width * box["Left"]
+    top = img_height * box["Top"]
+    width = img_width * box["Width"]
+    height = img_height * box["Height"]
+
+    points = (
+        (left, top),
+        (left + width, top),
+        (left + width, top + height),
+        (left, top + height),
+        (left, top),
+    )
+
+    draw.line(points, fill="#00d400", width=2)
+
+    return draw
