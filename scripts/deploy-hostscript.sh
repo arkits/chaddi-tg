@@ -7,7 +7,7 @@ echo ">>> hostscript running as $(whoami)@$(hostname)"
 echo ">>> deploying chaddi-tg to $(pwd)"
 echo ""
 
-cd ~
+cd /home/arkits/software
 
 if [ -d "chaddi-tg" ]; then
 

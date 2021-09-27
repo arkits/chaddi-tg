@@ -67,7 +67,7 @@ def handle(update: Update, context):
 {}
 
 ```
-Translated from {} to {}
+ℹ️ Translated from {} to {}
 ```
 """.format(
                 translated.text, translated.src.upper(), translated.dest.upper()
