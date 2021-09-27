@@ -1,16 +1,16 @@
 {% extends "base.html" %} {% block title %}Bakchod Details{% endblock %} {%
 block head %} {{ super() }} {% endblock %} {% block content %}
+<script defer src="/chaddi/static/details_bakchod.js"></script>
 <div class="container-lg">
   <br />
   <nav>
     <ul class="breadcrumb">
-      <li class="breadcrumb-item active">
-        <a>bakchod-details</a>
+      <li class="breadcrumb-item">details</li>
+      <li class="breadcrumb-item">
+        <a href="/chaddi/bakchods">bakchods</a>
       </li>
-      <li class="breadcrumb-item" aria-current="page">
-        <a href="/chaddi/details/bakchod?tg_id={{bakchod.tg_id}}"
-          >{{bakchod.tg_id}}</a
-        >
+      <li class="breadcrumb-item active" aria-current="page">
+        {{bakchod.tg_id}}
       </li>
     </ul>
   </nav>
@@ -45,7 +45,31 @@ block head %} {{ super() }} {% endblock %} {% block content %}
       </tr>
       <tr>
         <th class="text-right">Rokda:</th>
-        <td class="text-left">{{bakchod.rokda}}</td>
+        <td class="text-left">
+          <input
+            id="tg-id"
+            type="hidden"
+            name="tg-id"
+            value="{{bakchod.tg_id}}"
+          />
+          <div class="form-group">
+            <input
+              id="rokda-input"
+              name="rokda"
+              type="text"
+              class="form-control"
+              placeholder="{{bakchod.rokda}}"
+              required="required"
+              value="{{bakchod.rokda}}"
+            />
+          </div>
+          <input
+            id="update-rokda-button"
+            class="btn btn-primary"
+            type="submit"
+            value="Update Rokda"
+          />
+        </td>
       </tr>
       <tr>
         <th class="text-right">Metadata:</th>

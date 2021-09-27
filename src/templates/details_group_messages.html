@@ -4,9 +4,14 @@ head %} {{ super() }} {% endblock %} {% block content %}
   <br />
   <nav>
     <ul class="breadcrumb">
-      <li class="breadcrumb-item"><a href="/chaddi">details</a></li>
+      <li class="breadcrumb-item">details</li>
       <li class="breadcrumb-item">
-        <a href="/chaddi/details/group?group_id={{group.group_id}}">group</a>
+        <a href="/chaddi/groups">groups</a>
+      </li>
+      <li class="breadcrumb-item">
+        <a href="/chaddi/details/group?group_id={{group.group_id}}"
+          >{{group.group_id}}</a
+        >
       </li>
       <li class="breadcrumb-item active" aria-current="page">
         <a>messages</a>
