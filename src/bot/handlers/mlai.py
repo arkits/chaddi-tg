@@ -148,6 +148,10 @@ def handle_tynm(update: Update, context):
         file = acquire_file(update, context)
 
         src_image = Image.open(build_file_path(file))
+        src_image.thumbnail(
+            (700, 700), Image.ANTIALIAS
+        )  # source image can be significantly larger... resize it to fit better with the composite image
+
         src_img_width, src_img_height = src_image.size
 
         util.acquire_external_resource(NM_IMAGE_URL, "nm.png")
