@@ -2,6 +2,7 @@ from loguru import logger
 from telegram import Update
 from telegram.ext import CallbackContext
 import traceback
+from src.domain import tg_logger
 
 
 def log_error(update: Update, context: CallbackContext):
@@ -12,4 +13,12 @@ def log_error(update: Update, context: CallbackContext):
         context.__dict__,
         traceback.format_exc(),
     )
+
+    tg_logger.log(
+        "Caught Fatal Error! `error={}` \n \n`traceback={}`".format(
+            context.error,
+            traceback.format_exc(),
+        )
+    )
+
     return
