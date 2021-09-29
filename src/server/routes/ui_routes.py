@@ -128,7 +128,6 @@ async def get_details_group_messages(request: Request, group_id: str = "unset"):
 @router.get("/quotes", response_class=HTMLResponse)
 async def get_groups(request: Request):
 
-    # Get the last X messages
     quotes = Quote.select().limit(100).order_by(Quote.created.desc())
 
     return templates.TemplateResponse(
