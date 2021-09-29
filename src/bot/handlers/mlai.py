@@ -148,13 +148,15 @@ def handle_tynm(update: Update, context):
 
         src_img = Image.open(build_file_path(file))
         src_img_width, src_img_height = src_img.size
-        logger.info("src_img_width={} src_img_height={}", src_img_width, src_img_height)
+        logger.debug(
+            "src_img_width={} src_img_height={}", src_img_width, src_img_height
+        )
 
         util.acquire_external_resource(NM_IMG_URL, "nm.png")
 
         nm_img = Image.open(path.join(util.RESOURCES_DIR, "external", "nm.png"))
         nm_img_width, nm_img_height = nm_img.size
-        logger.info(
+        logger.debug(
             "original nm_img_width={} nm_img_height={}", nm_img_width, nm_img_height
         )
 
@@ -163,7 +165,7 @@ def handle_tynm(update: Update, context):
         )
 
         nm_img_width, nm_img_height = nm_img.size
-        logger.info(
+        logger.debug(
             "after resize nm_img_width={} nm_img_height={}", nm_img_width, nm_img_height
         )
 
