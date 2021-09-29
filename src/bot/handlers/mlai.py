@@ -5,14 +5,13 @@ from telegram import Update
 from telegram.parsemode import ParseMode
 from src.domain import dc, util
 from loguru import logger
-from PIL import Image, ImageDraw
-import requests
+from PIL import Image, ImageDraw, ImageOps
 
 rekognition_client = boto3.client("rekognition")
 
 MLAI_RESOURCES_DIR = "resources/mlai/"
 JPG_EXTENSION = ".jpg"
-NM_IMAGE_URL = "https://i.imgur.com/QAUObo1.png"
+NM_IMG_URL = "https://i.imgur.com/QAUObo1.png"
 
 
 def handle(update: Update, context):
@@ -147,25 +146,34 @@ def handle_tynm(update: Update, context):
 
         file = acquire_file(update, context)
 
-        src_image = Image.open(build_file_path(file))
-        src_image.thumbnail(
-            (700, 700), Image.ANTIALIAS
-        )  # source image can be significantly larger... resize it to fit better with the composite image
+        src_img = Image.open(build_file_path(file))
+        src_img_width, src_img_height = src_img.size
+        logger.info("src_img_width={} src_img_height={}", src_img_width, src_img_height)
 
-        src_img_width, src_img_height = src_image.size
+        util.acquire_external_resource(NM_IMG_URL, "nm.png")
 
-        util.acquire_external_resource(NM_IMAGE_URL, "nm.png")
-
-        nm_image = Image.open(path.join(util.RESOURCES_DIR, "external", "nm.png"))
-        nm_img_width, nm_img_height = nm_image.size
-
-        src_image.paste(
-            nm_image,
-            (src_img_width - nm_img_width, src_img_height - nm_img_height),
-            nm_image,
+        nm_img = Image.open(path.join(util.RESOURCES_DIR, "external", "nm.png"))
+        nm_img_width, nm_img_height = nm_img.size
+        logger.info(
+            "original nm_img_width={} nm_img_height={}", nm_img_width, nm_img_height
         )
 
-        src_image.save(build_file_path(file, "_tynm"))
+        nm_img = ImageOps.contain(
+            nm_img, (int(src_img_width / 2), int(src_img_height / 2)), Image.ANTIALIAS
+        )
+
+        nm_img_width, nm_img_height = nm_img.size
+        logger.info(
+            "after resize nm_img_width={} nm_img_height={}", nm_img_width, nm_img_height
+        )
+
+        src_img.paste(
+            nm_img,
+            (src_img_width - nm_img_width, src_img_height - nm_img_height),
+            nm_img,
+        )
+
+        src_img.save(build_file_path(file, "_tynm"))
 
         with open(build_file_path(file, "_tynm"), "rb") as photo_to_upload:
             logger.info("[tynm] uploading completed photo")
