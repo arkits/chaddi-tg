@@ -14,5 +14,5 @@ def log(message: str):
         raise Exception("Failed to get_bot_instance")
 
     bot_instance.send_message(
-        chat_id=LOGGING_CHAT_ID, text=message, parse_mode=ParseMode.MARKDOWN
+        chat_id=LOGGING_CHAT_ID, text=message[:4096], parse_mode=ParseMode.MARKDOWN
     )

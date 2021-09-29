@@ -65,7 +65,13 @@ def run_telegram_bot():
     v = version.get_version()
 
     tg_logger.log(
-        "chaddi-tg has started! \n\n`commit_id={}`".format(v["git_commit_id"])
+        """
+*chaddi-tg has started!*
+
+*Commit ID:* {}
+""".format(
+            v["git_commit_id"]
+        )
     )
 
     # Run the bot until you press Ctrl-C or the process receives SIGINT,

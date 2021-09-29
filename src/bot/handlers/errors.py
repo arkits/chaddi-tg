@@ -15,8 +15,19 @@ def log_error(update: Update, context: CallbackContext):
     )
 
     tg_logger.log(
-        "Caught Fatal Error! `error={}` \n \n`traceback={}`".format(
+        """
+*⚠️ A fatal error was caught!*
+
+Error: `{}` 
+
+Update:
+`{}`
+
+Traceback:
+`{}`
+""".format(
             context.error,
+            update.to_json(),
             traceback.format_exc(),
         )
     )
