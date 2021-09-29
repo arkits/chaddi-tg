@@ -1,6 +1,7 @@
 import datetime
 import traceback
 import boto3
+from boto3 import utils
 from telegram import Update
 from telegram.parsemode import ParseMode
 from src.domain import dc, util
@@ -11,67 +12,6 @@ rekognition_client = boto3.client("rekognition")
 
 MLAI_RESOURCE_DIR = "resources/mlai/"
 JPG_EXTENSION = ".jpg"
-
-
-def handle_ocr(update: Update, context):
-
-    try:
-
-        reply_text = """
-*chaddi-ai OCR \n*
-"""
-
-        dc.log_command_usage("mlai-ocr", update)
-
-        file = acquire_file(update, context)
-
-        logger.info("[mlai] Running rekognition on file_id={}", file["file_id"])
-        with open(
-            MLAI_RESOURCE_DIR + file["file_id"] + file["extension"], "rb"
-        ) as photo_file:
-            response = rekognition_client.detect_text(
-                Image={"Bytes": photo_file.read()}
-            )
-            logger.debug("[mlai] response={}", response)
-
-        text_detections = response["TextDetections"]
-        reply_text += "- Elements detected: {} \n \n".format(len(text_detections))
-
-        for idx, text in enumerate(text_detections):
-
-            if text["Type"] != "WORD":
-                continue
-
-            reply_text += "{} ".format(text["DetectedText"])
-
-        reply_text = reply_text[:4096]  # truncate to Telegram's max size
-        update.message.reply_text(reply_text, parse_mode=ParseMode.MARKDOWN)
-        return
-
-    except Exception as e:
-        logger.error(
-            "Caught Error in mlai.handle_ocr - {} \n {}",
-            e,
-            traceback.format_exc(),
-        )
-
-
-def acquire_file(update: Update, context):
-
-    # Extract file ID from update
-    file_id = str(
-        update.message.reply_to_message.photo[-1].file_id
-    )  # TODO: handle video and gifs?
-
-    logger.info("[mlai] Starting file download file_id={}", file_id)
-    file_handle = context.bot.get_file(file_id)
-    file_handle.download(MLAI_RESOURCE_DIR + file_id + JPG_EXTENSION)
-
-    return {"file_id": file_id, "extension": JPG_EXTENSION}
-
-
-def build_file_path(file):
-    return MLAI_RESOURCE_DIR + file["file_id"] + file["extension"]
 
 
 def handle(update: Update, context):
@@ -127,7 +67,9 @@ def handle(update: Update, context):
 
         image.save(MLAI_RESOURCE_DIR + file["file_id"] + "_mlai" + JPG_EXTENSION)
 
-        reply_text = reply_text[:4096]  # truncate to Telegram's max size
+        reply_text = reply_text[
+            :1024
+        ]  # truncate to Telegram's size limit for media caption
 
         with open(
             MLAI_RESOURCE_DIR + file["file_id"] + "_mlai" + JPG_EXTENSION, "rb"
@@ -138,12 +80,80 @@ def handle(update: Update, context):
                 parse_mode=ParseMode.MARKDOWN,
             )
 
+        # Cleanup the downloaded files
+        util.delete_file(build_file_path(file))
+        util.delete_file(build_file_path(file, "_mlai"))
+
     except Exception as e:
         logger.error(
             "Caught Error in mlai.handle - {} \n {}",
             e,
             traceback.format_exc(),
         )
+
+
+def handle_ocr(update: Update, context):
+
+    try:
+
+        reply_text = """
+*chaddi-ai OCR \n*
+"""
+
+        dc.log_command_usage("mlai-ocr", update)
+
+        file = acquire_file(update, context)
+
+        logger.info("[mlai] Running rekognition on file_id={}", file["file_id"])
+        with open(
+            MLAI_RESOURCE_DIR + file["file_id"] + file["extension"], "rb"
+        ) as photo_file:
+            response = rekognition_client.detect_text(
+                Image={"Bytes": photo_file.read()}
+            )
+            logger.debug("[mlai] response={}", response)
+
+        text_detections = response["TextDetections"]
+        reply_text += "- Elements detected: {} \n \n".format(len(text_detections))
+
+        for idx, text in enumerate(text_detections):
+
+            if text["Type"] != "WORD":
+                continue
+
+            reply_text += "{} ".format(text["DetectedText"])
+
+        reply_text = reply_text[:4096]  # truncate to Telegram's max size
+        update.message.reply_text(reply_text, parse_mode=ParseMode.MARKDOWN)
+
+        util.delete_file(build_file_path(file))
+
+        return
+
+    except Exception as e:
+        logger.error(
+            "Caught Error in mlai.handle_ocr - {} \n {}",
+            e,
+            traceback.format_exc(),
+        )
+
+
+def acquire_file(update: Update, context):
+
+    # Extract file ID from update
+    file_id = str(
+        update.message.reply_to_message.photo[-1].file_id
+    )  # TODO: handle video and gifs?
+
+    logger.info("[mlai] Starting file download file_id={}", file_id)
+    file_handle = context.bot.get_file(file_id)
+    file_handle.download(MLAI_RESOURCE_DIR + file_id + JPG_EXTENSION)
+
+    return {"file_id": file_id, "extension": JPG_EXTENSION}
+
+
+def build_file_path(file, file_name_suffix=""):
+    return MLAI_RESOURCE_DIR + file["file_id"] + file_name_suffix + file["extension"]
 
 
 def list_out_emotions(emotions):

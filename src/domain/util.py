@@ -59,9 +59,9 @@ def extract_pretty_name_from_bakchod(bakchod: Bakchod) -> str:
 def delete_file(file):
     if os.path.exists(file):
         os.remove(file)
-        logger.info("[util] deleted file! - {}", file)
+        logger.info("[util] deleted file! file={}", file)
     else:
-        logger.warn("[util] file does not exist - {}", file)
+        logger.warning("[util] unabled to delete... does not exist file={}", file)
 
 
 def choose_random_element_from_list(input_list):
