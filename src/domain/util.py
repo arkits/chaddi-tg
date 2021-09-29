@@ -1,4 +1,5 @@
 from loguru import logger
+import requests
 from telegram import update
 from telegram.user import User
 import os
@@ -19,7 +20,7 @@ nlp = en_core_web_sm.load()
 
 
 ROKDA_STRING = "₹okda"
-
+RESOURCES_DIR = "resources/"
 
 # Read verbLookupTable on startup
 verb_past_lookup_file = open("resources/verb-past-lookup.json", "r")
@@ -62,6 +63,29 @@ def delete_file(file):
         logger.info("[util] deleted file! file={}", file)
     else:
         logger.warning("[util] unabled to delete... does not exist file={}", file)
+
+
+def acquire_external_resource(resource_url, resource_name):
+
+    resource_path = os.path.join(RESOURCES_DIR, "external", resource_name)
+
+    if os.path.exists(resource_path):
+
+        logger.info(
+            "[acquire_external_resource] resource already exist. not dowloading - resource_path={}",
+            resource_path,
+        )
+
+    else:
+
+        logger.info(
+            "[acquire_external_resource] downloading resource_url={}", resource_url
+        )
+
+        r = requests.get(resource_url, allow_redirects=True)
+        open(resource_path, "wb").write(r.content)
+
+    return
 
 
 def choose_random_element_from_list(input_list):

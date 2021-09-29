@@ -1,17 +1,18 @@
-import datetime
+from os import path
 import traceback
 import boto3
-from boto3 import utils
 from telegram import Update
 from telegram.parsemode import ParseMode
 from src.domain import dc, util
 from loguru import logger
-from PIL import Image, ImageDraw, ExifTags, ImageColor
+from PIL import Image, ImageDraw
+import requests
 
 rekognition_client = boto3.client("rekognition")
 
-MLAI_RESOURCE_DIR = "resources/mlai/"
+MLAI_RESOURCES_DIR = "resources/mlai/"
 JPG_EXTENSION = ".jpg"
+NM_IMAGE_URL = "https://i.imgur.com/QAUObo1.png"
 
 
 def handle(update: Update, context):
@@ -28,7 +29,7 @@ def handle(update: Update, context):
 
         logger.info("[mlai] Running rekognition on file_id={}", file["file_id"])
         with open(
-            MLAI_RESOURCE_DIR + file["file_id"] + file["extension"], "rb"
+            MLAI_RESOURCES_DIR + file["file_id"] + file["extension"], "rb"
         ) as photo_file:
             response = rekognition_client.detect_faces(
                 Image={"Bytes": photo_file.read()}, Attributes=["ALL"]
@@ -65,14 +66,14 @@ def handle(update: Update, context):
 
             draw_bounding_box(draw, box, img_width, img_height)
 
-        image.save(MLAI_RESOURCE_DIR + file["file_id"] + "_mlai" + JPG_EXTENSION)
+        image.save(MLAI_RESOURCES_DIR + file["file_id"] + "_mlai" + JPG_EXTENSION)
 
         reply_text = reply_text[
             :1024
         ]  # truncate to Telegram's size limit for media caption
 
         with open(
-            MLAI_RESOURCE_DIR + file["file_id"] + "_mlai" + JPG_EXTENSION, "rb"
+            MLAI_RESOURCES_DIR + file["file_id"] + "_mlai" + JPG_EXTENSION, "rb"
         ) as photo_to_upload:
             update.message.reply_photo(
                 photo=photo_to_upload,
@@ -106,7 +107,7 @@ def handle_ocr(update: Update, context):
 
         logger.info("[mlai] Running rekognition on file_id={}", file["file_id"])
         with open(
-            MLAI_RESOURCE_DIR + file["file_id"] + file["extension"], "rb"
+            MLAI_RESOURCES_DIR + file["file_id"] + file["extension"], "rb"
         ) as photo_file:
             response = rekognition_client.detect_text(
                 Image={"Bytes": photo_file.read()}
@@ -138,6 +139,51 @@ def handle_ocr(update: Update, context):
         )
 
 
+def handle_tynm(update: Update, context):
+
+    try:
+
+        dc.log_command_usage("mlai-tynm", update)
+
+        file = acquire_file(update, context)
+
+        src_image = Image.open(build_file_path(file))
+        src_img_width, src_img_height = src_image.size
+
+        util.acquire_external_resource(NM_IMAGE_URL, "nm.png")
+
+        nm_image = Image.open(path.join(util.RESOURCES_DIR, "external", "nm.png"))
+        nm_img_width, nm_img_height = nm_image.size
+
+        src_image.paste(
+            nm_image,
+            (src_img_width - nm_img_width, src_img_height - nm_img_height),
+            nm_image,
+        )
+
+        src_image.save(build_file_path(file, "_tynm"))
+
+        with open(build_file_path(file, "_tynm"), "rb") as photo_to_upload:
+            logger.info("[tynm] uploading completed photo")
+            update.message.reply_photo(
+                photo=photo_to_upload,
+                caption="🙏 THANK YOU 🙏",
+                parse_mode=ParseMode.MARKDOWN,
+            )
+
+        util.delete_file(build_file_path(file))
+        util.delete_file(build_file_path(file, "_tynm"))
+
+        return
+
+    except Exception as e:
+        logger.error(
+            "Caught Error in mlai.handle_tynm - {} \n {}",
+            e,
+            traceback.format_exc(),
+        )
+
+
 def acquire_file(update: Update, context):
 
     # Extract file ID from update
@@ -147,13 +193,13 @@ def acquire_file(update: Update, context):
 
     logger.info("[mlai] Starting file download file_id={}", file_id)
     file_handle = context.bot.get_file(file_id)
-    file_handle.download(MLAI_RESOURCE_DIR + file_id + JPG_EXTENSION)
+    file_handle.download(MLAI_RESOURCES_DIR + file_id + JPG_EXTENSION)
 
     return {"file_id": file_id, "extension": JPG_EXTENSION}
 
 
 def build_file_path(file, file_name_suffix=""):
-    return MLAI_RESOURCE_DIR + file["file_id"] + file_name_suffix + file["extension"]
+    return MLAI_RESOURCES_DIR + file["file_id"] + file_name_suffix + file["extension"]
 
 
 def list_out_emotions(emotions):
