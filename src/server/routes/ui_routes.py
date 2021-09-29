@@ -135,65 +135,6 @@ async def get_groups(request: Request):
     )
 
 
-@router.post("/api/bakchod/metadata", response_class=HTMLResponse)
-async def post_update_bakchod_metadata(
-    request: Request, metadata: str = Form("unset"), tg_id: str = Form("unset")
-):
-
-    logger.info("post_update_bakchod_metadata tg_id={} metadata={}", tg_id, metadata)
-
-    response_message = {
-        "title": "Success",
-        "message": "Metadata updated successfully",
-        "alert_type": "alert-success",  # alert-success, alert-danger
-    }
-
-    b = None
-
-    try:
-
-        if tg_id == "unset":
-            raise Exception("tg_id was unset")
-
-        if metadata == "unset":
-            raise Exception("metadata was unset")
-
-        # Check if metadata is a JSON
-        try:
-            metadata_json = json.loads(metadata)
-        except Exception as e:
-            raise Exception("Error during json.loads(metadata) :: " + str(e))
-
-        b = Bakchod.get_by_id(tg_id)
-        if b is None:
-            raise Exception("Unable to find Bakchod")
-
-        b.metadata = metadata_json
-        b.save()
-
-    except Exception as e:
-
-        logger.error("Caught Exception - e={}", e)
-
-        response_message["title"] = "Backend Error"
-        response_message["message"] = e
-        response_message["alert_type"] = "alert-danger"
-
-        return templates.TemplateResponse(
-            "details_bakchod.html",
-            {
-                "request": request,
-                "bakchod": b,
-                "response_message": response_message,
-            },
-        )
-
-    return templates.TemplateResponse(
-        "details_bakchod.html",
-        {"request": request, "bakchod": b, "response_message": response_message},
-    )
-
-
 @router.post("/api/bot/send_message", response_class=HTMLResponse)
 async def post_api_bot_send_message(
     request: Request, message: str = Form("unset"), group_id: str = Form("unset")
