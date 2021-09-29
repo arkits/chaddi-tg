@@ -95,5 +95,24 @@ block head %} {{ super() }} {% endblock %} {% block content %}
       </tr>
     </tbody>
   </table>
+
+  <hr />
+
+  <h3>Groups ({{groups | length}})</h3>
+
+  <ul>
+    {% for group in groups %}
+    <li>
+      <a href="/chaddi/details/group?group_id={{group.group_id}}">
+        {{group.name}}
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+
+  <br />
+  <br />
+  <br />
+  <br />
 </div>
 {% endblock %}

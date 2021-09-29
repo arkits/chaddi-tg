@@ -2,7 +2,7 @@ import json
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from src.db import Bakchod, Group, Message, Quote, Roll, group_dao
+from src.db import Bakchod, Group, GroupMember, Message, Quote, Roll, group_dao
 from loguru import logger
 from src import bot
 from src.domain import version
@@ -80,8 +80,17 @@ async def get_details_bakchod(request: Request, tg_id: str = "unset"):
 
     b = Bakchod.get_by_id(tg_id)
 
+    groupmember_rows = GroupMember.select().where(GroupMember.bakchod == b.tg_id)
+
+    bakchod_groups = []
+
+    for groupmember_row in groupmember_rows:
+        group_row = Group.get_by_id(groupmember_row.group)
+        bakchod_groups.append(group_row)
+
     return templates.TemplateResponse(
-        "details_bakchod.html", {"request": request, "bakchod": b}
+        "details_bakchod.html",
+        {"request": request, "bakchod": b, "groups": bakchod_groups},
     )
 
 
