@@ -7,7 +7,8 @@ from telegram.ext import (
 )
 from . import handlers
 from src.domain import config
-
+from src.domain import tg_logger
+from src.domain import version
 
 app_config = config.get_config()
 
@@ -60,6 +61,12 @@ def run_telegram_bot():
     global bot_instance
     bot_instance = updater.bot
     logger.debug("Setting global bot_instance - bot_instance={}", bot_instance)
+
+    v = version.get_version()
+
+    tg_logger.log(
+        "chaddi-tg has started! \n\n`commit_id={}`".format(v["git_commit_id"])
+    )
 
     # Run the bot until you press Ctrl-C or the process receives SIGINT,
     # SIGTERM or SIGABRT. This should be used most of the time, since
