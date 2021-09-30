@@ -203,6 +203,13 @@ def handle_tynm(update: Update, context):
                 35,
             )
 
+            font_subtitle = ImageFont.truetype(
+                path.join(
+                    os.getcwd(), util.RESOURCES_DIR, "fonts", random_font_caption
+                ),
+                25,
+            )
+
             random_font_username = util.choose_random_element_from_list(
                 [
                     "Merriweather-Regular.ttf",
@@ -305,8 +312,16 @@ def handle_tynm(update: Update, context):
             )
             username_w, username_h = draw.textsize(username, font=font_username)
 
+            # Generate the timestamp of the message
+            timestamp = update.message.reply_to_message.date
+            timestamp_str = timestamp.strftime("%m/%d/%Y, %H:%M:%S")
+            timestamp_str += "\n {}".format(update.message.reply_to_message.chat.title)
+            timestamp_w, timestamp_h = draw.textsize(timestamp_str, font=font_subtitle)
+
             # Calculate the position of the caption
-            caption_x, caption_y = 100, (y1 / 2) - ((caption_h + username_h + 20) / 2)
+            caption_x, caption_y = 100, (y1 / 2) - (
+                (caption_h + username_h + timestamp_h + 20 + 10) / 2
+            )
 
             # Draw the caption
             draw.text(
@@ -318,6 +333,14 @@ def handle_tynm(update: Update, context):
                 (caption_x, caption_y + caption_h + 20),
                 username,
                 font=font_username,
+                fill=(255, 255, 255),
+            )
+
+            # Draw the timestamp
+            draw.text(
+                (caption_x, caption_y + caption_h + 20 + username_h + 10),
+                timestamp_str,
+                font=font_subtitle,
                 fill=(255, 255, 255),
             )
 
