@@ -85,7 +85,7 @@ def acquire_external_resource(resource_url, resource_name):
         r = requests.get(resource_url, allow_redirects=True)
         open(resource_path, "wb").write(r.content)
 
-    return
+    return resource_path
 
 
 def choose_random_element_from_list(input_list):
