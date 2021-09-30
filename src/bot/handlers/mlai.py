@@ -247,7 +247,7 @@ def handle_tynm(update: Update, context):
                 unsplash_photo_holder = Image.new("RGBA", (x1, y1), color=(0, 0, 0))
                 unsplash_photo_holder.paste(unsplash_photo, (0, 0))
 
-                img = Image.blend(img, unsplash_photo_holder, 0.2)
+                img = Image.blend(img, unsplash_photo_holder, 0.1)
 
             except Exception as e:
                 logger.warning(
