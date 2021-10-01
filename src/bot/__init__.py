@@ -69,9 +69,19 @@ def run_telegram_bot():
         """
 *chaddi-tg has started!*
 
+*chaddi-tg version:* {}
 *Commit ID:* {}
+*Commit Message:* {}
+*Commit Time:* {}
+*Time Started:* {}
+*Uptime:* {}
 """.format(
-            v["git_commit_id"]
+            v["semver"],
+            v["git_commit_id"],
+            v["git_commit_message"],
+            v["git_commit_time"],
+            v["time_service_started"],
+            v["pretty_uptime"],
         )
     )
 
