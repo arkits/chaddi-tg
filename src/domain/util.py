@@ -4,11 +4,12 @@ from telegram import update
 from telegram.user import User
 import os
 import random
-from datetime import datetime
+from datetime import datetime, timezone
 from src.db import Bakchod, GroupMember
 import en_core_web_sm
 from . import config
 import json
+import pytz
 
 
 app_config = config.get_config()
@@ -18,9 +19,11 @@ ADMIN_IDS = app_config.get("TELEGRAM", "TG_ADMIN_USERS")
 # Load Spacy English Language Pack
 nlp = en_core_web_sm.load()
 
-
 ROKDA_STRING = "₹okda"
 RESOURCES_DIR = "resources/"
+
+IST_TIMEZONE = pytz.timezone("Asia/Kolkata")
+UTC_TIMEZONE = pytz.timezone("UTC")
 
 # Read verbLookupTable on startup
 verb_past_lookup_file = open("resources/verb-past-lookup.json", "r")
@@ -161,3 +164,11 @@ def get_group_id_from_update(update: update):
         pass
 
     return group_id
+
+
+def normalize_datetime(dt: datetime):
+
+    if dt.tzinfo is None:
+        dt = UTC_TIMEZONE.localize(dt)
+
+    return IST_TIMEZONE.normalize(dt)

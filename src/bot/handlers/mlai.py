@@ -340,8 +340,8 @@ def handle_tynm(update: Update, context):
             username_w, username_h = draw.textsize(username, font=font_username)
 
             # Generate the timestamp of the message
-            timestamp = update.message.reply_to_message.date
-            timestamp_str = timestamp.strftime("%m/%d/%Y, %H:%M:%S")
+            timestamp = util.normalize_datetime(update.message.reply_to_message.date)
+            timestamp_str = timestamp.strftime("%d/%m/%Y, %I:%M %p")
             timestamp_str += "\n {}".format(update.message.reply_to_message.chat.title)
             timestamp_w, timestamp_h = draw.textsize(timestamp_str, font=font_subtitle)
 

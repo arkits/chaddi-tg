@@ -11,11 +11,13 @@ GIT_COMMIT_ID = (
     .decode("utf-8")
 )
 
-GIT_COMMIT_TIME = datetime.utcfromtimestamp(
-    int(
-        subprocess.check_output(["git", "show", "-s", "--format=%ct"])
-        .strip()
-        .decode("utf-8")
+GIT_COMMIT_TIME = util.normalize_datetime(
+    datetime.utcfromtimestamp(
+        int(
+            subprocess.check_output(["git", "show", "-s", "--format=%ct"])
+            .strip()
+            .decode("utf-8")
+        )
     )
 )
 
