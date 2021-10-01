@@ -14,7 +14,7 @@ rekognition_client = boto3.client("rekognition")
 
 MLAI_RESOURCES_DIR = path.join(util.RESOURCES_DIR, "mlai")
 EXTERNAL_DIR = path.join(util.RESOURCES_DIR, "external")
-
+FONTS_DIR = path.join(util.RESOURCES_DIR, "fonts")
 PNG_EXTENSION = ".png"
 NM_IMG_URL = "https://i.imgur.com/QAUObo1.png"
 
@@ -188,43 +188,6 @@ def handle_tynm(update: Update, context):
 
             text = update.message.reply_to_message.text
 
-            random_font_caption = util.choose_random_element_from_list(
-                [
-                    "Merriweather-Regular.ttf",
-                    "AmaticSC-Regular.ttf",
-                    "Italianno-Regular.ttf",
-                ]
-            )
-
-            font_caption = ImageFont.truetype(
-                path.join(
-                    os.getcwd(), util.RESOURCES_DIR, "fonts", random_font_caption
-                ),
-                35,
-            )
-
-            font_subtitle = ImageFont.truetype(
-                path.join(
-                    os.getcwd(), util.RESOURCES_DIR, "fonts", random_font_caption
-                ),
-                25,
-            )
-
-            random_font_username = util.choose_random_element_from_list(
-                [
-                    "Merriweather-Regular.ttf",
-                    "AmaticSC-Regular.ttf",
-                    "Italianno-Regular.ttf",
-                    "BebasNeue-Regular.ttf",
-                ]
-            )
-            font_username = ImageFont.truetype(
-                path.join(
-                    os.getcwd(), util.RESOURCES_DIR, "fonts", random_font_username
-                ),
-                50,
-            )
-
             # variables for image size
             x1 = 1280
             y1 = 720
@@ -300,10 +263,74 @@ def handle_tynm(update: Update, context):
                     traceback.format_exc(),
                 )
 
+            # Add dark background overlay
+            dark_bg = Image.new("RGBA", (x1, y1), color=(0, 0, 0, 150))
+            img = Image.alpha_composite(img, dark_bg)
+
             draw = ImageDraw.Draw(img)
 
             # Generate the caption
             caption = generate_wrapped_caption(text)
+
+            # Setup fonts
+            number_of_lines = len(caption.split("\n"))
+            logger.info("number_of_lines={}", number_of_lines)
+
+            if 0 < number_of_lines < 5:
+                font_caption_size = 75
+                font_username_size = 60
+                font_subtitle_size = 40
+            elif 5 <= number_of_lines < 10:
+                font_caption_size = 45
+                font_username_size = 40
+                font_subtitle_size = 30
+            else:
+                font_caption_size = 35
+                font_username_size = 40
+                font_subtitle_size = 30
+
+            logger.debug(
+                "font_caption_size={} font_username_size={} font_subtitle_size={}",
+                font_caption_size,
+                font_username_size,
+                font_subtitle_size,
+            )
+
+            random_font_caption = util.choose_random_element_from_list(
+                os.listdir(FONTS_DIR)
+            )
+
+            random_font_username = util.choose_random_element_from_list(
+                os.listdir(FONTS_DIR)
+            )
+
+            logger.debug(
+                "random_font_caption={} random_font_username={}",
+                random_font_caption,
+                random_font_username,
+            )
+
+            font_caption = ImageFont.truetype(
+                path.join(
+                    os.getcwd(), util.RESOURCES_DIR, "fonts", random_font_caption
+                ),
+                font_caption_size,
+            )
+
+            font_subtitle = ImageFont.truetype(
+                path.join(
+                    os.getcwd(), util.RESOURCES_DIR, "fonts", random_font_username
+                ),
+                font_subtitle_size,
+            )
+
+            font_username = ImageFont.truetype(
+                path.join(
+                    os.getcwd(), util.RESOURCES_DIR, "fonts", random_font_username
+                ),
+                font_username_size,
+            )
+
             caption_w, caption_h = draw.textsize(caption, font=font_caption)
 
             # Generate the username
@@ -389,7 +416,7 @@ def generate_wrapped_caption(text):
 
         if len(line) > 65:
 
-            w = textwrap.TextWrapper(width=65, break_long_words=False)
+            w = textwrap.TextWrapper(width=60, break_long_words=False)
             line = "\n".join(w.wrap(line))
 
         caption += line + "\n"
