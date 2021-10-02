@@ -70,12 +70,12 @@ def run_telegram_bot():
         """
 *chaddi-tg has started!*
 
-*chaddi-tg version:* {}
-*Commit ID:* {}
-*Commit Message:* {}
-*Commit Time:* {}
-*Time Started:* {}
-*Uptime:* {}
+*chaddi-tg version:* `{}`
+*Commit ID:* `{}`
+*Commit Message:* `{}`
+*Commit Time:* `{}`
+*Time Started:* `{}`
+*Uptime:* `{}`
 """.format(
             v["semver"],
             v["git_commit_id"],
