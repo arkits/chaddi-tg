@@ -10,7 +10,7 @@ import multiprocessing
 
 app_config = config.get_config()
 
-YTDL_MAX_DOWNLOAD_TIME = app_config.get("TELEGRAM", "YTDL_MAX_DOWNLOAD_TIME")
+YTDL_MAX_DOWNLOAD_TIME = float(app_config.get("TELEGRAM", "YTDL_MAX_DOWNLOAD_TIME"))
 
 YTDL_OPTS = {
     "outtmpl": os.path.join(util.RESOURCES_DIR, "external", "%(id)s"),
