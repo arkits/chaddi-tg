@@ -77,3 +77,4 @@ urllib3==1.26.4
 uvicorn==0.13.3
 wasabi==0.8.2
 Werkzeug==1.0.1
+youtube-dl==2021.6.6
