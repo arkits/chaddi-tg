@@ -66,8 +66,13 @@ def handle(
                 )
                 return
 
+            external_files = os.listdir(os.path.join(util.RESOURCES_DIR, "external"))
+            video_file = list(
+                filter(lambda x: str(x).startswith(video_info["id"]), external_files)
+            )[0]
+
             downloaded_video_path = os.path.join(
-                util.RESOURCES_DIR, "external", video_info["id"] + ".mp4"
+                util.RESOURCES_DIR, "external", video_file
             )
 
             caption = """
@@ -91,7 +96,7 @@ URL: {}
 
         except Exception as e:
             logger.error("[ytdl] Caught error in ytdl download e={}", e)
-            message.edit_text("Error downloading the video! (〃＞＿＜;〃)")
+            message.edit_text("Error downloading the video! (〃＞＿＜;〃) {}".format(e))
             raise e
 
     except Exception as e:
