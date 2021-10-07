@@ -27,6 +27,8 @@ def handle(update: Update, context):
 
         dc.log_command_usage("webm", update)
 
+        message = update.message.reply_text("Starting webm conversion (＠＾◡＾)")
+
         try:
 
             # Count time taken for webm conversion
@@ -66,9 +68,8 @@ def handle(update: Update, context):
                     str(document.file_id),
                     ffmpeg_conversion,
                 )
-                update.message.reply_text(
-                    text="(｡•́︿•̀｡) webm conversion failed (｡•́︿•̀｡)"
-                )
+
+                message.edit_text(text="(｡•́︿•̀｡) webm conversion failed (｡•́︿•̀｡)")
                 return
 
             # Calculate time taken to convert
@@ -102,6 +103,8 @@ def handle(update: Update, context):
                 caption=caption,
             )
 
+            message.delete()
+
             util.delete_file(WEBM_RESOURCES_DIR + str(document.file_id) + ".webm")
             util.delete_file(WEBM_RESOURCES_DIR + str(document.file_id) + ".mp4")
 
@@ -111,6 +114,8 @@ def handle(update: Update, context):
                 e,
                 traceback.format_exc(),
             )
+
+            message.edit_text(text="(｡•́︿•̀｡) webm conversion failed (｡•́︿•̀｡)")
 
     except Exception as e:
         logger.error(
