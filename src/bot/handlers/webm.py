@@ -6,6 +6,7 @@ import subprocess
 import traceback
 
 WEBM_RESOURCES_DIR = "resources/webm_conversions/"
+CUSTOM_TIMEOUT_SECONDS = 5000
 
 
 def handle(update: Update, context):
@@ -39,7 +40,10 @@ def handle(update: Update, context):
                 "[webm] Starting webm download - " + str(document.file_id) + ".webm"
             )
             webm_file = context.bot.get_file(document.file_id)
-            webm_file.download(WEBM_RESOURCES_DIR + str(document.file_id) + ".webm")
+            webm_file.download(
+                custom_path=WEBM_RESOURCES_DIR + str(document.file_id) + ".webm",
+                timeout=CUSTOM_TIMEOUT_SECONDS,
+            )
             logger.info(
                 "[webm] Finished downloading webm - " + str(document.file_id) + ".webm"
             )
@@ -99,11 +103,14 @@ def handle(update: Update, context):
             context.bot.send_video(
                 chat_id=update.message.chat_id,
                 video=open(WEBM_RESOURCES_DIR + str(document.file_id) + ".mp4", "rb"),
-                timeout=5000,
+                timeout=CUSTOM_TIMEOUT_SECONDS,
                 caption=caption,
             )
 
-            message.delete()
+            try:
+                message.delete()
+            except Exception as e:
+                logger.error("[webm] failed to delete message! error={}", e)
 
             util.delete_file(WEBM_RESOURCES_DIR + str(document.file_id) + ".webm")
             util.delete_file(WEBM_RESOURCES_DIR + str(document.file_id) + ".mp4")
