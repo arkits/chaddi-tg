@@ -1,4 +1,5 @@
 import json
+import locale
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -11,12 +12,19 @@ router = APIRouter()
 
 templates = Jinja2Templates(directory="templates")
 
+locale.setlocale(locale.LC_ALL, "en_US")
+
 
 def to_pretty_json(value):
     return json.dumps(value, sort_keys=True, indent=4, separators=(",", ": "))
 
 
+def to_pretty_number(value):
+    return locale.format_string("%d", value, grouping=True)
+
+
 templates.env.filters["tojson_pretty"] = to_pretty_json
+templates.env.filters["tonumber_pretty"] = to_pretty_number
 
 
 @router.get("/", response_class=HTMLResponse)
