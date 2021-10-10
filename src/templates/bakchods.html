@@ -1,7 +1,7 @@
 {% extends "base.html" %} {% block title %}Bakchods{% endblock %} {% block head
 %} {{ super() }} {% endblock %} {% block content %}
 <div class="container-lg">
-  <h1>{{bakchods | length}} Bakchods</h1>
+  <h1>{{bakchods_count | tonumber_pretty}} Bakchods</h1>
 
   {% with bakchods=bakchods %} {% include "partials/bakchods_table.html" %} {%
   endwith %}

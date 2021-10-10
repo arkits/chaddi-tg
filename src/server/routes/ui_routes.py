@@ -56,9 +56,11 @@ async def index(request: Request):
 async def get_bakchods(request: Request):
 
     bakchods = Bakchod.select().order_by(Bakchod.lastseen.desc()).limit(100)
+    bakchods_count = Bakchod.select().count()
 
     return templates.TemplateResponse(
-        "bakchods.html", {"request": request, "bakchods": bakchods}
+        "bakchods.html",
+        {"request": request, "bakchods": bakchods, "bakchods_count": bakchods_count},
     )
 
 
@@ -66,9 +68,11 @@ async def get_bakchods(request: Request):
 async def get_groups(request: Request):
 
     groups = Group.select().order_by(Group.updated.desc())
+    groups_count = Group.select().count()
 
     return templates.TemplateResponse(
-        "groups.html", {"request": request, "groups": groups}
+        "groups.html",
+        {"request": request, "groups": groups, "groups_count": groups_count},
     )
 
 
@@ -146,9 +150,11 @@ async def get_details_group_messages(request: Request, group_id: str = "unset"):
 async def get_groups(request: Request):
 
     quotes = Quote.select().limit(100).order_by(Quote.created.desc())
+    quotes_count = Quote.select().count()
 
     return templates.TemplateResponse(
-        "quotes.html", {"request": request, "quotes": quotes}
+        "quotes.html",
+        {"request": request, "quotes": quotes, "quotes_count": quotes_count},
     )
 
 
