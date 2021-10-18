@@ -1,0 +1,21 @@
+<div class="quotes-list">
+  {% for quote in quotes %}
+  <div class="card">
+    <pre class="quote-text font-size-16">{{quote.text}}</pre>
+    <p>
+      <strong>User:</strong> {{quote.author_bakchod.username}}<br />
+      <strong>Group:</strong> {{quote.quoted_in_group.name}}
+    </p>
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-sm"><strong>Created:</strong> {{quote.created }}</div>
+        <div class="col-sm"><strong>Quote ID:</strong> {{quote.quote_id}}</div>
+        <div class="col-sm">
+          <strong> Captured by:</strong>
+          {{quote.quote_capture_bakchod.username}}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
