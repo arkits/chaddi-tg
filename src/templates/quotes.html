@@ -3,7 +3,7 @@
 <div class="container-lg">
   <h1>{{quotes_count | tonumber_pretty}} Quotes</h1>
 
-  {% with quotes=quotes %} {% include "partials/quotes_table.html" %} {% endwith
+  {% with quotes=quotes %} {% include "partials/quotes_list.html" %} {% endwith
   %}
 </div>
 {% endblock %}
