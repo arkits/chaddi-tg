@@ -1,11 +1,15 @@
 import json
 import math
-from src.db import Bakchod
+
+from peewee import DoesNotExist, fn
+from src.db import Bakchod, Quote
 from fastapi import APIRouter, Request
 from starlette.responses import JSONResponse
 from loguru import logger
 from src import bot
 from pydantic import BaseModel
+
+from src.domain import util
 
 router = APIRouter()
 
@@ -143,6 +147,61 @@ async def post_api_set_bakchod_metadata(
 
         response_message = {
             "error": "Caught exception in post_api_set_bakchod_metadata",
+            "error_description": str(e),
+        }
+
+        return JSONResponse(content=response_message, status_code=500)
+
+    return JSONResponse(content=response_message, status_code=200)
+
+
+@router.get("/quotes", response_class=JSONResponse)
+async def get_api_quotes(request: Request, id: str = "unset"):
+
+    logger.info(
+        "get_api_quotes id={}",
+        id,
+    )
+
+    try:
+
+        if id == "unset":
+
+            q = Quote.select().order_by(fn.Random()).get()
+
+        else:
+
+            q = Quote.get_by_id(id)
+
+        response_message = {
+            "quote_id": q.quote_id,
+            "created": str(q.created),
+            "text": q.text,
+            "author_bakchod": util.extract_pretty_name_from_bakchod(q.author_bakchod),
+            "quoted_in_group": q.quoted_in_group.name,
+            "quote_capture_bakchod": util.extract_pretty_name_from_bakchod(
+                q.quote_capture_bakchod
+            ),
+        }
+
+        logger.debug("Generated response_message={}", response_message)
+
+    except DoesNotExist as e:
+
+        logger.error("Caught DoesNotExist - e={}", e)
+
+        response_message = {
+            "error": "Quote does not exist",
+        }
+
+        return JSONResponse(content=response_message, status_code=404)
+
+    except Exception as e:
+
+        logger.error("Caught Exception - e={}", e)
+
+        response_message = {
+            "error": "Caught exception in get_api_quotes",
             "error_description": str(e),
         }
 
