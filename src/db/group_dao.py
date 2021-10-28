@@ -97,13 +97,13 @@ def get_all_groupmembers_by_group_id(group_id: str):
     return groupmembers
 
 
-def get_all_messages_by_group_id(group_id: str, limit: int):
+def get_all_messages_by_group_id(group_id: str, page_number: int, items_per_page: int):
 
     messages = (
         Message.select()
-        .limit(limit)
         .order_by(Message.time_sent.desc())
         .where(Message.to_id == group_id)
+        .paginate(page_number, items_per_page)
         .execute()
     )
 

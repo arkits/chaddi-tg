@@ -127,13 +127,17 @@ async def get_details_group(request: Request, group_id: str = "unset"):
 
 
 @router.get("/details/messages", response_class=HTMLResponse)
-async def get_details_group_messages(request: Request, group_id: str = "unset"):
+async def get_details_group_messages(
+    request: Request, group_id: str = "unset", page: int = 1, limit: int = 100
+):
 
     g = Group.get_by_id(group_id)
 
     message_count = Message.select().where(Message.to_id == group_id).count()
 
-    messages = group_dao.get_all_messages_by_group_id(group_id, 100)
+    messages = group_dao.get_all_messages_by_group_id(group_id, page, limit)
+
+    number_of_pages = message_count // limit + 1
 
     return templates.TemplateResponse(
         "details_group_messages.html",
@@ -142,6 +146,9 @@ async def get_details_group_messages(request: Request, group_id: str = "unset"):
             "group": g,
             "messages": messages,
             "message_count": message_count,
+            "page": page,
+            "limit": limit,
+            "number_of_pages": number_of_pages,
         },
     )
 

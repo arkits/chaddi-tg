@@ -1,0 +1,24 @@
+<div class="messages-list">
+  {% for message in messages %}
+  <div class="card">
+    <pre class="quote-text font-size-8">{{message.text}}</pre>
+
+    <div class="container-fluid">
+      <hr />
+      <br />
+
+      <div class="row">
+        <div class="col-sm">
+          <strong>Sender:</strong> {{message.from_bakchod.username }}
+        </div>
+        <div class="col-sm">
+          <strong>Time Sent:</strong> {{message.time_sent }}
+        </div>
+        <div class="col-sm">
+          <strong>Message ID:</strong> {{message.message_id }}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>

@@ -1,5 +1,6 @@
 {% extends "base.html" %} {% block title %}Group Details{% endblock %} {% block
 head %} {{ super() }} {% endblock %} {% block content %}
+<script defer src="/chaddi/static/details_messages.js"></script>
 <div class="container-lg">
   <br />
   <nav>
@@ -22,26 +23,64 @@ head %} {{ super() }} {% endblock %} {% block content %}
 
   <h1>{{group.name}}</h1>
 
-  <table class="table">
-    <tbody>
-      <tr>
-        <th class="text-right">ID:</th>
-        <td class="text-left">{{group.group_id}}</td>
-      </tr>
-      <tr>
-        <th class="text-right">Number of Messages:</th>
-        <td class="text-left">{{message_count}}</td>
-      </tr>
-    </tbody>
-  </table>
-
-  <br />
-  <hr />
-  <br />
-
   <h4>Group Messages</h4>
 
-  {% with messages=messages %} {% include "partials/messages_table.html" %} {%
-  endwith %}
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-sm">
+        <div class="w-400 mw-full">
+          <input
+            id="group-id"
+            type="hidden"
+            name="group-id"
+            value="{{group.group_id}}}"
+          />
+
+          <div class="form-group">
+            <label for="full-name" class="required">Page Number</label>
+            <input
+              id="group-messages-page-number"
+              name="page-number"
+              type="text"
+              class="form-control"
+              placeholder="{{page}}"
+              required="required"
+              value="{{page}}"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="full-name" class="required">Limit</label>
+            <input
+              id="group-messages-limit"
+              name="end-id"
+              type="text"
+              class="form-control"
+              placeholder="{{limit}}"
+              required="required"
+              value="{{limit}}"
+            />
+          </div>
+
+          <input
+            id="load-messages-button"
+            class="btn btn-primary"
+            type="submit"
+            value="Load Messages"
+          />
+        </div>
+      </div>
+      <div class="col-sm">
+        <strong>Total Messages:</strong> {{message_count}} <br /><br />
+        <strong>Number of Pages:</strong> {{number_of_pages}}
+      </div>
+    </div>
+
+    <br />
+    <hr />
+
+    {% with messages=messages %} {% include "partials/messages_list.html" %} {%
+    endwith %}
+  </div>
+  {% endblock %}
 </div>
-{% endblock %}
