@@ -131,6 +131,10 @@ async def get_details_group_messages(
     request: Request, group_id: str = "unset", page: int = 1, limit: int = 100
 ):
 
+    # define upper limit on limit as 250
+    if limit > 250:
+        limit = 250
+
     g = Group.get_by_id(group_id)
 
     message_count = Message.select().where(Message.to_id == group_id).count()
