@@ -1,19 +1,18 @@
 from os import path
-import os
 import traceback
 import boto3
 from telegram import Update
 from telegram.parsemode import ParseMode
 from src.domain import dc, util
 from loguru import logger
-from PIL import Image, ImageDraw, ImageFont, ImageOps
-import textwrap
-import uuid
+from PIL import Image, ImageDraw
+import random
 
 rekognition_client = boto3.client("rekognition")
 
 MLAI_RESOURCES_DIR = path.join(util.RESOURCES_DIR, "mlai")
 PNG_EXTENSION = ".png"
+BOUNDING_BOX_COLORS = ["#03dac6", "#f9ff03", "#ff9c03", "#ff03e6", "#03ffd4"]
 
 
 def handle(update: Update, context):
@@ -115,6 +114,11 @@ def handle_ocr(update: Update, context):
             )
             logger.debug("[mlai] response={}", response)
 
+            # Draw bounding boxes on the image
+        image = Image.open(build_file_path(file))
+        img_width, img_height = image.size
+        draw = ImageDraw.Draw(image)
+
         text_detections = response["TextDetections"]
         reply_text += "- Elements detected: {} \n \n".format(len(text_detections))
 
@@ -123,12 +127,29 @@ def handle_ocr(update: Update, context):
             if text["Type"] != "WORD":
                 continue
 
-            reply_text += "{} ".format(text["DetectedText"])
+            reply_text += "{} \n".format(text["DetectedText"])
+
+            # if the response has returned a BoundingBox, draw it on the image
+            if "Geometry" in text:
+                box = text["Geometry"]["BoundingBox"]
+                draw_bounding_box(draw, box, img_width, img_height)
+
+        image.save(MLAI_RESOURCES_DIR + file["file_id"] + "_mlai" + PNG_EXTENSION)
 
         reply_text = reply_text[:4096]  # truncate to Telegram's max size
-        update.message.reply_text(reply_text, parse_mode=ParseMode.MARKDOWN)
 
+        with open(
+            MLAI_RESOURCES_DIR + file["file_id"] + "_mlai" + PNG_EXTENSION, "rb"
+        ) as photo_to_upload:
+            update.message.reply_photo(
+                photo=photo_to_upload,
+                caption=reply_text,
+                parse_mode=ParseMode.MARKDOWN,
+            )
+
+        # Cleanup the downloaded files
         util.delete_file(build_file_path(file))
+        util.delete_file(build_file_path(file, "_mlai"))
 
         return
 
@@ -170,7 +191,10 @@ def list_out_emotions(emotions):
     return toReturn
 
 
-def draw_bounding_box(draw, box, img_width, img_height):
+def draw_bounding_box(draw, box, img_width, img_height, fill_color_hex=None):
+
+    if fill_color_hex is None:
+        fill_color_hex = random.choice(BOUNDING_BOX_COLORS)
 
     left = img_width * box["Left"]
     top = img_height * box["Top"]
@@ -185,6 +209,6 @@ def draw_bounding_box(draw, box, img_width, img_height):
         (left, top),
     )
 
-    draw.line(points, fill="#00d400", width=2)
+    draw.line(points, fill=fill_color_hex, width=5)
 
     return draw
