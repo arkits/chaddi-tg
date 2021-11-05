@@ -42,7 +42,7 @@ def run_telegram_bot():
     dispatcher.add_handler(CommandHandler("translate", handlers.translate.handle))
     dispatcher.add_handler(CommandHandler("mlai", handlers.mlai.handle))
     dispatcher.add_handler(CommandHandler("ocr", handlers.mlai.handle_ocr))
-    dispatcher.add_handler(CommandHandler("tynm", handlers.mlai.handle_tynm))
+    dispatcher.add_handler(CommandHandler("tynm", handlers.tynm.handle))
     dispatcher.add_handler(CommandHandler("ytdl", handlers.ytdl.handle))
 
     dispatcher.add_handler(
