@@ -29,21 +29,30 @@ def run_telegram_bot():
     dispatcher.add_handler(CommandHandler("rokda", handlers.rokda.handle))
     dispatcher.add_handler(CommandHandler("superpower", handlers.superpower.handle))
     dispatcher.add_handler(CommandHandler("gamble", handlers.gamble.handle))
+    
     dispatcher.add_handler(CommandHandler("mom", handlers.mom.handle))
     dispatcher.add_handler(CommandHandler("mom2", handlers.mom2.handle))
+
     dispatcher.add_handler(CommandHandler("set", handlers.setter.handle))
     dispatcher.add_handler(CommandHandler("chutiya", handlers.chutiya.handle))
     dispatcher.add_handler(CommandHandler("aao", handlers.aao.handle))
     dispatcher.add_handler(CommandHandler("daan", handlers.daan.handle))
     dispatcher.add_handler(CommandHandler("version", handlers.version.handle))
+    
     dispatcher.add_handler(CommandHandler("quote", handlers.quotes.handle))
     dispatcher.add_handler(CommandHandler("quotes", handlers.quotes.handle))
+
     dispatcher.add_handler(CommandHandler("roll", handlers.roll.handle))
     dispatcher.add_handler(CommandHandler("translate", handlers.translate.handle))
     dispatcher.add_handler(CommandHandler("mlai", handlers.mlai.handle))
     dispatcher.add_handler(CommandHandler("ocr", handlers.mlai.handle_ocr))
     dispatcher.add_handler(CommandHandler("tynm", handlers.tynm.handle))
     dispatcher.add_handler(CommandHandler("ytdl", handlers.ytdl.handle))
+
+    dispatcher.add_handler(CommandHandler("remind", handlers.remind.handle))
+    dispatcher.add_handler(CommandHandler("reminder", handlers.remind.handle))
+    dispatcher.add_handler(CommandHandler("remindme", handlers.remind.handle))
+    dispatcher.add_handler(CommandHandler("alarm", handlers.remind.handle))
 
     dispatcher.add_handler(
         MessageHandler(Filters.status_update, handlers.defaults.status_update)

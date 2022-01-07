@@ -91,5 +91,14 @@ class Roll(BaseModel):
     prize = CharField(null=True)
 
 
+class ScheduledJob(BaseModel):
+    job_id = CharField(unique=True, primary_key=True)
+    created = DateTimeField()
+    updated = DateTimeField()
+    from_bakchod = ForeignKeyField(Bakchod, backref="scheduled_jobs")
+    group = ForeignKeyField(Group, backref="scheduled_jobs")
+    metadata = BinaryJSONField(default=EMPTY_JSON)
+
+
 db.connect()
-db.create_tables([Bakchod, Message, Group, GroupMember, Quote, Roll])
+db.create_tables([Bakchod, Message, Group, GroupMember, Quote, Roll, ScheduledJob])
