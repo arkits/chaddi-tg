@@ -23,16 +23,26 @@ def handle(update: Update, context: CallbackContext):
     try:
 
         due_seconds = parse_reminder_due(context.args)
-        if not 0 <= due_seconds <= (31 *86400):
+        if due_seconds <= 0:
+            update.message.reply_text(
+                text="<b>Usage:</b> <code>/remind 5m \"Chai break\"</code>", 
+                parse_mode=ParseMode.HTML
+            )
+            return
+
+        if due_seconds >= (31*86400):
             sticker_to_send = "CAADAQADrAEAAp6M4Ahtgp9JaiLJPxYE"
             update.message.reply_sticker(sticker=sticker_to_send)
             return
+
+        reminder_message = extract_reminder_message(update.message.text)
 
         job_context = {
             "chat_id": chat_id,
             "due_seconds": due_seconds,
             "from_bakchod_id": from_bakchod_id,
             "reply_to_message_id": reply_to_message_id,
+            "reminder_message": reminder_message   
         }
         job_context = json.dumps(job_context)
 
@@ -59,7 +69,10 @@ I will reply to you in {} as a reminder.
         )
 
     except (IndexError, ValueError):
-        update.message.reply_text("Usage: /remind <seconds>")
+        update.message.reply_text(
+            text="<b>Usage:</b> </pre>/remind 5m \"Chai break\"</pre>", 
+            parse_mode=ParseMode.HTML
+        )
 
 
 def build_job_name(chat_id, from_bakchod_id):
@@ -92,12 +105,19 @@ def reminder_handler(context: CallbackContext) -> None:
     reply_text = """
 {}
 """.format(
-        random.choice(REMINDER_RESPONSE_GREETINGS)
+        random.choice(REMINDER_RESPONSE_GREETINGS),
     )
+
+    if job_context["reminder_message"] != "":
+        reply_text = reply_text + """
+<b>> {}</b>
+""".format(job_context["reminder_message"])
+
     context.bot.send_message(
         chat_id=job_context["chat_id"],
         text=reply_text,
         reply_to_message_id=job_context["reply_to_message_id"],
+        parse_mode=ParseMode.HTML
     )
 
 
@@ -147,3 +167,11 @@ def parse_reminder_due(args):
             continue
 
     return due_seconds
+
+
+def extract_reminder_message(message: str):
+    custom_message = ""
+    s = message.split("\"")
+    if len(s) >= 2:
+        custom_message = "".join(s[1:])
+    return custom_message

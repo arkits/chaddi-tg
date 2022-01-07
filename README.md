@@ -25,6 +25,7 @@ Chaddi Bot has a variety of features to make your Telegram experience a whole lo
 - Fun and Games
   - `/roll` - starts a dice roll game
   - `/quotes` - showcase the important messages in your Group
+  - `/remind 5m "Chai break"` - Chaddi will remind you to take a break
 - Monitoring
   - Inbuilt and rich monitoring and metrics web UI and Grafana dashboard
 
