@@ -151,13 +151,13 @@ def parse_reminder_due(args):
             logger.trace("digit={} value_indicator={}".format(
                 digit, value_indicator))
 
-            if value_indicator == "min" or value_indicator == "m" or value_indicator == "mins":
+            if value_indicator == "min"  or value_indicator == "mins" or value_indicator == "m":
                 digit = digit * 60
 
-            if value_indicator == "hour" or value_indicator == "hr" or value_indicator == "h":
+            if value_indicator == "hour" or value_indicator == "hours" or value_indicator == "hr" or value_indicator == "hrs" or value_indicator == "h":
                 digit = digit * 60 * 60
 
-            if value_indicator == "day" or value_indicator == "d" or value_indicator == "days":
+            if value_indicator == "day" or value_indicator == "days" or value_indicator == "d":
                 digit = digit * 60 * 60 * 60
 
             due_seconds = due_seconds + digit
