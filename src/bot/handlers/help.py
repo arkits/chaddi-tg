@@ -22,5 +22,5 @@ def handle(update: Update, context: CallbackContext) -> None:
   - <code>/quotes</code> - showcase the important messages in your Group
   - <code>/remind 5m "Chai break"</code> - Chaddi will remind you to take a break
 
-Support group: https://t.me/+KRizKWs-rK4yOTFj
+Support group: https://t.me/chaddi_b
 """, parse_mode=ParseMode.HTML)

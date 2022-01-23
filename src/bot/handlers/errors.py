@@ -6,6 +6,10 @@ from src.domain import tg_logger
 
 
 def log_error(update: Update, context: CallbackContext):
+
+    if not update:
+        return
+
     logger.error(
         "Caught Fatal Error! error={} \n \nupdate={} \n \ncontext={} \n \ntraceback={}",
         context.error,

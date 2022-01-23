@@ -1,8 +1,10 @@
 import json
 import math
+import inspect
 
 from peewee import DoesNotExist, fn
-from src.db import Bakchod, Quote
+from playhouse.shortcuts import model_to_dict
+from src.db import Bakchod, Group, Message, Quote, group_dao
 from fastapi import APIRouter, Request
 from starlette.responses import JSONResponse
 from loguru import logger
@@ -16,9 +18,7 @@ router = APIRouter()
 
 @router.get("/health", response_class=JSONResponse)
 async def get_api_health(request: Request):
-
     response_message = {"health": "ok"}
-
     return JSONResponse(content=response_message, status_code=200)
 
 
@@ -46,18 +46,11 @@ async def post_api_bot_send_msg(request: Request, send_msg_params: SendMsgParams
             chat_id=send_msg_params.chat_id, text=send_msg_params.message_text
         )
 
+        return JSONResponse(content=response_message, status_code=200)
+
     except Exception as e:
-
         logger.error("Caught Exception - e={}", e)
-
-        response_message = {
-            "error": "Caught exception in post_api_bot_send_msg",
-            "error_description": str(e),
-        }
-
-        return JSONResponse(content=response_message, status_code=500)
-
-    return JSONResponse(content=response_message, status_code=200)
+        return handle_http_error(str(e), 500) 
 
 
 class SetBakchodRokdaParams(BaseModel):
@@ -93,18 +86,11 @@ async def post_api_set_bakchod_rokda(
         b.rokda = rokda_to_set
         b.save()
 
+        return JSONResponse(content=response_message, status_code=200)
+
     except Exception as e:
-
         logger.error("Caught Exception - e={}", e)
-
-        response_message = {
-            "error": "Caught exception in post_api_set_bakchod_rokda",
-            "error_description": str(e),
-        }
-
-        return JSONResponse(content=response_message, status_code=500)
-
-    return JSONResponse(content=response_message, status_code=200)
+        return handle_http_error(str(e), 500) 
 
 
 class SetBakchodMetadataParams(BaseModel):
@@ -141,18 +127,11 @@ async def post_api_set_bakchod_metadata(
         b.metadata = metadata_json
         b.save()
 
+        return JSONResponse(content=response_message, status_code=200)
+
     except Exception as e:
-
         logger.error("Caught Exception - e={}", e)
-
-        response_message = {
-            "error": "Caught exception in post_api_set_bakchod_metadata",
-            "error_description": str(e),
-        }
-
-        return JSONResponse(content=response_message, status_code=500)
-
-    return JSONResponse(content=response_message, status_code=200)
+        return handle_http_error(str(e), 500) 
 
 
 @router.get("/quotes", response_class=JSONResponse)
@@ -186,25 +165,211 @@ async def get_api_quotes(request: Request, id: str = "unset"):
 
         logger.debug("Generated response_message={}", response_message)
 
+        return JSONResponse(content=response_message, status_code=200)
+
     except DoesNotExist as e:
-
         logger.error("Caught DoesNotExist - e={}", e)
-
         response_message = {
             "error": "Quote does not exist",
         }
-
         return JSONResponse(content=response_message, status_code=404)
 
     except Exception as e:
-
         logger.error("Caught Exception - e={}", e)
+        return handle_http_error(str(e), 500) 
 
-        response_message = {
-            "error": "Caught exception in get_api_quotes",
-            "error_description": str(e),
+
+@router.get("/groups", response_class=JSONResponse)
+async def get_api_groups(request: Request, page_number: int = 1):
+
+    items_per_page = 50
+
+    logger.info(
+        "get_api_groups page_number", page_number
+    )
+
+    response = {
+        "current_page": page_number,
+        "total_groups": 0,
+        "total_pages": 0,
+        "groups": [],
+    }
+
+    try:
+
+        groups = (
+            Group.select()
+            .order_by(Group.updated.desc())
+            .paginate(page_number, items_per_page)
+            .execute()
+        )
+
+        for group in groups:
+            g = {
+                "group_id": group.group_id,
+                "name": group.name,
+                "created": str(group.created),
+                "updated": str(group.updated)
+            }
+            response["groups"].append(g)
+
+        response["total_groups"] = Group.select().count()
+        response["total_pages"] = response["total_groups"] // items_per_page + 1
+
+        return JSONResponse(content=response, status_code=200)
+    
+    except Exception as e:
+        logger.error("Caught Exception - e={}", e)
+        return handle_http_error(str(e), 500) 
+
+
+@router.get("/groups/{group_id}", response_class=JSONResponse)
+async def get_api_group_details(request: Request, group_id):
+
+    response = {}
+
+    try:
+
+        if group_id is None:
+            raise Exception("group_id was None")
+
+        g = Group.get_by_id(group_id)
+        response = json.loads(
+            json.dumps(model_to_dict(g), sort_keys=True, default=str)
+        )
+
+        return JSONResponse(content=response, status_code=200)
+    
+    except Exception as e:
+        logger.error("Caught Exception - e={}", e)
+        return handle_http_error(str(e), 500) 
+
+
+@router.get("/groups/{group_id}/messages", response_class=JSONResponse)
+async def get_api_group_messages(request: Request, group_id, page_number: int = 1, include_update: bool = False):
+
+    try:
+        
+        items_per_page = 50
+
+        if group_id is None:
+            raise Exception("group_id was None")
+
+        group = None
+
+        try:
+            group = Group.get_by_id(group_id)
+        except Exception as e:
+            logger.error("Caught Exception - e={}", e)
+        
+        if group is None:
+            raise Exception("Group not found")
+
+        total_messages = Message.select().where(Message.to_id == group_id).count()
+
+        total_pages = total_messages // items_per_page + 1
+
+        messages = group_dao.get_all_messages_by_group_id(group_id, page_number, items_per_page)
+
+        response = {
+            "current_page": page_number,
+            "total_pages": total_pages,
+            "total_messages": total_messages,
+            "messages": []
         }
 
-        return JSONResponse(content=response_message, status_code=500)
+        for message in messages:
+            m = {
+                "message_id": message.message_id,
+                "text": message.text,
+                "time_sent": str(message.time_sent),
+                "from_bakchod": {
+                    "tg_id": message.from_bakchod.tg_id,
+                    "username": message.from_bakchod.username,
+                    "pretty_name": message.from_bakchod.pretty_name
+                }
+            }
+            if include_update:
+                m["update"] = json.dumps(message.update)
+            response["messages"].append(m)
 
-    return JSONResponse(content=response_message, status_code=200)
+        return JSONResponse(content=response, status_code=200)
+    
+    except Exception as e:
+        logger.error("Caught Exception - e={}", e)
+        return handle_http_error(str(e), 500) 
+
+
+@router.get("/bakchods", response_class=JSONResponse)
+async def get_api_bakchods(request: Request, page_number: int = 1):
+
+    items_per_page = 50
+
+    logger.info(
+        "get_api_bakchods page_number", page_number
+    )
+
+    response = {
+        "current_page": page_number,
+        "total_bakchods": 0,
+        "total_pages": 0,
+        "bakchods": [],
+    }
+
+    try:
+
+        bakchods = (
+            Bakchod.select()
+            .order_by(Bakchod.updated.desc())
+            .paginate(page_number, items_per_page)
+            .execute()
+        )
+
+        for bakchod in bakchods:
+            response["bakchods"].append(quick_model_to_dict(bakchod))
+
+        response["total_bakchods"] = Bakchod.select().count()
+        response["total_pages"] = response["total_bakchods"] // items_per_page + 1
+
+        return JSONResponse(content=response, status_code=200)
+    
+    except Exception as e:
+        logger.error("Caught Exception - e={}", e)
+        return handle_http_error(str(e), 500) 
+
+@router.get("/bakchods/{tg_id}", response_class=JSONResponse)
+async def get_api_bakchod_details(request: Request, tg_id):
+
+    try:
+
+        if tg_id is None:
+            raise Exception("tg_id was None")
+
+        try:
+
+            b = Bakchod.get_by_id(tg_id)
+            response = quick_model_to_dict(b)
+            return JSONResponse(content=response, status_code=200)
+        
+        except Exception as e:
+            raise Exception("Bakchod not found")
+        
+    except Exception as e:
+        logger.error("Caught Exception - e={}", e)
+        return handle_http_error(str(e), 500) 
+
+
+def quick_model_to_dict(model):
+    return json.loads(
+        json.dumps(model_to_dict(model), sort_keys=True, default=str)
+    ) 
+
+
+def handle_http_error(error_description, status_code):
+
+    error_response = {
+        "error": "Caught fatal exception in {}".format(inspect.stack()[1][3]),
+        "error_description": error_description,
+    }
+
+    return JSONResponse(content=error_response, status_code=status_code) 

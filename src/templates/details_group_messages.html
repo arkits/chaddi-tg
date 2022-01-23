@@ -1,16 +1,16 @@
 {% extends "base.html" %} {% block title %}Group Details{% endblock %} {% block
 head %} {{ super() }} {% endblock %} {% block content %}
-<script defer src="/chaddi/static/details_messages.js"></script>
+<script defer src="/static/details_messages.js"></script>
 <div class="container-lg">
   <br />
   <nav>
     <ul class="breadcrumb">
       <li class="breadcrumb-item">details</li>
       <li class="breadcrumb-item">
-        <a href="/chaddi/groups">groups</a>
+        <a href="/groups">groups</a>
       </li>
       <li class="breadcrumb-item">
-        <a href="/chaddi/details/group?group_id={{group.group_id}}"
+        <a href="/details/group?group_id={{group.group_id}}"
           >{{group.group_id}}</a
         >
       </li>

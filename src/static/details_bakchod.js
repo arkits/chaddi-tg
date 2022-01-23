@@ -17,7 +17,7 @@ update_rokda_button.addEventListener("click", function () {
     redirect: "follow",
   };
 
-  fetch("/chaddi/api/bakchod/rokda", requestOptions)
+  fetch("/api/bakchod/rokda", requestOptions)
     .then((response) => response.text())
     .then((result) => location.reload())
     .catch((error) => console.log("error", error));
@@ -42,7 +42,7 @@ update_metadata_button.addEventListener("click", function () {
     redirect: "follow",
   };
 
-  fetch("/chaddi/api/bakchod/metadata", requestOptions)
+  fetch("/api/bakchod/metadata", requestOptions)
     .then((response) => response.text())
     .then((result) => location.reload())
     .catch((error) => console.log("error", error));

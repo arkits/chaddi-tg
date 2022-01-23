@@ -6,7 +6,7 @@ head %} {{ super() }} {% endblock %} {% block content %}
     <ul class="breadcrumb">
       <li class="breadcrumb-item">details</li>
       <li class="breadcrumb-item">
-        <a href="/chaddi/groups">groups</a>
+        <a href="/groups">groups</a>
       </li>
       <li class="breadcrumb-item active" aria-current="page">
         {{group.group_id}}
@@ -46,7 +46,7 @@ head %} {{ super() }} {% endblock %} {% block content %}
         <td class="text-left">
           {{message_count}}
           <a
-            href="/chaddi/details/messages?group_id={{group.group_id}}"
+            href="/details/messages?group_id={{group.group_id}}"
             class="btn btn-primary"
             role="button"
             >View</a
@@ -58,7 +58,7 @@ head %} {{ super() }} {% endblock %} {% block content %}
 
   <h3>Message</h3>
 
-  <form method="POST" action="/chaddi/api/bot/send_message">
+  <form method="POST" action="/api/bot/send_message">
     <input type="hidden" name="group_id" value="{{group.group_id}}" />
     <input class="form-control" type="text" name="message" value="" /><br />
     <input
@@ -95,7 +95,7 @@ head %} {{ super() }} {% endblock %} {% block content %}
         <td>{{groupmember.bakchod.lastseen}}</td>
         <td>
           <a
-            href="/chaddi/details/bakchod?tg_id={{groupmember.bakchod.tg_id}}"
+            href="/details/bakchod?tg_id={{groupmember.bakchod.tg_id}}"
             class="btn btn-primary"
             role="button"
             >View Details</a

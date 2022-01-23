@@ -1,13 +1,13 @@
 {% extends "base.html" %} {% block title %}Bakchod Details{% endblock %} {%
 block head %} {{ super() }} {% endblock %} {% block content %}
-<script defer src="/chaddi/static/details_bakchod.js"></script>
+<script defer src="/static/details_bakchod.js"></script>
 <div class="container-lg">
   <br />
   <nav>
     <ul class="breadcrumb">
       <li class="breadcrumb-item">details</li>
       <li class="breadcrumb-item">
-        <a href="/chaddi/bakchods">bakchods</a>
+        <a href="/bakchods">bakchods</a>
       </li>
       <li class="breadcrumb-item active" aria-current="page">
         {{bakchod.tg_id}}
@@ -46,51 +46,22 @@ block head %} {{ super() }} {% endblock %} {% block content %}
       <tr>
         <th class="text-right">Rokda:</th>
         <td class="text-left">
-          <input
-            id="tg-id"
-            type="hidden"
-            name="tg-id"
-            value="{{bakchod.tg_id}}"
-          />
+          <input id="tg-id" type="hidden" name="tg-id" value="{{bakchod.tg_id}}" />
           <div class="form-group">
-            <input
-              id="rokda-input"
-              name="rokda"
-              type="text"
-              class="form-control"
-              placeholder="{{bakchod.rokda}}"
-              required="required"
-              value="{{bakchod.rokda}}"
-            />
+            <input id="rokda-input" name="rokda" type="text" class="form-control" placeholder="{{bakchod.rokda}}"
+              required="required" value="{{bakchod.rokda}}" />
           </div>
-          <input
-            id="update-rokda-button"
-            class="btn btn-primary"
-            type="submit"
-            value="Update Rokda"
-          />
+          <input id="update-rokda-button" class="btn btn-primary" type="submit" value="Update Rokda" />
         </td>
       </tr>
       <tr>
         <th class="text-right">Metadata:</th>
         <td>
           <div class="form-group">
-            <textarea
-              class="form-control"
-              id="metadata-textarea"
-              name="metadata"
-              type="text"
-              required="required"
-            >
-{{bakchod.metadata | tojson_pretty}}</textarea
-            >
+            <textarea class="form-control" id="metadata-textarea" name="metadata" type="text" required="required">
+{{bakchod.metadata | tojson_pretty}}</textarea>
           </div>
-          <input
-            id="update-metadata-button"
-            class="btn btn-primary"
-            type="submit"
-            value="Update Metadata"
-          />
+          <input id="update-metadata-button" class="btn btn-primary" type="submit" value="Update Metadata" />
         </td>
       </tr>
     </tbody>
@@ -103,7 +74,7 @@ block head %} {{ super() }} {% endblock %} {% block content %}
   <ul>
     {% for group in groups %}
     <li>
-      <a href="/chaddi/details/group?group_id={{group.group_id}}">
+      <a href="/details/group?group_id={{group.group_id}}">
         {{group.name}}
       </a>
     </li>

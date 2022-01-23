@@ -7,3 +7,7 @@ aao - 👳‍♀️
 quotes - 🙊
 chutiya - 🤬
 translate - Translate any language to English
+tynm - 🇮🇳 🙏 👳‍♀️
+ocr - Perform OCR on image
+remind - Set a reminder
+help - HAAALLLPPP

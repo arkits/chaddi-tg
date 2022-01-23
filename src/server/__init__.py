@@ -5,16 +5,33 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from starlette_exporter import PrometheusMiddleware, handle_metrics
 
-from src.domain import config
+from src.domain import config, version
 from src.server.routes import api_routes
 from src.server.routes import ui_routes
 
 # Initialize the config
 app_config = config.get_config()
 
-app = FastAPI()
+tags_metadata = [
+    {
+        "name": "api",
+        "description": "Chaddi API Endpoints",
+    }, 
+    {
+        "name":"ui",
+        "description": "Chaddi Web UI Endpoints"
+    }
+]
 
-app.mount("/chaddi/static", StaticFiles(directory="static"), name="static")
+v = version.get_version()
+
+app = FastAPI(
+    title="chaddi-tg",
+    version=v["git_commit_id"],
+    openapi_tags=tags_metadata
+)
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 app.add_middleware(
@@ -30,17 +47,17 @@ app.add_middleware(
     prefix="http",
     buckets=[0.1, 0.25, 0.5, 0.75, 1],
 )
-app.add_route("/chaddi/metrics", handle_metrics)
+app.add_route("/metrics", handle_metrics)
 
-app.include_router(api_routes.router, prefix="/chaddi/api")
+app.include_router(api_routes.router, prefix="/api", tags=["api"])
 
-app.include_router(ui_routes.router, prefix="/chaddi")
+app.include_router(ui_routes.router, tags=["ui"])
 
 
 def run_server():
 
     logger.info(
-        "[server] Starting Server on http://localhost:{}/chaddi",
+        "[server] Starting Server on http://localhost:{}",
         app_config.get("SERVER", "PORT"),
     )
     uvicorn.run(
