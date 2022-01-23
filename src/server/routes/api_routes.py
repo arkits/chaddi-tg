@@ -135,22 +135,66 @@ async def post_api_set_bakchod_metadata(
 
 
 @router.get("/quotes", response_class=JSONResponse)
-async def get_api_quotes(request: Request, id: str = "unset"):
+async def get_api_quotes(request: Request, page_number: int = 1):
+
+    items_per_page = 50
 
     logger.info(
-        "get_api_quotes id={}",
-        id,
+        "get_api_quotes page_number={}", page_number
     )
+
+    response = {
+        "current_page": page_number,
+        "total_quotes": 0,
+        "total_pages": 0,
+        "groups": [],
+    }
 
     try:
 
-        if id == "unset":
+        quotes = (
+            Quote.select()
+            .order_by(Quote.created.desc())
+            .paginate(page_number, items_per_page)
+            .execute()
+        )
 
+        for quote in quotes:
+            q = {
+                "quote_id": quote.quote_id,
+                "created": str(quote.created),
+                "text": quote.text,
+                "author_bakchod": util.extract_pretty_name_from_bakchod(quote.author_bakchod),
+                "quoted_in_group": quote.quoted_in_group.name,
+                "quote_capture_bakchod": util.extract_pretty_name_from_bakchod(
+                    quote.quote_capture_bakchod
+                ),
+            }
+            response["groups"].append(q)
+
+        response["total_groups"] = Group.select().count()
+        response["total_pages"] = response["total_groups"] // items_per_page + 1
+
+        return JSONResponse(content=response, status_code=200)
+    
+    except Exception as e:
+        logger.error("Caught Exception - e={}", e)
+        return handle_http_error(str(e), 500) 
+
+
+@router.get("/quotes/{quote_id}", response_class=JSONResponse)
+async def get_api_quote_details(request: Request, quote_id: str = "random"):
+
+    logger.info("get_api_quotes quote_id={}", quote_id)
+
+    try:
+
+        q = None
+
+        if quote_id == "random":
             q = Quote.select().order_by(fn.Random()).get()
-
         else:
-
-            q = Quote.get_by_id(id)
+            q = Quote.get_by_id(quote_id)
 
         response_message = {
             "quote_id": q.quote_id,
@@ -162,8 +206,6 @@ async def get_api_quotes(request: Request, id: str = "unset"):
                 q.quote_capture_bakchod
             ),
         }
-
-        logger.debug("Generated response_message={}", response_message)
 
         return JSONResponse(content=response_message, status_code=200)
 
@@ -185,7 +227,7 @@ async def get_api_groups(request: Request, page_number: int = 1):
     items_per_page = 50
 
     logger.info(
-        "get_api_groups page_number", page_number
+        "get_api_groups page_number={}", page_number
     )
 
     response = {
@@ -306,7 +348,7 @@ async def get_api_bakchods(request: Request, page_number: int = 1):
     items_per_page = 50
 
     logger.info(
-        "get_api_bakchods page_number", page_number
+        "get_api_bakchods page_number={}", page_number
     )
 
     response = {
@@ -336,6 +378,7 @@ async def get_api_bakchods(request: Request, page_number: int = 1):
     except Exception as e:
         logger.error("Caught Exception - e={}", e)
         return handle_http_error(str(e), 500) 
+
 
 @router.get("/bakchods/{tg_id}", response_class=JSONResponse)
 async def get_api_bakchod_details(request: Request, tg_id):
