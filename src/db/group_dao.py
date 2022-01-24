@@ -92,9 +92,9 @@ def get_all_groupmembers_by_group_id(group_id: str):
 
     groupmembers = (
         GroupMember.select()
-            .limit(100)
-            .where(GroupMember.group_id == group_id)
-            .execute()
+        .limit(100)
+        .where(GroupMember.group_id == group_id)
+        .execute()
     )
 
     return groupmembers

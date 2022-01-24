@@ -9,14 +9,10 @@ def get_scheduledjobs_by_bakchod(bakchod_id: str) -> Roll:
 
         b = Bakchod.get_by_id(bakchod_id)
 
-        sjs = (
-            ScheduledJob.select()
-                .where(ScheduledJob.from_bakchod == b)
-                .execute()
-        )
+        sjs = ScheduledJob.select().where(ScheduledJob.from_bakchod == b).execute()
 
         jobs = []
-        
+
         for sj in sjs:
             jobs.append(sj)
 

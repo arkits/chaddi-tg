@@ -17,20 +17,13 @@ tags_metadata = [
     {
         "name": "api",
         "description": "Chaddi API Endpoints",
-    }, 
-    {
-        "name":"ui",
-        "description": "Chaddi Web UI Endpoints"
-    }
+    },
+    {"name": "ui", "description": "Chaddi Web UI Endpoints"},
 ]
 
 v = version.get_version()
 
-app = FastAPI(
-    title="chaddi-tg",
-    version=v["git_commit_id"],
-    openapi_tags=tags_metadata
-)
+app = FastAPI(title="chaddi-tg", version=v["git_commit_id"], openapi_tags=tags_metadata)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 

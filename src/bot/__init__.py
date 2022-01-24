@@ -32,7 +32,7 @@ def run_telegram_bot():
     dispatcher.add_handler(CommandHandler("rokda", handlers.rokda.handle))
     dispatcher.add_handler(CommandHandler("superpower", handlers.superpower.handle))
     dispatcher.add_handler(CommandHandler("gamble", handlers.gamble.handle))
-    
+
     dispatcher.add_handler(CommandHandler("mom", handlers.mom.handle))
     dispatcher.add_handler(CommandHandler("mom2", handlers.mom2.handle))
 
@@ -41,7 +41,7 @@ def run_telegram_bot():
     dispatcher.add_handler(CommandHandler("aao", handlers.aao.handle))
     dispatcher.add_handler(CommandHandler("daan", handlers.daan.handle))
     dispatcher.add_handler(CommandHandler("version", handlers.version.handle))
-    
+
     dispatcher.add_handler(CommandHandler("quote", handlers.quotes.handle))
     dispatcher.add_handler(CommandHandler("quotes", handlers.quotes.handle))
 

@@ -7,7 +7,8 @@ from src.domain import dc
 
 def handle(update: Update, context: CallbackContext) -> None:
     dc.log_command_usage("help", update)
-    update.message.reply_text(text="""
+    update.message.reply_text(
+        text="""
 <b>Welcome to ChaddiBot!</b>
 - Utils
   - WebM to MP4 Converter
@@ -23,4 +24,6 @@ def handle(update: Update, context: CallbackContext) -> None:
   - <code>/remind 5m "Chai break"</code> - Chaddi will remind you to take a break
 
 Support group: https://t.me/chaddi_b
-""", parse_mode=ParseMode.HTML)
+""",
+        parse_mode=ParseMode.HTML,
+    )

@@ -26,25 +26,27 @@ def handle(update: Update, context: CallbackContext):
     try:
 
         # check if user can create reminder
-        reminders_created = scheduledjob_dao.get_scheduledjobs_by_bakchod(from_bakchod_id)
+        reminders_created = scheduledjob_dao.get_scheduledjobs_by_bakchod(
+            from_bakchod_id
+        )
         if len(reminders_created) > 10:
             update.message.reply_text(
-                text="You have created too many reminders! Please cancel your previous ones, or wait for them to complete.", 
-                parse_mode=ParseMode.HTML
+                text="You have created too many reminders! Please cancel your previous ones, or wait for them to complete.",
+                parse_mode=ParseMode.HTML,
             )
-            return 
+            return
 
         # parse the due_seconds
         due_seconds = parse_reminder_due(context.args)
         if due_seconds <= 0:
             update.message.reply_text(
-                text="<b>Usage:</b> <code>/remind 5m \"Chai break\"</code>", 
-                parse_mode=ParseMode.HTML
+                text='<b>Usage:</b> <code>/remind 5m "Chai break"</code>',
+                parse_mode=ParseMode.HTML,
             )
             return
 
         # validate due_seconds
-        if due_seconds >= (31*86400):
+        if due_seconds >= (31 * 86400):
             sticker_to_send = "CAADAQADrAEAAp6M4Ahtgp9JaiLJPxYE"
             update.message.reply_sticker(sticker=sticker_to_send)
             return
@@ -61,7 +63,7 @@ def handle(update: Update, context: CallbackContext):
             "from_bakchod_id": from_bakchod_id,
             "reply_to_message_id": reply_to_message_id,
             "reminder_message": reminder_message,
-            "reminder_time": reminder_time   
+            "reminder_time": reminder_time,
         }
 
         from_bakchod = Bakchod.get_by_id(from_bakchod_id)
@@ -71,13 +73,13 @@ def handle(update: Update, context: CallbackContext):
             updated=datetime.now(),
             from_bakchod=from_bakchod,
             group=chat_id,
-            job_context=job_context
+            job_context=job_context,
         )
 
         # build the job_name
         job_name = build_job_name(str(chat_id), str(from_bakchod_id), sj.job_id)
 
-        # update job_context with new params        
+        # update job_context with new params
         job_context["job_id"] = sj.job_id
         job_context["job_name"] = job_name
         sj.job_context = job_context
@@ -85,7 +87,10 @@ def handle(update: Update, context: CallbackContext):
 
         # add to the job_queue
         context.job_queue.run_once(
-            reminder_handler, due_seconds, context=json.dumps(job_context), name=job_name
+            reminder_handler,
+            due_seconds,
+            context=json.dumps(job_context),
+            name=job_name,
         )
 
         logger.info(
@@ -102,16 +107,15 @@ I will reply to you in {} as a reminder.
 
 <b>Reminder ID:</b> {}
 """.format(
-                util.pretty_time_delta(due_seconds),
-                sj.job_id
+                util.pretty_time_delta(due_seconds), sj.job_id
             ),
             parse_mode=ParseMode.HTML,
         )
 
     except (IndexError, ValueError):
         update.message.reply_text(
-            text="<b>Usage:</b> </pre>/remind 5m \"Chai break\"</pre>", 
-            parse_mode=ParseMode.HTML
+            text='<b>Usage:</b> </pre>/remind 5m "Chai break"</pre>',
+            parse_mode=ParseMode.HTML,
         )
 
 
@@ -139,32 +143,39 @@ REMINDER_RESPONSE_GREETINGS = [
 def reminder_handler(context: CallbackContext) -> None:
 
     try:
-        
+
         # extract job_context
         job = context.job
         job_context = json.loads(job.context)
 
-        logger.debug("[reminder_handler] job={} job_context={}", job.__dict__, job_context)
+        logger.debug(
+            "[reminder_handler] job={} job_context={}", job.__dict__, job_context
+        )
 
         # build reply_text
         reply_text = """
 {}
 """.format(
-        random.choice(REMINDER_RESPONSE_GREETINGS),
-    )
+            random.choice(REMINDER_RESPONSE_GREETINGS),
+        )
 
         # handle reminder_message
         if job_context["reminder_message"] != "":
-            reply_text = reply_text + """
+            reply_text = (
+                reply_text
+                + """
 <b>> {}</b>
-""".format(job_context["reminder_message"])
+""".format(
+                    job_context["reminder_message"]
+                )
+            )
 
         # send the message
         context.bot.send_message(
             chat_id=job_context["chat_id"],
             text=reply_text,
             reply_to_message_id=job_context["reply_to_message_id"],
-            parse_mode=ParseMode.HTML
+            parse_mode=ParseMode.HTML,
         )
 
         # delete from db
@@ -189,7 +200,9 @@ def parse_reminder_due(args):
                 try:
                     value_indicator = args[idx + 1]
                 except IndexError:
-                    logger.trace("Caught IndexError, defaulting value_indicator to seconds")
+                    logger.trace(
+                        "Caught IndexError, defaulting value_indicator to seconds"
+                    )
             else:
                 # handle case where digit and value indicator are together
                 for char in a:
@@ -201,16 +214,29 @@ def parse_reminder_due(args):
                 digit = int(digit)
 
             value_indicator = value_indicator.lower()
-            logger.trace("digit={} value_indicator={}".format(
-                digit, value_indicator))
+            logger.trace("digit={} value_indicator={}".format(digit, value_indicator))
 
-            if value_indicator == "min"  or value_indicator == "mins" or value_indicator == "m":
+            if (
+                value_indicator == "min"
+                or value_indicator == "mins"
+                or value_indicator == "m"
+            ):
                 digit = digit * 60
 
-            if value_indicator == "hour" or value_indicator == "hours" or value_indicator == "hr" or value_indicator == "hrs" or value_indicator == "h":
+            if (
+                value_indicator == "hour"
+                or value_indicator == "hours"
+                or value_indicator == "hr"
+                or value_indicator == "hrs"
+                or value_indicator == "h"
+            ):
                 digit = digit * 60 * 60
 
-            if value_indicator == "day" or value_indicator == "days" or value_indicator == "d":
+            if (
+                value_indicator == "day"
+                or value_indicator == "days"
+                or value_indicator == "d"
+            ):
                 digit = digit * 60 * 60 * 60
 
             due_seconds = due_seconds + digit
@@ -224,7 +250,7 @@ def parse_reminder_due(args):
 
 def extract_reminder_message(message: str):
     custom_message = ""
-    s = message.split("\"")
+    s = message.split('"')
     if len(s) >= 2:
         custom_message = "".join(s[1:])
     return custom_message
