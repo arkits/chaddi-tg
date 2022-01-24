@@ -5,10 +5,12 @@ from telegram.ext import (
     MessageHandler,
     Filters,
 )
+
 from . import handlers
 from src.domain import config
 from src.domain import tg_logger
 from src.domain import version
+from src.domain.scheduler import reschedule_saved_jobs
 
 app_config = config.get_config()
 
@@ -21,6 +23,7 @@ def run_telegram_bot():
     updater = Updater(app_config.get("TELEGRAM", "TG_BOT_TOKEN"))
 
     dispatcher = updater.dispatcher
+    job_queue = updater.job_queue
 
     dispatcher.add_handler(CommandHandler("start", handlers.start.handle))
     dispatcher.add_handler(CommandHandler("help", handlers.help.handle))
@@ -94,6 +97,8 @@ def run_telegram_bot():
             v["pretty_uptime"],
         )
     )
+
+    reschedule_saved_jobs(job_queue)
 
     # Run the bot until you press Ctrl-C or the process receives SIGINT,
     # SIGTERM or SIGABRT. This should be used most of the time, since

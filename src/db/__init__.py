@@ -92,12 +92,12 @@ class Roll(BaseModel):
 
 
 class ScheduledJob(BaseModel):
-    job_id = CharField(unique=True, primary_key=True)
+    job_id = AutoField()
     created = DateTimeField()
     updated = DateTimeField()
     from_bakchod = ForeignKeyField(Bakchod, backref="scheduled_jobs")
     group = ForeignKeyField(Group, backref="scheduled_jobs")
-    metadata = BinaryJSONField(default=EMPTY_JSON)
+    job_context = BinaryJSONField(default=EMPTY_JSON)
 
 
 db.connect()

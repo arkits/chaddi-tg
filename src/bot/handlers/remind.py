@@ -1,7 +1,10 @@
+from datetime import datetime
 import json
+import time
 from loguru import logger
 from telegram import Update, ParseMode
 from telegram.ext import CallbackContext
+from src.db import Bakchod, ScheduledJob, scheduledjob_dao
 from src.domain import dc, util
 import random
 
@@ -22,6 +25,16 @@ def handle(update: Update, context: CallbackContext):
 
     try:
 
+        # check if user can create reminder
+        reminders_created = scheduledjob_dao.get_scheduledjobs_by_bakchod(from_bakchod_id)
+        if len(reminders_created) > 10:
+            update.message.reply_text(
+                text="You have created too many reminders! Please cancel your previous ones, or wait for them to complete.", 
+                parse_mode=ParseMode.HTML
+            )
+            return 
+
+        # parse the due_seconds
         due_seconds = parse_reminder_due(context.args)
         if due_seconds <= 0:
             update.message.reply_text(
@@ -30,31 +43,55 @@ def handle(update: Update, context: CallbackContext):
             )
             return
 
+        # validate due_seconds
         if due_seconds >= (31*86400):
             sticker_to_send = "CAADAQADrAEAAp6M4Ahtgp9JaiLJPxYE"
             update.message.reply_sticker(sticker=sticker_to_send)
             return
 
+        reminder_time = int(time.time()) + due_seconds
+
+        # parse reminder_message
         reminder_message = extract_reminder_message(update.message.text)
 
+        # build the job_context
         job_context = {
             "chat_id": chat_id,
             "due_seconds": due_seconds,
             "from_bakchod_id": from_bakchod_id,
             "reply_to_message_id": reply_to_message_id,
-            "reminder_message": reminder_message   
+            "reminder_message": reminder_message,
+            "reminder_time": reminder_time   
         }
-        job_context = json.dumps(job_context)
 
-        job_name = build_job_name(str(chat_id), str(from_bakchod_id))
+        from_bakchod = Bakchod.get_by_id(from_bakchod_id)
+
+        sj = ScheduledJob.create(
+            created=datetime.now(),
+            updated=datetime.now(),
+            from_bakchod=from_bakchod,
+            group=chat_id,
+            job_context=job_context
+        )
+
+        # build the job_name
+        job_name = build_job_name(str(chat_id), str(from_bakchod_id), sj.job_id)
+
+        # update job_context with new params        
+        job_context["job_id"] = sj.job_id
+        job_context["job_name"] = job_name
+        sj.job_context = job_context
+        sj.save()
+
+        # add to the job_queue
+        context.job_queue.run_once(
+            reminder_handler, due_seconds, context=json.dumps(job_context), name=job_name
+        )
 
         logger.info(
-            "[remind] Scheduling reminder job_name={} job_context={}",
+            "[remind] Scheduled Job job_name={} job_context={}",
             job_name,
             job_context,
-        )
-        context.job_queue.run_once(
-            reminder_handler, due_seconds, context=job_context, name=job_name
         )
 
         update.message.reply_text(
@@ -62,8 +99,11 @@ def handle(update: Update, context: CallbackContext):
 <b>✅ Reminder set!</b>
 
 I will reply to you in {} as a reminder.
+
+<b>Reminder ID:</b> {}
 """.format(
-                util.pretty_time_delta(due_seconds)
+                util.pretty_time_delta(due_seconds),
+                sj.job_id
             ),
             parse_mode=ParseMode.HTML,
         )
@@ -75,8 +115,8 @@ I will reply to you in {} as a reminder.
         )
 
 
-def build_job_name(chat_id, from_bakchod_id):
-    return "reminder/{}/{}".format(str(chat_id), str(from_bakchod_id))
+def build_job_name(chat_id, from_bakchod_id, job_id):
+    return "reminder/{}/{}/{}".format(str(chat_id), str(from_bakchod_id), str(job_id))
 
 
 def remove_job_if_exists(name: str, context: CallbackContext) -> bool:
@@ -97,28 +137,41 @@ REMINDER_RESPONSE_GREETINGS = [
 
 
 def reminder_handler(context: CallbackContext) -> None:
-    job = context.job
-    job_context = json.loads(job.context)
 
-    logger.debug("[reminder_handler] job={} job_context={}", job.__dict__, job_context)
+    try:
+        
+        # extract job_context
+        job = context.job
+        job_context = json.loads(job.context)
 
-    reply_text = """
+        logger.debug("[reminder_handler] job={} job_context={}", job.__dict__, job_context)
+
+        # build reply_text
+        reply_text = """
 {}
 """.format(
         random.choice(REMINDER_RESPONSE_GREETINGS),
     )
 
-    if job_context["reminder_message"] != "":
-        reply_text = reply_text + """
+        # handle reminder_message
+        if job_context["reminder_message"] != "":
+            reply_text = reply_text + """
 <b>> {}</b>
 """.format(job_context["reminder_message"])
 
-    context.bot.send_message(
-        chat_id=job_context["chat_id"],
-        text=reply_text,
-        reply_to_message_id=job_context["reply_to_message_id"],
-        parse_mode=ParseMode.HTML
-    )
+        # send the message
+        context.bot.send_message(
+            chat_id=job_context["chat_id"],
+            text=reply_text,
+            reply_to_message_id=job_context["reply_to_message_id"],
+            parse_mode=ParseMode.HTML
+        )
+
+        # delete from db
+        ScheduledJob.delete_by_id(job_context["job_id"])
+
+    except Exception as e:
+        logger.error("Caught exception in reminder_handler e={}", e)
 
 
 def parse_reminder_due(args):
