@@ -3,7 +3,16 @@ import locale
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from src.db import Bakchod, Group, GroupMember, Message, Quote, Roll, group_dao
+from src.db import (
+    Bakchod,
+    Group,
+    GroupMember,
+    Message,
+    Quote,
+    Roll,
+    ScheduledJob,
+    group_dao,
+)
 from loguru import logger
 from src import bot
 from src.domain import version
@@ -220,4 +229,16 @@ async def post_api_bot_send_message(
     return templates.TemplateResponse(
         "details_group.html",
         {"request": request, "group": g, "response_message": response_message},
+    )
+
+
+@router.get("/jobs", response_class=HTMLResponse)
+async def get_jobs(request: Request):
+
+    jobs = ScheduledJob.select().limit(100).order_by(ScheduledJob.created.desc())
+    job_count = ScheduledJob.select().count()
+
+    return templates.TemplateResponse(
+        "jobs.html",
+        {"request": request, "jobs": jobs, "job_count": job_count},
     )

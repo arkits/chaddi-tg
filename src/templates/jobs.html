@@ -1,0 +1,27 @@
+{% extends "base.html" %} {% block title %}Jobs{% endblock %} {% block head %}
+{{ super() }} {% endblock %} {% block content %}
+<div class="container-lg">
+    <h1>{{job_count | tonumber_pretty}} Jobs</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>job_name</th>
+                <th>job_context</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for job in jobs %}
+            <tr>
+                <td>{{job.job_context.job_name}}</td>
+                <td>
+                    <code>
+                    {{job.job_context}}
+                    </code>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
