@@ -21,13 +21,16 @@ socket.on("message", function (msg, cb) {
   messageTd = createTd(msg.message.message_id);
   messageTr.appendChild(messageTd);
 
-  messageTd = createTd(msg.message.to_id);
+  messageTd = createTd(msg.message?.from_bakchod?.pretty_name);
+  messageTr.appendChild(messageTd);
+
+  messageTd = createTd(msg.message?.update?.message?.chat?.title);
   messageTr.appendChild(messageTd);
 
   messageTd = createTd(msg.message.text);
   messageTr.appendChild(messageTd);
 
-  messagesTbody.appendChild(messageTr);
+  messagesTbody.insertBefore(messageTr, messagesTbody.firstChild);
 });
 
 function createTd(innerText) {
