@@ -28,4 +28,4 @@ def log_message_from_update(update: Update):
 
     metrics.inc_message_count(update)
 
-    return
+    return m

@@ -242,3 +242,12 @@ async def get_jobs(request: Request):
         "jobs.html",
         {"request": request, "jobs": jobs, "job_count": job_count},
     )
+
+
+@router.get("/live", response_class=HTMLResponse)
+async def get_live(request: Request):
+
+    return templates.TemplateResponse(
+        "live.html",
+        {"request": request},
+    )

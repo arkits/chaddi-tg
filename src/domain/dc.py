@@ -1,9 +1,13 @@
 from datetime import datetime
+import json
 from loguru import logger
 from telegram import Update
 from src.db import bakchod_dao, group_dao, message_dao
 from . import util
 from . import metrics
+from src.server import socket_manager
+import asyncio
+from playhouse.shortcuts import model_to_dict
 
 
 def log_command_usage(command_name: str, update: Update):
@@ -45,8 +49,15 @@ def sync_persistence_data(update: Update):
 
     b.save()
 
-    message_dao.log_message_from_update(update)
+    m = message_dao.log_message_from_update(update)
 
     group_dao.log_group_from_update(update)
+
+    asyncio.run(
+        socket_manager.emit(
+            "message",
+            {"message": json.loads(json.dumps(model_to_dict(m), default=str))},
+        )
+    )
 
     return

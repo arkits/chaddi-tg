@@ -1,0 +1,22 @@
+{% extends "base.html" %} {% block title %}Live{% endblock %} {% block head %}
+{{ super() }} {% endblock %} {% block content %}
+<script src="https://cdn.socket.io/4.4.1/socket.io.min.js"
+    integrity="sha384-fKnu0iswBIqkjxrhQCTZ7qlLHOFEgNkRmK2vaO/LbTZSXdJfAu6ewRBdwHPhBo/H"
+    crossorigin="anonymous"></script>
+<script defer src="/static/live.js"></script>
+<div class="container-lg">
+    <h1>Live</h1>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>time_sent</th>
+                <th>message_id</th>
+                <th>to_id</th>
+                <th>text</th>
+            </tr>
+        </thead>
+        <tbody id="messages-table-body">
+        </tbody>
+    </table>
+</div>
+{% endblock %}

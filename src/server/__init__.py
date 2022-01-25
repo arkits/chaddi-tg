@@ -5,10 +5,9 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from starlette_exporter import PrometheusMiddleware, handle_metrics
+from fastapi_socketio import SocketManager
 
 from src.domain import config, version
-from src.server.routes import api_routes
-from src.server.routes import ui_routes
 
 # Initialize the config
 app_config = config.get_config()
@@ -25,8 +24,9 @@ v = version.get_version()
 
 app = FastAPI(title="chaddi-tg", version=v["git_commit_id"], openapi_tags=tags_metadata)
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+socket_manager = SocketManager(app=app)
 
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.add_middleware(
     CORSMiddleware,
@@ -45,9 +45,14 @@ app.add_middleware(
 )
 app.add_route("/metrics", handle_metrics)
 
+from src.server.routes import api_routes
+from src.server.routes import ui_routes
+
 app.include_router(api_routes.router, prefix="/api", tags=["api"])
 
 app.include_router(ui_routes.router, tags=["ui"])
+
+from src.server.routes import sio_routes
 
 
 def run_server():
