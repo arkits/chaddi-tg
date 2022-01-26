@@ -46,7 +46,7 @@ def handle(update: Update, context: CallbackContext):
             return
 
         # validate due_seconds
-        if due_seconds >= (31 * 86400):
+        if due_seconds >= (10 * 365 * 86400):
             sticker_to_send = "CAADAQADrAEAAp6M4Ahtgp9JaiLJPxYE"
             update.message.reply_sticker(sticker=sticker_to_send)
             return
