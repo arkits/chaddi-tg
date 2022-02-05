@@ -49,7 +49,7 @@ def handle(update: Update, context):
         prompt = open(
             path.join(util.RESOURCES_DIR, "openai", "mom3-prompt.txt"), "r"
         ).read()
-        prompt += "\n\nUser: " + message
+        prompt += "\n\nUser: " + message[:200]
         prompt += "\nChaddi: "
 
         logger.debug("[mom3] prompt={}", prompt)
