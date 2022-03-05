@@ -103,7 +103,7 @@ def handle(update: Update, context):
             return
 
         # Generate the response
-        if random.random() > 0.50:
+        if random.random() < 0.20:
             logger.info(
                 "[mom] generating response with rake - protagonist='{}' message='{}'",
                 protagonist,
@@ -188,8 +188,8 @@ def joke_mom(sentence, protagonist, force=False):
     target = "your mom"
 
     if not force:
-        # flip the joke 20% of times
-        if random.random() > 0.8:
+        # flip the joke occasionally
+        if random.random() > 0.95:
             target, protagonist = protagonist, target
 
     # extract parts of speech and generate insults
@@ -209,7 +209,7 @@ def joke_mom(sentence, protagonist, force=False):
                 else:
                     return random_reply(protagonist)
     else:
-        return "{}, please link your aadhaar to continue".format(protagonist)
+        return "{}, kripaya aapna aadhaar link kare".format(protagonist)
 
 
 # return the first relevant part of speech tag
