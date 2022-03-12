@@ -71,7 +71,7 @@ def extract_magic_word(target_message):
     doc = util.get_nlp()(target_message)
 
     # the types on pos that we care about - refer to https://universaldependencies.org/docs/u/pos/
-    accepted_pos_types = ["VERB", "NOUN", "PROPN"]
+    accepted_pos_types = ["VERB", "NOUN", "PROPN", "ADJ", "ADV"]
 
     # Create a dict for storing the tokens sorted by pos types
     tokens_sorted = {}
