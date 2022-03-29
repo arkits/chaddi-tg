@@ -24,3 +24,4 @@ from . import ytdl
 from . import tynm
 from . import remind
 from . import antiwordle
+from . import sutta

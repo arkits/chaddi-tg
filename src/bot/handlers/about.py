@@ -36,7 +36,7 @@ def handle(update: Update, context: CallbackContext):
                     "Kaun hai bee '{}'??? Try <code>/about @username</code>".format(
                         username
                     ),
-                    parse_mode=ParseMode.HTML
+                    parse_mode=ParseMode.HTML,
                 )
                 return
 
