@@ -1,5 +1,3 @@
-from distutils.command.build_scripts import first_line_re
-from re import L
 from loguru import logger
 from telegram import Update
 from telegram.ext import CallbackContext
@@ -61,7 +59,7 @@ def is_wordle_result(message_text: str) -> bool:
 
     # check remaining lines
     for line in messages_text_lines[2:]:
-        logger.info("[antiwordle] checking line={}", line)
+        logger.debug("[antiwordle] checking line={}", line)
 
         if line is None:
             return False
