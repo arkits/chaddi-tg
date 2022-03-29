@@ -23,3 +23,4 @@ from . import mlai
 from . import ytdl
 from . import tynm
 from . import remind
+from . import antiwordle

@@ -8,7 +8,7 @@ from telegram.ext import CallbackContext
 from src.bot.handlers import roll, mom
 from src.domain import dc, rokda, util
 from src.db import Bakchod, EMPTY_JSON, GroupMember, bakchod_dao, group_dao
-from . import hi, bestie
+from . import hi, bestie, antiwordle
 
 
 def all(update: Update, context: CallbackContext) -> None:
@@ -32,6 +32,8 @@ def all(update: Update, context: CallbackContext) -> None:
     handle_dice_rolls(update, context)
 
     handle_message_matching(update, context)
+
+    antiwordle.handle(update, context)
 
 
 def handle_bakchod_metadata_effects(
