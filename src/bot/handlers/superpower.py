@@ -1,18 +1,25 @@
+from telegram.ext import CallbackContext
+from telegram import Update
 from loguru import logger
 from src.domain import dc, util
 from datetime import datetime
 import pytz
 
 
-def handle(update, context):
+def handle(update: Update, context: CallbackContext):
 
-    dc.log_command_usage("superpower", update)
+    try:
 
-    response = superpower_countdown_calc()
+        dc.log_command_usage("superpower", update)
 
-    logger.info("[superpower] Returning response={}", response)
+        response = superpower_countdown_calc()
 
-    update.message.reply_text(response)
+        logger.info("[superpower] Returning response={}", response)
+
+        update.message.reply_text(response)
+
+    except Exception as e:
+        logger.error("Caught Exception in superpower.handle - e={}", e)
 
 
 # Calculates timedelta between current time and Dec 31st 2019 IST.

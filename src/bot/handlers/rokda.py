@@ -1,21 +1,27 @@
+from telegram.ext import CallbackContext
+from telegram import Update
 from loguru import logger
-from peewee import Update
 from src.domain import dc, util
 from src.db import Bakchod, bakchod_dao
 
 
-def handle(update: Update, context):
+def handle(update: Update, context: CallbackContext):
 
-    dc.log_command_usage("rokda", update)
+    try:
 
-    if update.message.reply_to_message:
-        b = bakchod_dao.get_or_create_bakchod_from_tg_user(
-            update.message.reply_to_message.from_user
-        )
-    else:
-        b = bakchod_dao.get_or_create_bakchod_from_tg_user(update.message.from_user)
+        dc.log_command_usage("rokda", update)
 
-    update.message.reply_text(text=generate_rokda_response(b))
+        if update.message.reply_to_message:
+            b = bakchod_dao.get_or_create_bakchod_from_tg_user(
+                update.message.reply_to_message.from_user
+            )
+        else:
+            b = bakchod_dao.get_or_create_bakchod_from_tg_user(update.message.from_user)
+
+        update.message.reply_text(text=generate_rokda_response(b))
+
+    except Exception as e:
+        logger.error("Caught Exception in rokda.handle - e={}", e)
 
 
 def generate_rokda_response(bakchod: Bakchod):
