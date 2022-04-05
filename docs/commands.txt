@@ -11,3 +11,4 @@ tynm - 🇮🇳 🙏 👳‍♀️
 ocr - Perform OCR on image
 remind - Set a reminder
 help - HAAALLLPPP
+sutta - 🚬👌 😗💨

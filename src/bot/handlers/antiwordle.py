@@ -15,7 +15,7 @@ def handle(update: Update, context: CallbackContext, log_to_dc=True):
             return
 
         if log_to_dc:
-            dc.log_command_usage("antiworld", update)
+            dc.log_command_usage("antiwordle", update)
 
         logger.info("[antiwordle] detected wordle message={}", update.message.text)
 
@@ -73,11 +73,11 @@ def is_wordle_result(message_text: str) -> bool:
 def random_reply():
 
     replies = [
-        "KILL ALL WORDLE FAGS 🔫",
         "KILL ALL WORDLE TARDS 🔫",
-        "WORLDE WAALOO TUMAHRI MAA KAA",
+        "WORDLE WAALOO TUMAHRI MAA KAA",
         "BHHAAAAAAAAKKKKK TERA WORDLE BSDK",
         "HAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATTTTT",
+        "NO ONE CARES ABOUT YOUR WORDLE TARSH",
     ]
 
     random.seed(datetime.datetime.now())
