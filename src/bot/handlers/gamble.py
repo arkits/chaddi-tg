@@ -1,4 +1,4 @@
-import json
+import traceback
 from loguru import logger
 from telegram import Update
 from src.db import Bakchod, bakchod_dao
@@ -10,17 +10,27 @@ import ciso8601
 
 def handle(update: Update, context):
 
-    dc.log_command_usage("gamble", update)
+    try:
 
-    b = bakchod_dao.get_or_create_bakchod_from_tg_user(update.message.from_user)
+        dc.log_command_usage("gamble", update)
 
-    can_gamble, response = can_bakchod_gamble(b)
-    if not can_gamble:
+        b = bakchod_dao.get_or_create_bakchod_from_tg_user(update.message.from_user)
+
+        can_gamble, response = can_bakchod_gamble(b)
+        if not can_gamble:
+            update.message.reply_text(response)
+            return
+
+        response = gamble(b, update)
         update.message.reply_text(response)
-        return
 
-    response = gamble(b, update)
-    update.message.reply_text(response)
+    except Exception as e:
+        logger.error(
+            "Caught Error in gamble.handle - {} \n {}",
+            e,
+            traceback.format_exc(),
+        )
+        return
 
 
 def gamble(bakchod: Bakchod, update: Update):
