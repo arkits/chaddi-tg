@@ -17,4 +17,4 @@ jobs:
           privateKey: ${{ secrets.SSH_PRIVATE_KEY }}
           debug: false
           command: |
-            /home/arkits/software/chaddi-tg/scripts/deploy-hostscript.sh
+            /opt/software/chaddi-tg/scripts/deploy-hostscript.sh
