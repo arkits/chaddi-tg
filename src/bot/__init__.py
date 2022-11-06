@@ -53,6 +53,7 @@ def run_telegram_bot():
     dispatcher.add_handler(CommandHandler("ocr", handlers.mlai.handle_ocr))
     dispatcher.add_handler(CommandHandler("tynm", handlers.tynm.handle))
     dispatcher.add_handler(CommandHandler("ytdl", handlers.ytdl.handle))
+    dispatcher.add_handler(CommandHandler("dalle", handlers.dalle.handle))
 
     dispatcher.add_handler(CommandHandler("remind", handlers.remind.handle))
     dispatcher.add_handler(CommandHandler("reminder", handlers.remind.handle))

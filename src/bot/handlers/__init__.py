@@ -25,3 +25,4 @@ from . import tynm
 from . import remind
 from . import antiwordle
 from . import sutta
+from . import dalle
