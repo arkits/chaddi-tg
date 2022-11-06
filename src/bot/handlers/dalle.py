@@ -54,9 +54,9 @@ def handle(update: Update, context):
         try:
 
             prompt = extract_prompt(update)
-            if prompt is None or prompt == "":
-                logger.info("[dalle] message was None!")
-                update.message.reply_text("HAAAAAAAATTTTT")
+            if prompt is None or prompt == "" or len(prompt) < 10:
+                logger.error("[dalle] prompt failed validation! prompt={}", prompt)
+                update.message.reply_text("HAAAAAAAATTTTT prompt de bc")
                 return
 
             logger.info("[dalle] prompt={}", prompt)
@@ -116,6 +116,9 @@ def extract_prompt(update: Update):
     if update.message.text:
         prompt = update.message.text
 
-    prompt = prompt.split("/dalle ")[1]
+    if prompt.startswith("/dalle"):
+        prompt = prompt[6:]
+
+    prompt = prompt.strip()
 
     return prompt
