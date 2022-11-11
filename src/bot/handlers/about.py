@@ -55,7 +55,7 @@ def generate_about_response(bakchod: Bakchod):
     )
     about_response = about_response + "~ ID: <code>{}</code> \n".format(bakchod.tg_id)
     about_response = about_response + "~ ₹okda: <code>{}</code> \n".format(
-        round(bakchod.rokda, 2)
+        util.pretty_print_rokda(bakchod.rokda)
     )
     about_response = about_response + "~ Last seen: <code>{}</code> \n".format(
         bakchod.lastseen

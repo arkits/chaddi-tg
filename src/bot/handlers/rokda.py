@@ -25,9 +25,7 @@ def handle(update: Update, context: CallbackContext):
 
 
 def generate_rokda_response(bakchod: Bakchod):
-
-    response = "💰 {} has {} ₹okda!".format(
-        util.extract_pretty_name_from_bakchod(bakchod), round(bakchod.rokda, 2)
+    return "💰 {} has {} ₹okda!".format(
+        util.extract_pretty_name_from_bakchod(bakchod),
+        util.pretty_print_rokda(bakchod.rokda),
     )
-
-    return response

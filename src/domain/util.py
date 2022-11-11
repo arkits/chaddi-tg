@@ -11,7 +11,6 @@ from . import config
 import json
 import pytz
 
-
 app_config = config.get_config()
 
 ADMIN_IDS = app_config.get("TELEGRAM", "TG_ADMIN_USERS")
@@ -28,6 +27,10 @@ UTC_TIMEZONE = pytz.timezone("UTC")
 # Read verbLookupTable on startup
 verb_past_lookup_file = open("resources/verb-past-lookup.json", "r")
 verb_past_lookup = json.loads(verb_past_lookup_file.read())
+
+
+def pretty_print_rokda(r):
+    return "{:,}".format(round(r, 2))
 
 
 def get_verb_past_lookup():
