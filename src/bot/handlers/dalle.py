@@ -63,7 +63,7 @@ def handle(update: Update, context):
 
             if COMMAND_ENABLED:
 
-                response = openai.Image.create(prompt=prompt, n=1, size="256x256")
+                response = openai.Image.create(prompt=prompt, n=1, size="512x512")
                 image_url = response["data"][0]["url"]
 
                 logger.info(
