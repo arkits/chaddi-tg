@@ -13,7 +13,6 @@ import openai
 app_config = config.get_config()
 
 COMMAND_ENABLED = True
-COMMAND_COST = 500
 
 openai.api_key = app_config.get("OPENAI", "API_KEY")
 
@@ -27,15 +26,6 @@ def handle(update: Update, context):
         initiator_id = update.message.from_user.id
         if initiator_id is None:
             logger.error("[dalle] initiator_id was None!")
-            return
-
-        if not util.paywall_user(initiator_id, COMMAND_COST):
-            update.message.reply_text(
-                "Sorry! You don't have enough ₹okda! Each `/dalle` costs {} ₹okda.".format(
-                    COMMAND_COST
-                ),
-                parse_mode=ParseMode.MARKDOWN,
-            )
             return
 
         b = bakchod_dao.get_or_create_bakchod_from_tg_user(update.message.from_user)
@@ -63,7 +53,23 @@ def handle(update: Update, context):
 
             if COMMAND_ENABLED:
 
-                response = openai.Image.create(prompt=prompt, n=1, size="512x512")
+                response = None
+
+                try:
+                    response = openai.Image.create(prompt=prompt, n=1, size="512x512")
+                except openai.InvalidRequestError as e:
+                    logger.error(
+                        "[dalle] Caught openai.InvalidRequestError e={} prompt={}",
+                        e,
+                        prompt,
+                    )
+                    update.message.reply_text(
+                        "Kaise chutiya request tha...  OpenAI ne bola '{}'".format(
+                            e._message
+                        )
+                    )
+                    return
+
                 image_url = response["data"][0]["url"]
 
                 logger.info(
