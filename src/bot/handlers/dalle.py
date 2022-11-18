@@ -44,7 +44,7 @@ def handle(update: Update, context):
         try:
 
             prompt = extract_prompt(update)
-            if prompt is None or prompt == "" or len(prompt) < 10:
+            if prompt is None or prompt == "" or len(prompt) <= 25:
                 logger.error("[dalle] prompt failed validation! prompt={}", prompt)
                 update.message.reply_text("HAAAAAAAATTTTT prompt de bc")
                 return
