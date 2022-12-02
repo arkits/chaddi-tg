@@ -104,7 +104,7 @@ def extract_magic_word(target_message):
         return None
 
     # choose which pos_type to use...
-    magic_pos_type = util.choose_random_element_from_list(list(tokens_sorted.keys()))
+    magic_pos_type = list(tokens_sorted.keys())[0]
     logger.debug("[aao] magic_pos_type={}", magic_pos_type)
 
     # choose magic word...
