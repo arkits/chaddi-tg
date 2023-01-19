@@ -16,9 +16,4 @@ echo ""
 
 cd src
 
-TIMESTAMP=$(date +"%s")
-FILENAME="chaddi_$TIMESTAMP.log"
-echo ">>> logging to file ./logs/$FILENAME"
-echo ""
-
-python chaddi.py >../logs/chaddi_$TIMESTAMP.log 2>&1 &
+python chaddi.py >../logs/chaddi.log 2>&1 &
