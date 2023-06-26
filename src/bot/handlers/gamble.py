@@ -43,6 +43,8 @@ def gamble(bakchod: Bakchod, update: Update):
 
     roll = random.random()
 
+    random_bakchod_pretty_name = random_bakchod.pretty_name or random_bakchod.username
+
     if roll > 0.98:
         response = "HOLY CRAP! You won! +500 ₹okda"
         bakchod.rokda = bakchod.rokda + 500
@@ -54,7 +56,7 @@ def gamble(bakchod: Bakchod, update: Update):
         bakchod.rokda = bakchod.rokda + 300
     elif roll > 0.85:
         response = "You won 200 ₹okda and gifted 15 to {}".format(
-            random_bakchod.username
+            random_bakchod_pretty_name
         )
         bakchod.rokda = bakchod.rokda + 200
         random_bakchod.rokda += 15
@@ -69,7 +71,7 @@ def gamble(bakchod: Bakchod, update: Update):
         bakchod.rokda = bakchod.rokda + 1
     elif roll > 0.45:
         response = "{} brought you chai and you tipped him 100 ₹okda".format(
-            random_bakchod.username
+            random_bakchod_pretty_name
         )
         bakchod.rokda = bakchod.rokda - 100
         random_bakchod.rokda += 100
@@ -81,7 +83,7 @@ def gamble(bakchod: Bakchod, update: Update):
         bakchod.rokda = bakchod.rokda - 375
     elif roll > 0.15:
         response = "You actually won... but while leaving the casino you got mugged by {} and lost 500 ₹okda!".format(
-            random_bakchod.username
+            random_bakchod_pretty_name
         )
         bakchod.rokda = bakchod.rokda - 500
         random_bakchod.rokda += 500
@@ -90,7 +92,7 @@ def gamble(bakchod: Bakchod, update: Update):
         bakchod.rokda = bakchod.rokda - 1000
     elif roll > 0.001:
         response = "You lost your entire fortune (and Paul's Kwid) to {}. Gambling can suck!".format(
-            random_bakchod.username
+            random_bakchod_pretty_name
         )
         random_bakchod.rokda += bakchod.rokda
         bakchod.rokda = 1
