@@ -50,12 +50,12 @@ def handle(update: Update, context):
             path.join(util.RESOURCES_DIR, "openai", "mom3-prompt.txt"), "r"
         ).read()
         prompt += "\n\nUser: " + message[:200]
-        prompt += "\nChaddi: "
+        prompt += "\nResponse: "
 
         logger.debug("[mom3] prompt={}", prompt)
 
         response = openai.Completion.create(
-            engine="text-davinci-001",
+            engine="gpt-5-nano",
             prompt=prompt,
             temperature=0.5,
             max_tokens=60,
