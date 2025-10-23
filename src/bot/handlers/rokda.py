@@ -1,11 +1,11 @@
-from telegram.ext import CallbackContext
+from telegram.ext import ContextTypes
 from telegram import Update
 from loguru import logger
 from src.domain import dc, util
 from src.db import Bakchod, bakchod_dao
 
 
-def handle(update: Update, context: CallbackContext):
+async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
 
@@ -18,7 +18,7 @@ def handle(update: Update, context: CallbackContext):
         else:
             b = bakchod_dao.get_or_create_bakchod_from_tg_user(update.message.from_user)
 
-        update.message.reply_text(text=generate_rokda_response(b))
+        await update.message.reply_text(text=generate_rokda_response(b))
 
     except Exception as e:
         logger.error("Caught Exception in rokda.handle - e={}", e)

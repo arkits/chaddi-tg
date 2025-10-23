@@ -2,14 +2,15 @@ from datetime import datetime
 import json
 import time
 from loguru import logger
-from telegram import Update, ParseMode
-from telegram.ext import CallbackContext
+from telegram import Update
+from telegram.constants import ParseMode
+from telegram.ext import ContextTypes
 from src.db import Bakchod, ScheduledJob, scheduledjob_dao
 from src.domain import dc, util
 import random
 
 
-def handle(update: Update, context: CallbackContext):
+async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     dc.log_command_usage("remind", update)
 
@@ -30,7 +31,7 @@ def handle(update: Update, context: CallbackContext):
             from_bakchod_id
         )
         if len(reminders_created) > 10:
-            update.message.reply_text(
+            await update.message.reply_text(
                 text="You have created too many reminders! Please cancel your previous ones, or wait for them to complete.",
                 parse_mode=ParseMode.HTML,
             )
@@ -39,7 +40,7 @@ def handle(update: Update, context: CallbackContext):
         # parse the due_seconds
         due_seconds = parse_reminder_due(context.args)
         if due_seconds <= 0:
-            update.message.reply_text(
+            await update.message.reply_text(
                 text='<b>Usage:</b> <code>/remind 5m "Chai break"</code>',
                 parse_mode=ParseMode.HTML,
             )
@@ -48,7 +49,7 @@ def handle(update: Update, context: CallbackContext):
         # validate due_seconds
         if due_seconds >= (10 * 365 * 86400):
             sticker_to_send = "CAADAQADrAEAAp6M4Ahtgp9JaiLJPxYE"
-            update.message.reply_sticker(sticker=sticker_to_send)
+            await update.message.reply_sticker(sticker=sticker_to_send)
             return
 
         reminder_time = int(time.time()) + due_seconds
@@ -99,7 +100,7 @@ def handle(update: Update, context: CallbackContext):
             job_context,
         )
 
-        update.message.reply_text(
+        await update.message.reply_text(
             """
 <b>✅ Reminder set!</b>
 
@@ -113,7 +114,7 @@ I will reply to you in {} as a reminder.
         )
 
     except (IndexError, ValueError):
-        update.message.reply_text(
+        await update.message.reply_text(
             text='<b>Usage:</b> </pre>/remind 5m "Chai break"</pre>',
             parse_mode=ParseMode.HTML,
         )
@@ -123,7 +124,7 @@ def build_job_name(chat_id, from_bakchod_id, job_id):
     return "reminder/{}/{}/{}".format(str(chat_id), str(from_bakchod_id), str(job_id))
 
 
-def remove_job_if_exists(name: str, context: CallbackContext) -> bool:
+def remove_job_if_exists(name: str, context: ContextTypes.DEFAULT_TYPE) -> bool:
     current_jobs = context.job_queue.get_jobs_by_name(name)
     if not current_jobs:
         return False
@@ -140,7 +141,7 @@ REMINDER_RESPONSE_GREETINGS = [
 ]
 
 
-def reminder_handler(context: CallbackContext) -> None:
+async def reminder_handler(context: ContextTypes.DEFAULT_TYPE) -> None:
 
     try:
 
@@ -171,7 +172,7 @@ def reminder_handler(context: CallbackContext) -> None:
             )
 
         # send the message
-        context.bot.send_message(
+        await context.bot.send_message(
             chat_id=job_context["chat_id"],
             text=reply_text,
             reply_to_message_id=job_context["reply_to_message_id"],

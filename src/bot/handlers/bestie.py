@@ -1,11 +1,13 @@
 from loguru import logger
+from telegram import Update
+from telegram.ext import ContextTypes
 from src.domain import dc
 
 import random
 import datetime
 
 
-def handle(update, context, log_to_dc=True):
+async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE, log_to_dc=True):
 
     bestie_response_whitelist = [222021705, 148933790]
 
@@ -14,7 +16,7 @@ def handle(update, context, log_to_dc=True):
         if log_to_dc:
             dc.log_command_usage("bestie", update)
 
-        update.message.reply_text(random_reply())
+        await update.message.reply_text(random_reply())
 
 
 def random_reply():

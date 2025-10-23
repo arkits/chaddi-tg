@@ -1,7 +1,8 @@
 from loguru import logger
 from telegram import Update
+from telegram.ext import ContextTypes
+from telegram.constants import ParseMode
 from src.domain import dc, util, config
-from telegram import ParseMode
 import json
 import random
 import datetime
@@ -23,7 +24,7 @@ preposition_to_verb_map = json.loads(
 )
 
 
-def handle(update: Update, context):
+async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
 
@@ -36,7 +37,7 @@ def handle(update: Update, context):
             logger.debug(
                 "[mom] user didn't reply to another user",
             )
-            update.message.reply_text(
+            await update.message.reply_text(
                 "Try replying to someone with `/mom`", parse_mode=ParseMode.MARKDOWN
             )
             return
@@ -48,7 +49,7 @@ def handle(update: Update, context):
 
         # Check if Bakchod has enough rokda to do a /mom...
         if not util.paywall_user(initiator_user.id, COMMAND_COST):
-            update.message.reply_text(
+            await update.message.reply_text(
                 "Sorry! You don't have enough ₹okda! Each /mom costs {} ₹okda.".format(
                     COMMAND_COST
                 )
@@ -61,7 +62,7 @@ def handle(update: Update, context):
         # Extract the recipient - Telegram User who shall receive the insult
         if update.message.reply_to_message.from_user is None:
             sticker_to_send = "CAADAQADrAEAAp6M4Ahtgp9JaiLJPxYE"
-            update.message.reply_sticker(sticker=sticker_to_send)
+            await update.message.reply_sticker(sticker=sticker_to_send)
             return
 
         recipient = update.message.reply_to_message.from_user
@@ -76,11 +77,11 @@ def handle(update: Update, context):
             if recipient.username == BOT_USERNAME:
                 # Don't insult Chaddi!
                 sticker_to_send = "CAADAQADrAEAAp6M4Ahtgp9JaiLJPxYE"
-                update.message.reply_sticker(sticker=sticker_to_send)
+                await update.message.reply_sticker(sticker=sticker_to_send)
                 return
             else:
                 # Protect the users in the blacklist
-                update.message.reply_text(
+                await update.message.reply_text(
                     "{} is protected by a 👁️ Nazar Raksha Kavach".format(
                         util.extract_pretty_name_from_tg_user(recipient)
                     )
@@ -99,7 +100,7 @@ def handle(update: Update, context):
         if message is None:
             logger.info("[mom] message was None!")
             sticker_to_send = "CAADAQADrAEAAp6M4Ahtgp9JaiLJPxYE"
-            update.message.reply_sticker(sticker=sticker_to_send)
+            await update.message.reply_sticker(sticker=sticker_to_send)
             return
 
         # Generate the response
@@ -119,10 +120,10 @@ def handle(update: Update, context):
             response = spacy_joke(message, protagonist)
 
         if random.random() > 0.01:
-            update.message.reply_to_message.reply_text(response)
+            await update.message.reply_to_message.reply_text(response)
         else:
             # User has chance to get protected
-            update.message.reply_text(
+            await update.message.reply_text(
                 recipient + " is protected by a 👁️ Nazar Raksha Kavach"
             )
 

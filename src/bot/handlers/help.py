@@ -1,13 +1,13 @@
 from loguru import logger
 from telegram import Update
-from telegram.ext import CallbackContext
-from telegram.parsemode import ParseMode
+from telegram.ext import ContextTypes
+from telegram.constants import ParseMode
 from src.domain import dc
 
 
-def handle(update: Update, context: CallbackContext) -> None:
+async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     dc.log_command_usage("help", update)
-    update.message.reply_text(
+    await update.message.reply_text(
         text="""
 <b>Welcome to ChaddiBot!</b>
 - Utils

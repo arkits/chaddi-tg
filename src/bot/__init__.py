@@ -1,9 +1,10 @@
 from loguru import logger
 from telegram.ext import (
-    Updater,
+    Application,
     CommandHandler,
     MessageHandler,
-    Filters,
+    filters,
+    ContextTypes,
 )
 
 from . import handlers
@@ -17,65 +18,10 @@ app_config = config.get_config()
 bot_instance = None
 
 
-def run_telegram_bot():
-
-    # Create the Updater and pass it your bot's token.
-    updater = Updater(app_config.get("TELEGRAM", "TG_BOT_TOKEN"))
-
-    dispatcher = updater.dispatcher
-    job_queue = updater.job_queue
-
-    dispatcher.add_handler(CommandHandler("start", handlers.start.handle))
-    dispatcher.add_handler(CommandHandler("help", handlers.help.handle))
-    dispatcher.add_handler(CommandHandler("hi", handlers.hi.handle))
-    dispatcher.add_handler(CommandHandler("about", handlers.about.handle))
-    dispatcher.add_handler(CommandHandler("rokda", handlers.rokda.handle))
-    dispatcher.add_handler(CommandHandler("superpower", handlers.superpower.handle))
-    dispatcher.add_handler(CommandHandler("gamble", handlers.gamble.handle))
-    dispatcher.add_handler(CommandHandler("sutta", handlers.sutta.handle))
-
-    dispatcher.add_handler(CommandHandler("mom", handlers.mom3.handle))
-    dispatcher.add_handler(CommandHandler("mom2", handlers.mom2.handle))
-
-    dispatcher.add_handler(CommandHandler("set", handlers.setter.handle))
-    dispatcher.add_handler(CommandHandler("chutiya", handlers.chutiya.handle))
-    dispatcher.add_handler(CommandHandler("aao", handlers.aao.handle))
-    dispatcher.add_handler(CommandHandler("daan", handlers.daan.handle))
-    dispatcher.add_handler(CommandHandler("version", handlers.version.handle))
-
-    dispatcher.add_handler(CommandHandler("quote", handlers.quotes.handle))
-    dispatcher.add_handler(CommandHandler("quotes", handlers.quotes.handle))
-
-    dispatcher.add_handler(CommandHandler("roll", handlers.roll.handle))
-    dispatcher.add_handler(CommandHandler("translate", handlers.translate.handle))
-    dispatcher.add_handler(CommandHandler("mlai", handlers.mlai.handle))
-    dispatcher.add_handler(CommandHandler("ocr", handlers.mlai.handle_ocr))
-    dispatcher.add_handler(CommandHandler("tynm", handlers.tynm.handle))
-    dispatcher.add_handler(CommandHandler("ytdl", handlers.ytdl.handle))
-    dispatcher.add_handler(CommandHandler("dalle", handlers.dalle.handle))
-
-    dispatcher.add_handler(CommandHandler("remind", handlers.remind.handle))
-    dispatcher.add_handler(CommandHandler("reminder", handlers.remind.handle))
-    dispatcher.add_handler(CommandHandler("remindme", handlers.remind.handle))
-    dispatcher.add_handler(CommandHandler("alarm", handlers.remind.handle))
-
-    dispatcher.add_handler(
-        MessageHandler(Filters.status_update, handlers.defaults.status_update)
-    )
-    dispatcher.add_handler(
-        MessageHandler(Filters.document.category("video"), handlers.webm.handle)
-    )
-    dispatcher.add_handler(MessageHandler(Filters.all, handlers.defaults.all))
-
-    # Log all errors
-    dispatcher.add_error_handler(handlers.errors.log_error)
-
-    # Start the Bot
-    logger.info("[tg] Starting Telegram Bot with Polling")
-    updater.start_polling()
-
+async def post_init(application: Application) -> None:
+    """Post initialization callback"""
     global bot_instance
-    bot_instance = updater.bot
+    bot_instance = application.bot
     logger.debug("Setting global bot_instance - bot_instance={}", bot_instance)
 
     v = version.get_version()
@@ -100,12 +46,69 @@ def run_telegram_bot():
         )
     )
 
-    reschedule_saved_jobs(job_queue)
+    reschedule_saved_jobs(application.job_queue)
 
-    # Run the bot until you press Ctrl-C or the process receives SIGINT,
-    # SIGTERM or SIGABRT. This should be used most of the time, since
-    # start_polling() is non-blocking and will stop the bot gracefully.
-    updater.idle()
+
+def run_telegram_bot():
+
+    # Create the Application and pass it your bot's token.
+    application = (
+        Application.builder()
+        .token(app_config.get("TELEGRAM", "TG_BOT_TOKEN"))
+        .post_init(post_init)
+        .build()
+    )
+
+    # Add command handlers
+    application.add_handler(CommandHandler("start", handlers.start.handle))
+    application.add_handler(CommandHandler("help", handlers.help.handle))
+    application.add_handler(CommandHandler("hi", handlers.hi.handle))
+    application.add_handler(CommandHandler("about", handlers.about.handle))
+    application.add_handler(CommandHandler("rokda", handlers.rokda.handle))
+    application.add_handler(CommandHandler("superpower", handlers.superpower.handle))
+    application.add_handler(CommandHandler("gamble", handlers.gamble.handle))
+    application.add_handler(CommandHandler("sutta", handlers.sutta.handle))
+
+    application.add_handler(CommandHandler("mom", handlers.mom3.handle))
+    application.add_handler(CommandHandler("mom2", handlers.mom2.handle))
+
+    application.add_handler(CommandHandler("set", handlers.setter.handle))
+    application.add_handler(CommandHandler("chutiya", handlers.chutiya.handle))
+    application.add_handler(CommandHandler("aao", handlers.aao.handle))
+    application.add_handler(CommandHandler("daan", handlers.daan.handle))
+    application.add_handler(CommandHandler("version", handlers.version.handle))
+
+    application.add_handler(CommandHandler("quote", handlers.quotes.handle))
+    application.add_handler(CommandHandler("quotes", handlers.quotes.handle))
+
+    application.add_handler(CommandHandler("roll", handlers.roll.handle))
+    application.add_handler(CommandHandler("translate", handlers.translate.handle))
+    application.add_handler(CommandHandler("mlai", handlers.mlai.handle))
+    application.add_handler(CommandHandler("ocr", handlers.mlai.handle_ocr))
+    application.add_handler(CommandHandler("tynm", handlers.tynm.handle))
+    application.add_handler(CommandHandler("ytdl", handlers.ytdl.handle))
+    application.add_handler(CommandHandler("dalle", handlers.dalle.handle))
+
+    application.add_handler(CommandHandler("remind", handlers.remind.handle))
+    application.add_handler(CommandHandler("reminder", handlers.remind.handle))
+    application.add_handler(CommandHandler("remindme", handlers.remind.handle))
+    application.add_handler(CommandHandler("alarm", handlers.remind.handle))
+
+    # Add message handlers
+    application.add_handler(
+        MessageHandler(filters.StatusUpdate.ALL, handlers.defaults.status_update)
+    )
+    application.add_handler(
+        MessageHandler(filters.Document.VIDEO, handlers.webm.handle)
+    )
+    application.add_handler(MessageHandler(filters.ALL, handlers.defaults.all))
+
+    # Log all errors
+    application.add_error_handler(handlers.errors.log_error)
+
+    # Start the Bot
+    logger.info("[tg] Starting Telegram Bot with Polling")
+    application.run_polling(allowed_updates=["message", "edited_message", "channel_post", "edited_channel_post"])
 
 
 def get_bot_instance():

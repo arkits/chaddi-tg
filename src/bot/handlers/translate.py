@@ -1,5 +1,7 @@
 from loguru import logger
-from telegram import Update, ParseMode
+from telegram import Update
+from telegram.ext import ContextTypes
+from telegram.constants import ParseMode
 from src.domain import dc
 import traceback
 from googletrans import Translator
@@ -7,7 +9,7 @@ from googletrans import Translator
 translator = Translator()
 
 
-def handle(update: Update, context):
+async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
 
@@ -17,7 +19,7 @@ def handle(update: Update, context):
             logger.debug(
                 "[translate] user didn't reply to another user",
             )
-            update.message.reply_text(
+            await update.message.reply_text(
                 "Try replying to a message with `/translate` to translate it to English",
                 parse_mode=ParseMode.MARKDOWN,
             )
@@ -45,7 +47,7 @@ def handle(update: Update, context):
                 "[translate] Failed to extract text to translate text_to_translate={}",
                 text_to_translate,
             )
-            update.message.reply_text(
+            await update.message.reply_text(
                 "Failed to extract text to translate :(",
                 parse_mode=ParseMode.MARKDOWN,
             )
@@ -73,7 +75,7 @@ def handle(update: Update, context):
                 translated.text, translated.src.upper(), translated.dest.upper()
             )
 
-            update.message.reply_text(reply_text, parse_mode=ParseMode.MARKDOWN)
+            await update.message.reply_text(reply_text, parse_mode=ParseMode.MARKDOWN)
 
         except Exception as e:
 
@@ -83,7 +85,7 @@ def handle(update: Update, context):
                 traceback.format_exc(),
             )
 
-            update.message.reply_text(
+            await update.message.reply_text(
                 "Failed to translate :( googletrans error={}".format(e),
                 parse_mode=ParseMode.MARKDOWN,
             )

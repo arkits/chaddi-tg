@@ -3,7 +3,8 @@ import os
 import random
 import traceback
 from telegram import Update
-from telegram.parsemode import ParseMode
+from telegram.constants import ParseMode
+from telegram.ext import ContextTypes
 from src.domain import dc, util
 from loguru import logger
 from PIL import Image, ImageDraw, ImageFont, ImageOps
@@ -28,7 +29,7 @@ NM_IMG_URLS = [
 NM_IMG_LOCATIONS = ["bottom_right", "bottom_left"]
 
 
-def handle(update: Update, context):
+async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     random.seed(datetime.datetime.now())
 
@@ -37,7 +38,7 @@ def handle(update: Update, context):
         dc.log_command_usage("tynm", update)
 
         if update.message.reply_to_message is None:
-            update.message.reply_text("Please reply to a message with `/tynm`")
+            await update.message.reply_text("Please reply to a message with `/tynm`")
             return
 
         # Choose NM_IMG
@@ -50,7 +51,7 @@ def handle(update: Update, context):
         # Handle photo message
         if update.message.reply_to_message.photo:
 
-            file = acquire_file(update, context)
+            file = await acquire_file(update, context)
 
             src_img = Image.open(build_file_path(file))
             src_img_width, src_img_height = src_img.size
@@ -66,7 +67,7 @@ def handle(update: Update, context):
 
             with open(build_file_path(file, "_tynm"), "rb") as photo_to_upload:
                 logger.info("[tynm] uploading completed photo")
-                update.message.reply_photo(
+                await update.message.reply_photo(
                     photo=photo_to_upload,
                 )
 
@@ -120,16 +121,15 @@ def handle(update: Update, context):
                     EXTERNAL_DIR, str(user_id) + ".webp"
                 )
 
-                user_profile_photo = (
-                    update.message.reply_to_message.from_user.get_profile_photos(
-                        limit=1
-                    ).photos[0]
+                user_profile_photos = await update.message.reply_to_message.from_user.get_profile_photos(
+                    limit=1
                 )
+                user_profile_photo = user_profile_photos.photos[0]
                 user_profile_photo_file_id = user_profile_photo[-1].file_id
-                user_profile_photo_file = context.bot.getFile(
+                user_profile_photo_file = await context.bot.get_file(
                     user_profile_photo_file_id
                 )
-                user_profile_photo_file.download(user_profile_photo_path)
+                await user_profile_photo_file.download_to_drive(user_profile_photo_path)
 
                 user_profile_photo_img = (
                     Image.open(user_profile_photo_path).convert("RGBA").resize((y1, y1))
@@ -278,7 +278,7 @@ def handle(update: Update, context):
 
             with open(img_path, "rb") as photo_to_upload:
                 logger.info("[tynm] uploading completed photo")
-                update.message.reply_photo(
+                await update.message.reply_photo(
                     photo=photo_to_upload,
                 )
 
@@ -361,7 +361,7 @@ def place_image(src_img: Image, placement_img: Image, scale=2, location="bottom_
     return
 
 
-def acquire_file(update: Update, context):
+async def acquire_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Extract file ID from update
     file_id = str(
@@ -369,8 +369,8 @@ def acquire_file(update: Update, context):
     )  # TODO: handle video and gifs?
 
     logger.info("[tynm] Starting file download file_id={}", file_id)
-    file_handle = context.bot.get_file(file_id)
-    file_handle.download(MLAI_RESOURCES_DIR + file_id + PNG_EXTENSION)
+    file_handle = await context.bot.get_file(file_id)
+    await file_handle.download_to_drive(MLAI_RESOURCES_DIR + file_id + PNG_EXTENSION)
 
     return {"file_id": file_id, "extension": PNG_EXTENSION}
 

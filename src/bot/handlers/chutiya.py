@@ -1,8 +1,9 @@
 import random
 from loguru import logger
 from telegram import Update
+from telegram.ext import ContextTypes
+from telegram.constants import ParseMode
 from src.domain import dc, util, config
-from telegram import ParseMode
 import traceback
 
 app_config = config.get_config()
@@ -14,7 +15,7 @@ mom_response_blacklist = [BOT_USERNAME]
 COMMAND_COST = 200
 
 
-def handle(update: Update, context):
+async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
 
@@ -29,12 +30,12 @@ def handle(update: Update, context):
         og_sender = util.extract_pretty_name_from_tg_user(og_from)
         if og_sender != BOT_USERNAME:
             if reply_to_message is not None:
-                update.message.reply_to_message.reply_text(
+                await update.message.reply_to_message.reply_text(
                     text="{} is a {}".format(og_sender, acronymify("chutiya")),
                     parse_mode=ParseMode.MARKDOWN,
                 )
             else:
-                update.message.reply_text(
+                await update.message.reply_text(
                     text="{} is a {}".format(og_sender, acronymify("chutiya")),
                     parse_mode=ParseMode.MARKDOWN,
                 )
@@ -42,7 +43,7 @@ def handle(update: Update, context):
         else:
             # DON'T INSULT CHADDI!
             sticker_to_send = "CAADAQADrAEAAp6M4Ahtgp9JaiLJPxYE"
-            update.message.reply_sticker(sticker=sticker_to_send)
+            await update.message.reply_sticker(sticker=sticker_to_send)
 
     except Exception as e:
         logger.error(

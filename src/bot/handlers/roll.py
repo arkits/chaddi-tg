@@ -2,8 +2,9 @@ import math
 import traceback
 from loguru import logger
 import shortuuid
-from telegram import Update, ParseMode
-from telegram.ext import CallbackContext
+from telegram import Update
+from telegram.constants import ParseMode
+from telegram.ext import ContextTypes
 from src.domain import config, dc, util
 from src.db import Bakchod, Group, Roll, bakchod_dao, group_dao, roll_dao
 import random
@@ -22,7 +23,7 @@ app_config = config.get_config()
 BOT_USERNAME = app_config.get("TELEGRAM", "BOT_USERNAME")
 
 
-def handle(update: Update, context: CallbackContext):
+async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     dc.log_command_usage("roll", update)
 
@@ -32,15 +33,15 @@ def handle(update: Update, context: CallbackContext):
 
         if command == "start":
 
-            handle_command_start(update)
+            await handle_command_start(update)
 
         elif command == "reset":
 
-            handle_command_reset(update, context)
+            await handle_command_reset(update, context)
 
         else:
 
-            handle_command_default(update)
+            await handle_command_default(update)
 
     except Exception as e:
         logger.error(
@@ -50,20 +51,20 @@ def handle(update: Update, context: CallbackContext):
         )
 
 
-def handle_command_default(update: Update):
+async def handle_command_default(update: Update):
     """
     Return roll status for anything else
     """
 
     group_id = _get_group_id_from_update(update)
     if group_id is None:
-        update.message.reply_text(text="Roll can only be used in a group!")
+        await update.message.reply_text(text="Roll can only be used in a group!")
         return
 
     current_roll = roll_dao.get_roll_by_group_id(group_id)
 
     if current_roll is None:
-        update.message.reply_text(
+        await update.message.reply_text(
             text="No active roulette right now. <code>/roll start</code> to start one!",
             parse_mode=ParseMode.HTML,
         )
@@ -73,7 +74,7 @@ def handle_command_default(update: Update):
         if current_roll.expiry <= datetime.datetime.now():
 
             # Handle expired roll
-            update.message.reply_text(
+            await update.message.reply_text(
                 text="No active roulette right now. <code>/roll start</code> to start one!",
                 parse_mode=ParseMode.HTML,
             )
@@ -83,16 +84,16 @@ def handle_command_default(update: Update):
 
             pretty_roll_desc = _generate_pretty_roll_description(current_roll)
             response = "<b>Started new roulette!</b> {}".format(pretty_roll_desc)
-            update.message.reply_text(text=response, parse_mode=ParseMode.HTML)
+            await update.message.reply_text(text=response, parse_mode=ParseMode.HTML)
             return
 
 
-def handle_command_start(update: Update):
+async def handle_command_start(update: Update):
     create_new_roll = False
 
     group_id = _get_group_id_from_update(update)
     if group_id is None:
-        update.message.reply_text(text="Roll only be used in a group!")
+        await update.message.reply_text(text="Roll only be used in a group!")
         return
 
     current_roll = roll_dao.get_roll_by_group_id(group_id)
@@ -112,21 +113,21 @@ def handle_command_start(update: Update):
 
         roll = generate_new_roll(update, group_id)
         if roll is None:
-            update.message.reply_text(text="Couldn't start a new roll :(")
+            await update.message.reply_text(text="Couldn't start a new roll :(")
             return
 
         pretty_roll_desc = _generate_pretty_roll_description(roll)
         response = "<b>Started new roulette!</b> {}".format(pretty_roll_desc)
-        update.message.reply_text(text=response, parse_mode=ParseMode.HTML)
+        await update.message.reply_text(text=response, parse_mode=ParseMode.HTML)
         return
 
     else:
         # Handle when not create_new_roll
-        update.message.reply_text("Chal kat re bsdk!")
+        await update.message.reply_text("Chal kat re bsdk!")
         return
 
 
-def handle_command_reset(update: Update, context: CallbackContext):
+async def handle_command_reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if util.is_admin_tg_user(update.message.from_user):
 
@@ -146,11 +147,11 @@ def handle_command_reset(update: Update, context: CallbackContext):
         return
 
     else:
-        update.message.reply_text("Chal kat re bsdk!")
+        await update.message.reply_text("Chal kat re bsdk!")
         return
 
 
-def handle_dice_rolls(dice_value, update, context):
+async def handle_dice_rolls(dice_value, update, context):
 
     try:
 
@@ -192,7 +193,7 @@ def handle_dice_rolls(dice_value, update, context):
             if not DEBUG:
                 if last_time_rolled > five_min_ago:
                     logger.info("[roll] rolled too soon... skipping")
-                    update.message.reply_text(
+                    await update.message.reply_text(
                         "You can only roll once every 5 mins... Ignoring this roll!"
                     )
                     return
@@ -272,7 +273,7 @@ def handle_dice_rolls(dice_value, update, context):
                         group_id,
                         util.extract_pretty_name_from_bakchod(victim),
                     )
-                    context.bot.send_message(
+                    await context.bot.send_message(
                         chat_id=update.message.chat_id,
                         text="BYEEEEEEEEEEEE "
                         + util.extract_pretty_name_from_bakchod(victim),
@@ -280,7 +281,7 @@ def handle_dice_rolls(dice_value, update, context):
 
                     # refer to https://python-telegram-bot.readthedocs.io/en/stable/telegram.bot.html#telegram.Bot.kick_chat_member
                     ban_until = datetime.datetime.now() + datetime.timedelta(seconds=31)
-                    context.bot.kick_chat_member(
+                    await context.bot.kick_chat_member(
                         chat_id=group_id, user_id=victim.tg_id, until_date=ban_until
                     )
 
@@ -293,7 +294,7 @@ def handle_dice_rolls(dice_value, update, context):
                         e,
                         traceback.format_exc(),
                     )
-                    context.bot.send_message(
+                    await context.bot.send_message(
                         chat_id=update.message.chat_id,
                         text="Looks like I'm not able to kick user... Please check the Group permissions!",
                     )
@@ -302,7 +303,7 @@ def handle_dice_rolls(dice_value, update, context):
             response = "<b>WINRAR!!!</b> {}".format(
                 _generate_pretty_roll_description(current_roll)
             )
-            update.message.reply_text(text=response, parse_mode=ParseMode.HTML)
+            await update.message.reply_text(text=response, parse_mode=ParseMode.HTML)
 
             # Schedule callback for resetting roll effects in 1 hour
             context.job_queue.run_once(
@@ -546,7 +547,7 @@ def _pretty_roll_rule(roll_rule: str) -> str:
         return None
 
 
-def reset_roll_effects(context: CallbackContext):
+async def reset_roll_effects(context: ContextTypes.DEFAULT_TYPE):
 
     # Get group_id
     group_id = context.job.context
@@ -587,7 +588,7 @@ def reset_roll_effects(context: CallbackContext):
     response = "Roll Modifiers for {} are now removed!".format(
         util.extract_pretty_name_from_bakchod(victim)
     )
-    context.bot.send_message(
+    await context.bot.send_message(
         group_id,
         text=response,
     )

@@ -1,13 +1,13 @@
 from loguru import logger
 from telegram import Update
-from telegram.ext import CallbackContext
+from telegram.ext import ContextTypes
 from src.domain import dc
 
 import random
 import datetime
 
 
-def handle(update: Update, context: CallbackContext, log_to_dc=True):
+async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE, log_to_dc=True):
 
     try:
 
@@ -19,10 +19,10 @@ def handle(update: Update, context: CallbackContext, log_to_dc=True):
 
         logger.info("[antiwordle] detected wordle message={}", update.message.text)
 
-        update.message.reply_text(random_reply())
+        await update.message.reply_text(random_reply())
 
         try:
-            update.message.delete()
+            await update.message.delete()
         except Exception as e:
             logger.error("[antiwordle] caught error while deleting message={}", e)
 

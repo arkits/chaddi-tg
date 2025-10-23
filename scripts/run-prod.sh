@@ -6,14 +6,11 @@ set -e
 
 cd ..
 
-source .venv/bin/activate
-
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 
-# echo ">>> pip installing"
-# pip install -r requirements.txt
-# echo ""
+# Dependencies are now managed by uv via pyproject.toml
+# Install/sync dependencies with: uv sync
 
 cd src
 
-python chaddi.py >../logs/chaddi.log 2>&1 &
+uv run python chaddi.py >../logs/chaddi.log 2>&1 &

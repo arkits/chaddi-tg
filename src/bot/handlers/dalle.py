@@ -2,10 +2,11 @@ from os import path
 import uuid
 from loguru import logger
 from telegram import Update
+from telegram.ext import ContextTypes
+from telegram.constants import ParseMode
 from src.bot.handlers import mom
 from src.db import Bakchod, bakchod_dao
 from src.domain import dc, util, config
-from telegram import ParseMode
 import traceback
 import openai
 
@@ -17,7 +18,7 @@ COMMAND_ENABLED = True
 openai.api_key = app_config.get("OPENAI", "API_KEY")
 
 
-def handle(update: Update, context):
+async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
 
@@ -34,7 +35,7 @@ def handle(update: Update, context):
             pass
         else:
             logger.info("[dalle] denied request for disabled bakchod={}", b.pretty_name)
-            update.message.reply_text(
+            await update.message.reply_text(
                 "/dalle is not enabled for you. Ping @arkits with your TG ID - {}".format(
                     b.tg_id
                 )
@@ -46,12 +47,12 @@ def handle(update: Update, context):
             prompt = extract_prompt(update)
             if prompt is None or prompt == "":
                 logger.error("[dalle] prompt failed validation! prompt={}", prompt)
-                update.message.reply_text("HAAAAAAAATTTTT prompt de bc")
+                await update.message.reply_text("HAAAAAAAATTTTT prompt de bc")
                 return
 
             if len(prompt) <= 10:
                 logger.error("[dalle] prompt failed validation! prompt={}", prompt)
-                update.message.reply_text("HAAAAAAAATTTTT longer prompt de bc")
+                await update.message.reply_text("HAAAAAAAATTTTT longer prompt de bc")
                 return
 
             logger.info("[dalle] prompt={}", prompt)
@@ -68,7 +69,7 @@ def handle(update: Update, context):
                         e,
                         prompt,
                     )
-                    update.message.reply_text(
+                    await update.message.reply_text(
                         "Kaise chutiya request tha...  OpenAI ne bola '{}'".format(
                             e._message
                         )
@@ -87,14 +88,14 @@ def handle(update: Update, context):
 
                 with open(resource_path, "rb") as photo_to_upload:
                     logger.info("[dalle] uploading completed photo")
-                    update.message.reply_photo(photo=photo_to_upload, caption=prompt)
+                    await update.message.reply_photo(photo=photo_to_upload, caption=prompt)
 
                 util.delete_file(resource_path)
 
                 return
 
             else:
-                update.message.reply_text(
+                await update.message.reply_text(
                     "/dalle temporarily disabled, try again later... maybe PAYUPP!!!?????"
                 )
                 return
@@ -105,7 +106,7 @@ def handle(update: Update, context):
                 e,
                 traceback.format_exc(),
             )
-            update.message.reply_text(
+            await update.message.reply_text(
                 "Something has gone wrong! Ping @arkits about this XD"
             )
 

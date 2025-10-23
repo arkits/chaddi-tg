@@ -2,8 +2,9 @@ import math
 from src.db import bakchod_dao
 from loguru import logger
 from telegram import Update
+from telegram.ext import ContextTypes
+from telegram.constants import ParseMode
 from src.domain import dc, util, config
-from telegram import ParseMode
 import traceback
 
 app_config = config.get_config()
@@ -15,7 +16,7 @@ mom_response_blacklist = [BOT_USERNAME]
 COMMAND_COST = 200
 
 
-def handle(update: Update, context):
+async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
 
@@ -26,7 +27,7 @@ def handle(update: Update, context):
         query = query.split(" ")
 
         if len(query) < 2:
-            update.message.reply_text(
+            await update.message.reply_text(
                 text="Haat chutiya! Syntax is `/daan @username 786`",
                 parse_mode=ParseMode.MARKDOWN,
             )
@@ -75,10 +76,10 @@ def handle(update: Update, context):
         # Handle if receiver could be extracted
         if receiver is None:
             if receiver_username:
-                update.message.reply_text(receiver_username + "??? Who dat???")
+                await update.message.reply_text(receiver_username + "??? Who dat???")
                 return
             else:
-                update.message.reply_text("Kisko daan do be????")
+                await update.message.reply_text("Kisko daan do be????")
                 return
 
         # Parse Daan amount
@@ -87,11 +88,11 @@ def handle(update: Update, context):
             daan = round(daan, 2)
             daan = abs(daan)
         except Exception as e:
-            update.message.reply_text("Kitna ₹okda be???")
+            await update.message.reply_text("Kitna ₹okda be???")
             return
 
         if not math.isfinite(daan):
-            update.message.reply_text(
+            await update.message.reply_text(
                 "Yeh dekho chutiyapa chal ra hai. Setting {}'s rokda to 0!".format(
                     util.extract_pretty_name_from_bakchod(sender)
                 )
@@ -110,7 +111,7 @@ def handle(update: Update, context):
         # Checking if sender has enough rokda
         sender_rokda = sender.rokda
         if (sender_rokda - daan) < 0:
-            update.message.reply_text("Gareeb saale! You don't have enough ₹okda!")
+            await update.message.reply_text("Gareeb saale! You don't have enough ₹okda!")
             return
 
         # Sender is trying to daan to themselves... :thinking_face:
@@ -120,7 +121,7 @@ def handle(update: Update, context):
             )
             file_id = "CAADAwADrQADnozgCI_qxocBgD_OFgQ"
             sticker_to_send = file_id
-            update.message.reply_sticker(sticker=sticker_to_send)
+            await update.message.reply_sticker(sticker=sticker_to_send)
             return
 
         # Commit Daan transaction to DB
@@ -148,7 +149,7 @@ def handle(update: Update, context):
 
         logger.info("[daan] returning response='{}'", response)
 
-        update.message.reply_text(response)
+        await update.message.reply_text(response)
 
     except Exception as e:
         logger.error(

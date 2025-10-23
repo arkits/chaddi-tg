@@ -2,7 +2,8 @@ from os import path
 import traceback
 import boto3
 from telegram import Update
-from telegram.parsemode import ParseMode
+from telegram.ext import ContextTypes
+from telegram.constants import ParseMode
 from src.domain import dc, util
 from loguru import logger
 from PIL import Image, ImageDraw
@@ -15,7 +16,7 @@ PNG_EXTENSION = ".png"
 BOUNDING_BOX_COLORS = ["#03dac6", "#f9ff03", "#ff9c03", "#ff03e6", "#03ffd4"]
 
 
-def handle(update: Update, context):
+async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
 
@@ -25,7 +26,7 @@ def handle(update: Update, context):
 *chaddi-ai Facial Analysis \n*
 """
 
-        file = acquire_file(update, context)
+        file = await acquire_file(update, context)
 
         logger.info("[mlai] Running rekognition on file_id={}", file["file_id"])
         with open(
@@ -75,7 +76,7 @@ def handle(update: Update, context):
         with open(
             MLAI_RESOURCES_DIR + file["file_id"] + "_mlai" + PNG_EXTENSION, "rb"
         ) as photo_to_upload:
-            update.message.reply_photo(
+            await update.message.reply_photo(
                 photo=photo_to_upload,
                 caption=reply_text,
                 parse_mode=ParseMode.MARKDOWN,
@@ -93,7 +94,7 @@ def handle(update: Update, context):
         )
 
 
-def handle_ocr(update: Update, context):
+async def handle_ocr(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
 
@@ -103,7 +104,7 @@ def handle_ocr(update: Update, context):
 
         dc.log_command_usage("mlai-ocr", update)
 
-        file = acquire_file(update, context)
+        file = await acquire_file(update, context)
 
         logger.info("[mlai] Running rekognition on file_id={}", file["file_id"])
         with open(
@@ -141,7 +142,7 @@ def handle_ocr(update: Update, context):
         with open(
             MLAI_RESOURCES_DIR + file["file_id"] + "_mlai" + PNG_EXTENSION, "rb"
         ) as photo_to_upload:
-            update.message.reply_photo(
+            await update.message.reply_photo(
                 photo=photo_to_upload,
                 caption=reply_text,
                 parse_mode=ParseMode.MARKDOWN,
@@ -161,7 +162,7 @@ def handle_ocr(update: Update, context):
         )
 
 
-def acquire_file(update: Update, context):
+async def acquire_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Extract file ID from update
     file_id = str(
@@ -169,8 +170,8 @@ def acquire_file(update: Update, context):
     )  # TODO: handle video and gifs?
 
     logger.info("[mlai] Starting file download file_id={}", file_id)
-    file_handle = context.bot.get_file(file_id)
-    file_handle.download(MLAI_RESOURCES_DIR + file_id + PNG_EXTENSION)
+    file_handle = await context.bot.get_file(file_id)
+    await file_handle.download_to_drive(MLAI_RESOURCES_DIR + file_id + PNG_EXTENSION)
 
     return {"file_id": file_id, "extension": PNG_EXTENSION}
 

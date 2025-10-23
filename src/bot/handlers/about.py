@@ -1,12 +1,12 @@
-from telegram.ext import CallbackContext
+from telegram.ext import ContextTypes
 from telegram import Update, Message
 from loguru import logger
-from telegram.parsemode import ParseMode
+from telegram.constants import ParseMode
 from src.domain import dc, util
 from src.db import Bakchod, bakchod_dao
 
 
-def handle(update: Update, context: CallbackContext):
+async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
 
@@ -32,7 +32,7 @@ def handle(update: Update, context: CallbackContext):
             # search for bakchod by username
             b = bakchod_dao.get_bakchod_by_username(username)
             if b is None:
-                update.message.reply_text(
+                await update.message.reply_text(
                     "Kaun hai bee '{}'??? Try <code>/about @username</code>".format(
                         username
                     ),
@@ -40,7 +40,7 @@ def handle(update: Update, context: CallbackContext):
                 )
                 return
 
-        update.message.reply_text(
+        await update.message.reply_text(
             text=generate_about_response(b), parse_mode=ParseMode.HTML
         )
 

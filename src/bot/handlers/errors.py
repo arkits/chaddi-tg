@@ -1,11 +1,11 @@
 from loguru import logger
 from telegram import Update
-from telegram.ext import CallbackContext
+from telegram.ext import ContextTypes
 import traceback
 from src.domain import tg_logger
 
 
-def log_error(update: Update, context: CallbackContext):
+async def log_error(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if not update:
         return
@@ -13,7 +13,7 @@ def log_error(update: Update, context: CallbackContext):
     logger.error(
         "Caught Fatal Error! error={} \n \nupdate={} \n \ncontext={} \n \ntraceback={}",
         context.error,
-        update.to_json(),
+        update.to_json() if update else "No update",
         context.__dict__,
         traceback.format_exc(),
     )
@@ -22,7 +22,7 @@ def log_error(update: Update, context: CallbackContext):
         """
 *⚠️ A fatal error was caught!*
 
-Error: `{}` 
+Error: `{}`
 
 Update:
 `{}`
@@ -31,7 +31,7 @@ Traceback:
 `{}`
 """.format(
             context.error,
-            update.to_json(),
+            update.to_json() if update else "No update",
             traceback.format_exc(),
         )
     )

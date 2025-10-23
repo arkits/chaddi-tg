@@ -1,6 +1,7 @@
 import random
-from telegram.ext import CallbackContext
-from telegram import ParseMode, Update
+from telegram.ext import ContextTypes
+from telegram.constants import ParseMode
+from telegram import Update
 from loguru import logger
 from src.db import Bakchod
 from src.domain import dc, util
@@ -8,7 +9,7 @@ from src.domain import dc, util
 COMMAND_COST = 200
 
 
-def handle(update: Update, context: CallbackContext, log_to_dc=True):
+async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE, log_to_dc=True):
 
     try:
 
@@ -18,7 +19,7 @@ def handle(update: Update, context: CallbackContext, log_to_dc=True):
             return
 
         if not util.paywall_user(initiator_user.id, COMMAND_COST):
-            update.message.reply_text(
+            await update.message.reply_text(
                 "Sorry! You don't have enough ₹okda! Each /sutta costs {} ₹okda.".format(
                     COMMAND_COST
                 )
@@ -28,13 +29,13 @@ def handle(update: Update, context: CallbackContext, log_to_dc=True):
         if log_to_dc:
             dc.log_command_usage("sutta", update)
 
-        start_sutta(update, context)
+        await start_sutta(update, context)
 
     except Exception as e:
         logger.error("Caught Exception in sutta.handle - e={}", e)
 
 
-def update_sutta(context: CallbackContext):
+async def update_sutta(context: ContextTypes.DEFAULT_TYPE):
 
     try:
 
@@ -71,12 +72,12 @@ def update_sutta(context: CallbackContext):
 
             s = "{}{}{}".format(cig_start, looploop, cig_end)
 
-            context.bot.edit_message_text(s, chat_id, message_id)
+            await context.bot.edit_message_text(s, chat_id, message_id)
 
         else:
             job.schedule_removal()
 
-            context.bot.edit_message_text("~~~", chat_id, message_id)
+            await context.bot.edit_message_text("~~~", chat_id, message_id)
 
             b.metadata["sutta_ittr"] = None
             b.save()
@@ -85,7 +86,7 @@ def update_sutta(context: CallbackContext):
         logger.error("Caught Exception in update_sutta - e={}", e)
 
 
-def start_sutta(update: Update, context: CallbackContext):
+async def start_sutta(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Check for previously running sutta jobs
     b = Bakchod.get_by_id(update.message.from_user.id)
@@ -95,12 +96,12 @@ def start_sutta(update: Update, context: CallbackContext):
 
     if b.metadata.get("sutta_ittr") is not None:
         logger.error("[sutta] sutta_ittr was not None...")
-        update.message.reply_text(
+        await update.message.reply_text(
             "DHUMRAPAN SEHAT KE LIYE HANIKARAK HAI! 💀",
         )
         return
 
-    message = update.message.reply_text(
+    message = await update.message.reply_text(
         "`~~ Ek minute... lighter kidhar hai... ~~`", parse_mode=ParseMode.MARKDOWN_V2
     )
 

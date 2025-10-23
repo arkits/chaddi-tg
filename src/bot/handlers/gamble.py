@@ -1,6 +1,7 @@
 import traceback
 from loguru import logger
 from telegram import Update
+from telegram.ext import ContextTypes
 from src.db import Bakchod, bakchod_dao
 from src.domain import dc, util
 import datetime
@@ -8,7 +9,7 @@ import random
 import ciso8601
 
 
-def handle(update: Update, context):
+async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
 
@@ -18,11 +19,11 @@ def handle(update: Update, context):
 
         can_gamble, response = can_bakchod_gamble(b)
         if not can_gamble:
-            update.message.reply_text(response)
+            await update.message.reply_text(response)
             return
 
         response = gamble(b, update)
-        update.message.reply_text(response)
+        await update.message.reply_text(response)
 
     except Exception as e:
         logger.error(
