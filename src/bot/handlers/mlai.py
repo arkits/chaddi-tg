@@ -1,13 +1,15 @@
-from os import path
+import random
 import traceback
+from os import path
+
 import boto3
-from telegram import Update
-from telegram.ext import ContextTypes
-from telegram.constants import ParseMode
-from src.domain import dc, util
 from loguru import logger
 from PIL import Image, ImageDraw
-import random
+from telegram import Update
+from telegram.constants import ParseMode
+from telegram.ext import ContextTypes
+
+from src.domain import dc, util
 
 rekognition_client = boto3.client("rekognition")
 
@@ -17,9 +19,7 @@ BOUNDING_BOX_COLORS = ["#03dac6", "#f9ff03", "#ff9c03", "#ff03e6", "#03ffd4"]
 
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     try:
-
         dc.log_command_usage("mlai", update)
 
         reply_text = """
@@ -29,9 +29,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         file = await acquire_file(update, context)
 
         logger.info("[mlai] Running rekognition on file_id={}", file["file_id"])
-        with open(
-            MLAI_RESOURCES_DIR + file["file_id"] + file["extension"], "rb"
-        ) as photo_file:
+        with open(MLAI_RESOURCES_DIR + file["file_id"] + file["extension"], "rb") as photo_file:
             response = rekognition_client.detect_faces(
                 Image={"Bytes": photo_file.read()}, Attributes=["ALL"]
             )
@@ -42,12 +40,9 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         img_width, img_height = image.size
         draw = ImageDraw.Draw(image)
 
-        reply_text += "- Number of Faces detected: {} \n".format(
-            len(response["FaceDetails"])
-        )
+        reply_text += "- Number of Faces detected: {} \n".format(len(response["FaceDetails"]))
 
         for idx, face_detail in enumerate(response["FaceDetails"]):
-
             reply_text += """
 * Face #{}*
 - Gender: {}
@@ -69,9 +64,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         image.save(MLAI_RESOURCES_DIR + file["file_id"] + "_mlai" + PNG_EXTENSION)
 
-        reply_text = reply_text[
-            :1024
-        ]  # truncate to Telegram's size limit for media caption
+        reply_text = reply_text[:1024]  # truncate to Telegram's size limit for media caption
 
         with open(
             MLAI_RESOURCES_DIR + file["file_id"] + "_mlai" + PNG_EXTENSION, "rb"
@@ -95,9 +88,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def handle_ocr(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     try:
-
         reply_text = """
 *chaddi-ai OCR \n*
 """
@@ -107,12 +98,8 @@ async def handle_ocr(update: Update, context: ContextTypes.DEFAULT_TYPE):
         file = await acquire_file(update, context)
 
         logger.info("[mlai] Running rekognition on file_id={}", file["file_id"])
-        with open(
-            MLAI_RESOURCES_DIR + file["file_id"] + file["extension"], "rb"
-        ) as photo_file:
-            response = rekognition_client.detect_text(
-                Image={"Bytes": photo_file.read()}
-            )
+        with open(MLAI_RESOURCES_DIR + file["file_id"] + file["extension"], "rb") as photo_file:
+            response = rekognition_client.detect_text(Image={"Bytes": photo_file.read()})
             logger.debug("[mlai] response={}", response)
 
             # Draw bounding boxes on the image
@@ -121,10 +108,9 @@ async def handle_ocr(update: Update, context: ContextTypes.DEFAULT_TYPE):
         draw = ImageDraw.Draw(image)
 
         text_detections = response["TextDetections"]
-        reply_text += "- Elements detected: {} \n \n".format(len(text_detections))
+        reply_text += f"- Elements detected: {len(text_detections)} \n \n"
 
         for idx, text in enumerate(text_detections):
-
             if text["Type"] != "WORD":
                 continue
 
@@ -163,11 +149,8 @@ async def handle_ocr(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def acquire_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     # Extract file ID from update
-    file_id = str(
-        update.message.reply_to_message.photo[-1].file_id
-    )  # TODO: handle video and gifs?
+    file_id = str(update.message.reply_to_message.photo[-1].file_id)  # TODO: handle video and gifs?
 
     logger.info("[mlai] Starting file download file_id={}", file_id)
     file_handle = await context.bot.get_file(file_id)
@@ -181,19 +164,15 @@ def build_file_path(file, file_name_suffix=""):
 
 
 def list_out_emotions(emotions):
-
     toReturn = ""
 
     for emotion in emotions:
-        toReturn += "{} ({}%); ".format(
-            emotion["Type"], round(emotion["Confidence"], 2)
-        )
+        toReturn += "{} ({}%); ".format(emotion["Type"], round(emotion["Confidence"], 2))
 
     return toReturn
 
 
 def draw_bounding_box(draw, box, img_width, img_height, fill_color_hex=None):
-
     if fill_color_hex is None:
         fill_color_hex = random.choice(BOUNDING_BOX_COLORS)
 

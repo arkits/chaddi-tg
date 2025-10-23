@@ -1,8 +1,8 @@
-import random
-from telegram.ext import ContextTypes
-from telegram.constants import ParseMode
-from telegram import Update
 from loguru import logger
+from telegram import Update
+from telegram.constants import ParseMode
+from telegram.ext import ContextTypes
+
 from src.db import Bakchod
 from src.domain import dc, util
 
@@ -10,9 +10,7 @@ COMMAND_COST = 200
 
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE, log_to_dc=True):
-
     try:
-
         initiator_user = update.message.from_user
         if initiator_user is None:
             logger.error("[sutta] initiator_user was None!")
@@ -20,9 +18,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE, log_to_dc=T
 
         if not util.paywall_user(initiator_user.id, COMMAND_COST):
             await update.message.reply_text(
-                "Sorry! You don't have enough ₹okda! Each /sutta costs {} ₹okda.".format(
-                    COMMAND_COST
-                )
+                f"Sorry! You don't have enough ₹okda! Each /sutta costs {COMMAND_COST} ₹okda."
             )
             return
 
@@ -36,9 +32,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE, log_to_dc=T
 
 
 async def update_sutta(context: ContextTypes.DEFAULT_TYPE):
-
     try:
-
         job = context.job
 
         chat_id = job.context["chat_id"]
@@ -58,19 +52,16 @@ async def update_sutta(context: ContextTypes.DEFAULT_TYPE):
 
         ittr = b.metadata["sutta_ittr"]
 
-        logger.debug(
-            "[sutta] handling update_sutta bakchod_id={} ittr={}", bakchod_id, ittr
-        )
+        logger.debug("[sutta] handling update_sutta bakchod_id={} ittr={}", bakchod_id, ittr)
 
         if ittr <= 8:
-
             cig_start = "(̅_̅_̅_̅(̅_̅"
             cig_end = "_̅()ڪے"
             loop = "_̅"
 
             looploop = loop * (8 - ittr)
 
-            s = "{}{}{}".format(cig_start, looploop, cig_end)
+            s = f"{cig_start}{looploop}{cig_end}"
 
             await context.bot.edit_message_text(s, chat_id, message_id)
 
@@ -87,7 +78,6 @@ async def update_sutta(context: ContextTypes.DEFAULT_TYPE):
 
 
 async def start_sutta(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     # Check for previously running sutta jobs
     b = Bakchod.get_by_id(update.message.from_user.id)
     if b is None:

@@ -1,19 +1,20 @@
+import datetime
+
+from loguru import logger
 from peewee import DoesNotExist
 from telegram import Update, User
-from . import Bakchod
-from loguru import logger
-import datetime
+
 from src.domain import util
+
+from . import Bakchod
 
 
 def get_bakchod_from_update(update: Update) -> Bakchod:
-
     tg_id = update.message.from_user.id
     username = update.message.from_user.username
     pretty_name = util.extract_pretty_name_from_tg_user(update.message.from_user)
 
     try:
-
         exists_in_db = Bakchod.get(Bakchod.tg_id == tg_id)
         # logger.debug("[db] tg_id={} exists_in_db={}", tg_id, exists_in_db)
 
@@ -21,7 +22,6 @@ def get_bakchod_from_update(update: Update) -> Bakchod:
             return exists_in_db
 
     except DoesNotExist:
-
         logger.info("[db] tg_id={} DoesNotExist... Creating new!", tg_id)
 
         return Bakchod.create(
@@ -35,13 +35,11 @@ def get_bakchod_from_update(update: Update) -> Bakchod:
 
 
 def get_or_create_bakchod_from_tg_user(user: User) -> Bakchod:
-
     tg_id = user.id
     username = user.username
     pretty_name = util.extract_pretty_name_from_tg_user(user)
 
     try:
-
         exists_in_db = Bakchod.get(Bakchod.tg_id == tg_id)
         # logger.debug("[db] tg_id={} exists_in_db={}", tg_id, exists_in_db)
 
@@ -49,7 +47,6 @@ def get_or_create_bakchod_from_tg_user(user: User) -> Bakchod:
             return exists_in_db
 
     except DoesNotExist:
-
         logger.info("[db] tg_id={} DoesNotExist... Creating new!", tg_id)
 
         return Bakchod.create(
@@ -63,16 +60,13 @@ def get_or_create_bakchod_from_tg_user(user: User) -> Bakchod:
 
 
 def get_bakchod_by_username(username: str) -> Bakchod:
-
     try:
-
         exists_in_db = Bakchod.get(Bakchod.username == username)
 
         if exists_in_db is not None:
             return exists_in_db
 
     except DoesNotExist:
-
         logger.warning("[db] username={} DoesNotExist", username)
 
         return None

@@ -1,14 +1,17 @@
-from datetime import datetime
 import random
 import traceback
+from datetime import datetime
+
 from loguru import logger
 from peewee import DoesNotExist
 from telegram import Update
 from telegram.ext import ContextTypes
-from src.bot.handlers import roll, mom
+
+from src.bot.handlers import mom, roll
+from src.db import EMPTY_JSON, Bakchod, GroupMember, bakchod_dao, group_dao
 from src.domain import dc, rokda, util
-from src.db import Bakchod, EMPTY_JSON, GroupMember, bakchod_dao, group_dao
-from . import hi, bestie, antiwordle
+
+from . import antiwordle, bestie, hi
 
 
 async def all(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -39,7 +42,6 @@ async def all(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def handle_bakchod_metadata_effects(
     update: Update, context: ContextTypes.DEFAULT_TYPE, bakchod: Bakchod
 ):
-
     if bakchod.metadata is None:
         return
 
@@ -51,22 +53,15 @@ async def handle_bakchod_metadata_effects(
     bot = context.bot
 
     try:
-
         for key in bakchod.metadata:
-
             if key == "route-messages":
-
                 rm = bakchod.metadata[key]
 
                 # logger.debug("route-messages metadata was set - {}", rm)
 
                 for route_message_props in rm:
-
                     # if the message is posted to the same group, then ignore it
-                    if str(route_message_props["to_group"]) == str(
-                        update.message.chat_id
-                    ):
-
+                    if str(route_message_props["to_group"]) == str(update.message.chat_id):
                         logger.trace(
                             "[metadata] route-messages - posted in the same group - {} // {}",
                             route_message_props["to_group"],
@@ -82,11 +77,9 @@ async def handle_bakchod_metadata_effects(
                     )
 
             if key == "censored":
-
                 censored_metadata = bakchod.metadata[key]
 
                 if group_id is not None and group_id in censored_metadata["group_ids"]:
-
                     logger.info(
                         "[metadata] censoring {}",
                         util.extract_pretty_name_from_bakchod(bakchod),
@@ -111,13 +104,10 @@ async def handle_bakchod_metadata_effects(
                     return
 
             if key == "auto_mom":
-
                 auto_mom_metadata = bakchod.metadata[key]
 
                 if group_id is not None and group_id in auto_mom_metadata["group_ids"]:
-
                     if random.random() > 0.5:
-
                         logger.info(
                             "[metadata] auto_mom - victim={} message={}",
                             util.extract_pretty_name_from_bakchod(bakchod),
@@ -136,13 +126,11 @@ async def handle_bakchod_metadata_effects(
 
 
 async def handle_message_matching(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     message_text = update.message.text
 
     if message_text is not None:
-
         # Handle 'hi' messages
-        if "hi" == message_text.lower():
+        if message_text.lower() == "hi":
             await hi.handle(update, context, log_to_dc=False)
 
         # Handle bestie messages
@@ -153,7 +141,6 @@ async def handle_message_matching(update: Update, context: ContextTypes.DEFAULT_
 
 
 async def handle_dice_rolls(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     dice = update.message.dice
 
     if dice is None:
@@ -166,7 +153,6 @@ async def handle_dice_rolls(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def status_update(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-
     g = group_dao.get_group_from_update(update)
 
     # Handle new_chat_member
@@ -174,16 +160,13 @@ async def status_update(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
     if new_chat_members is not None:
         for new_member in new_chat_members:
-
             b = bakchod_dao.get_or_create_bakchod_from_tg_user(new_member)
 
             try:
                 GroupMember.get(
-                    (GroupMember.group_id == g.group_id)
-                    & (GroupMember.bakchod_id == b.tg_id)
+                    (GroupMember.group_id == g.group_id) & (GroupMember.bakchod_id == b.tg_id)
                 )
             except DoesNotExist:
-
                 logger.info(
                     "[status_update] bakchod={} has joined group={}",
                     b.tg_id,
@@ -196,7 +179,6 @@ async def status_update(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     left_chat_member = update.message.left_chat_member
 
     if left_chat_member is not None:
-
         b = bakchod_dao.get_or_create_bakchod_from_tg_user(left_chat_member)
 
         logger.info("[status_update] bakchod={} has left group={}", b.tg_id, g.group_id)

@@ -1,17 +1,16 @@
 import json
 import time
-from loguru import logger
-from src.db import ScheduledJob
 
-from src.bot.handlers.remind import reminder_handler, build_job_name
+from loguru import logger
+
+from src.bot.handlers.remind import build_job_name, reminder_handler
+from src.db import ScheduledJob
 
 
 def reschedule_saved_jobs(job_queue):
-
     sjs = ScheduledJob.select()
 
     for sj in sjs:
-
         due_seconds = sj.job_context["reminder_time"] - int(time.time())
 
         job_name = build_job_name(

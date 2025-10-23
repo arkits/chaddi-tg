@@ -1,14 +1,13 @@
-from telegram.ext import ContextTypes
-from telegram import Update
 from loguru import logger
-from src.domain import dc, util
+from telegram import Update
+from telegram.ext import ContextTypes
+
 from src.db import Bakchod, bakchod_dao
+from src.domain import dc, util
 
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     try:
-
         dc.log_command_usage("rokda", update)
 
         if update.message.reply_to_message:
@@ -25,7 +24,4 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def generate_rokda_response(bakchod: Bakchod):
-    return "💰 {} has {} ₹okda!".format(
-        util.extract_pretty_name_from_bakchod(bakchod),
-        util.pretty_print_rokda(bakchod.rokda),
-    )
+    return f"💰 {util.extract_pretty_name_from_bakchod(bakchod)} has {util.pretty_print_rokda(bakchod.rokda)} ₹okda!"

@@ -1,8 +1,12 @@
 import json
 import locale
-from fastapi import APIRouter, Request, Form
+
+from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from loguru import logger
+
+from src import bot
 from src.db import (
     Bakchod,
     Group,
@@ -13,8 +17,6 @@ from src.db import (
     ScheduledJob,
     group_dao,
 )
-from loguru import logger
-from src import bot
 from src.domain import version
 
 router = APIRouter()
@@ -38,7 +40,6 @@ templates.env.filters["tonumber_pretty"] = to_pretty_number
 
 @router.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-
     bakchods_count = Bakchod.select().count()
     groups_count = Group.select().count()
     messages_count = Message.select().count()
@@ -63,7 +64,6 @@ async def index(request: Request):
 
 @router.get("/bakchods", response_class=HTMLResponse)
 async def get_bakchods(request: Request):
-
     bakchods = Bakchod.select().order_by(Bakchod.lastseen.desc()).limit(100)
     bakchods_count = Bakchod.select().count()
 
@@ -75,7 +75,6 @@ async def get_bakchods(request: Request):
 
 @router.get("/groups", response_class=HTMLResponse)
 async def get_groups(request: Request):
-
     groups = Group.select().order_by(Group.updated.desc())
     groups_count = Group.select().count()
 
@@ -87,18 +86,14 @@ async def get_groups(request: Request):
 
 @router.get("/messages", response_class=HTMLResponse)
 async def get_groups(request: Request):
-
     # Get the last X messages
     messages = Message.select().limit(100).order_by(Message.time_sent.desc())
 
-    return templates.TemplateResponse(
-        "messages.html", {"request": request, "messages": messages}
-    )
+    return templates.TemplateResponse("messages.html", {"request": request, "messages": messages})
 
 
 @router.get("/details/bakchod", response_class=HTMLResponse)
 async def get_details_bakchod(request: Request, tg_id: str = "unset"):
-
     b = Bakchod.get_by_id(tg_id)
 
     groupmember_rows = GroupMember.select().where(GroupMember.bakchod == b.tg_id)
@@ -117,7 +112,6 @@ async def get_details_bakchod(request: Request, tg_id: str = "unset"):
 
 @router.get("/details/group", response_class=HTMLResponse)
 async def get_details_group(request: Request, group_id: str = "unset"):
-
     g = Group.get_by_id(group_id)
 
     message_count = Message.select().where(Message.to_id == group_id).count()
@@ -139,7 +133,6 @@ async def get_details_group(request: Request, group_id: str = "unset"):
 async def get_details_group_messages(
     request: Request, group_id: str = "unset", page: int = 1, limit: int = 100
 ):
-
     # define upper limit on limit as 250
     if limit > 250:
         limit = 250
@@ -168,7 +161,6 @@ async def get_details_group_messages(
 
 @router.get("/quotes", response_class=HTMLResponse)
 async def get_groups(request: Request):
-
     quotes = Quote.select().limit(100).order_by(Quote.created.desc())
     quotes_count = Quote.select().count()
 
@@ -182,7 +174,6 @@ async def get_groups(request: Request):
 async def post_api_bot_send_message(
     request: Request, message: str = Form("unset"), group_id: str = Form("unset")
 ):
-
     logger.info("post_api_bot_send_message group_id={} message={}", group_id, message)
 
     response_message = {
@@ -194,7 +185,6 @@ async def post_api_bot_send_message(
     g = None
 
     try:
-
         if group_id == "unset":
             raise Exception("group_id was unset")
 
@@ -210,7 +200,6 @@ async def post_api_bot_send_message(
         g = Group.get_by_id(group_id)
 
     except Exception as e:
-
         logger.error("Caught Exception - e={}", e)
 
         response_message["title"] = "Backend Error"
@@ -234,7 +223,6 @@ async def post_api_bot_send_message(
 
 @router.get("/jobs", response_class=HTMLResponse)
 async def get_jobs(request: Request):
-
     jobs = ScheduledJob.select().limit(100).order_by(ScheduledJob.created.desc())
     job_count = ScheduledJob.select().count()
 
@@ -246,7 +234,6 @@ async def get_jobs(request: Request):
 
 @router.get("/live", response_class=HTMLResponse)
 async def get_live(request: Request):
-
     return templates.TemplateResponse(
         "live.html",
         {"request": request},

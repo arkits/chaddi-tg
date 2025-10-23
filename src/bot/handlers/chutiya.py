@@ -1,10 +1,12 @@
 import random
+import traceback
+
 from loguru import logger
 from telegram import Update
-from telegram.ext import ContextTypes
 from telegram.constants import ParseMode
-from src.domain import dc, util, config
-import traceback
+from telegram.ext import ContextTypes
+
+from src.domain import config, dc, util
 
 app_config = config.get_config()
 
@@ -16,9 +18,7 @@ COMMAND_COST = 200
 
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     try:
-
         dc.log_command_usage("chutiya", update)
 
         reply_to_message = update.message.reply_to_message
@@ -56,10 +56,10 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # makes every word an acronym
 def acronymify(word):
-    response = str()
+    response = ""
 
     for letter in word:
-        response += "\n {} = `{}`".format(letter.upper(), pick_a_word(letter).title())
+        response += f"\n {letter.upper()} = `{pick_a_word(letter).title()}`"
 
     return response
 

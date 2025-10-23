@@ -1,5 +1,4 @@
 def reward_rokda(r: int):
-
     if (r < 0) or r is None:
         r = 0
 

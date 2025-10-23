@@ -1,14 +1,17 @@
+import datetime
+import html
+import random
+import traceback
+
 from loguru import logger
 from peewee import DoesNotExist
 from telegram import Update
-from telegram.ext import ContextTypes
 from telegram.constants import ParseMode
-from src.domain import dc, util, config
-from src.db import Quote, quote as quote_dao
-import random
-import datetime
-import traceback
-import html
+from telegram.ext import ContextTypes
+
+from src.db import Quote
+from src.db import quote as quote_dao
+from src.domain import config, dc, util
 
 app_config = config.get_config()
 
@@ -20,9 +23,7 @@ MESSAGE_ADDED_QUOTE = "✏️ Rote memorization successful! You can retrive this
 
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     try:
-
         dc.log_command_usage("quotes", update)
 
         # Extract query...
@@ -58,7 +59,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 response = Quote.delete_by_id(id_to_remove)
 
                 if response == 1:
-                    response = "Removed Quote - ID=<code>{}</code>".format(id_to_remove)
+                    response = f"Removed Quote - ID=<code>{id_to_remove}</code>"
                 else:
                     response = "Arrey isko hatao re..."
 
@@ -68,7 +69,6 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(text=response, parse_mode=ParseMode.HTML)
 
         elif command == "get":
-
             response = ""
 
             try:
@@ -81,11 +81,9 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 return
 
             try:
-
                 quote = Quote.get_by_id(quote_id)
 
             except DoesNotExist:
-
                 group_id = util.get_group_id_from_update(update)
                 if group_id is None:
                     await update.message.reply_text(text="Can't run this command here!")
@@ -102,16 +100,13 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     )
                     return
 
-                response = "Couldn't find quote with ID <code>{}</code>... but here's a random one -".format(
-                    quote_id
-                )
+                response = f"Couldn't find quote with ID <code>{quote_id}</code>... but here's a random one -"
 
             pretty_quote = generate_pretty_quote(quote)
             response = response + pretty_quote
             await update.message.reply_text(text=response, parse_mode=ParseMode.HTML)
 
         else:
-
             group_id = util.get_group_id_from_update(update)
             if group_id is None:
                 await update.message.reply_text(text="Can't run this command here!")
@@ -134,37 +129,27 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def generate_pretty_quote(quote: Quote):
-
     if quote is None:
         return ""
 
-    pretty_quote = """
+    pretty_quote = f"""
 <pre>
-{}
+{html.escape(quote.text)}
 </pre>
-<b>~ by श्री {}</b>
-<b>~ on {}</b>
-<b>~ ID:</b> <code>{}</code>
-        """.format(
-        html.escape(quote.text),
-        util.extract_pretty_name_from_bakchod(quote.author_bakchod),
-        quote.created,
-        quote.quote_id,
-    )
+<b>~ by श्री {util.extract_pretty_name_from_bakchod(quote.author_bakchod)}</b>
+<b>~ on {quote.created}</b>
+<b>~ ID:</b> <code>{quote.quote_id}</code>
+        """
 
     return pretty_quote
 
 
 def get_random_quote_from_group(group_id: str) -> Quote:
-
-    all_quotes_in_group = (
-        Quote.select().where(Quote.quoted_in_group == group_id).execute()
-    )
+    all_quotes_in_group = Quote.select().where(Quote.quoted_in_group == group_id).execute()
 
     all_quotes = []
 
     if len(all_quotes_in_group) > 0:
-
         for quote in all_quotes_in_group:
             all_quotes.append(quote)
 
@@ -177,5 +162,4 @@ def get_random_quote_from_group(group_id: str) -> Quote:
         return random_quote
 
     else:
-
         return None

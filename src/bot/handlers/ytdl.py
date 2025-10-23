@@ -1,13 +1,13 @@
-from __future__ import unicode_literals
+import multiprocessing
+import os
+import traceback
+
+import youtube_dl
 from loguru import logger
 from telegram import Update
 from telegram.ext import ContextTypes
-from src.domain import dc, util, config
-import youtube_dl
-import traceback
-import os
-import multiprocessing
 
+from src.domain import config, dc, util
 
 app_config = config.get_config()
 
@@ -25,11 +25,9 @@ async def handle(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
 ):
-
     dc.log_command_usage("ytdl", update)
 
     try:
-
         message_text = update.message.text
         message_params = message_text.split(" ")
 
@@ -39,7 +37,6 @@ async def handle(
         message = await update.message.reply_text("Downloading video via youtube-dl (＠＾◡＾)")
 
         try:
-
             video_info = ydl.extract_info(video_url, download=False)
             logger.debug("[ytdl] video_info={}", video_info)
 
@@ -52,7 +49,6 @@ async def handle(
 
             # If thread is active
             if p.is_alive():
-
                 logger.debug("[ytdl] killing process")
 
                 p_killed = True
@@ -72,9 +68,7 @@ async def handle(
                 filter(lambda x: str(x).startswith(video_info["id"]), external_files)
             )[0]
 
-            downloaded_video_path = os.path.join(
-                util.RESOURCES_DIR, "external", video_file
-            )
+            downloaded_video_path = os.path.join(util.RESOURCES_DIR, "external", video_file)
 
             caption = """
 {}
@@ -97,7 +91,7 @@ URL: {}
 
         except Exception as e:
             logger.error("[ytdl] Caught error in ytdl download e={}", e)
-            await message.edit_text("Error downloading the video! (〃＞＿＜;〃) {}".format(e))
+            await message.edit_text(f"Error downloading the video! (〃＞＿＜;〃) {e}")
             raise e
 
     except Exception as e:
@@ -110,7 +104,6 @@ URL: {}
 
 
 def download_video(video_url):
-
     logger.debug("[ytdl] starting download video_url={}", video_url)
     download_info = ydl.download([video_url])
     logger.debug("[ytdl] finished download download_info={}", download_info)

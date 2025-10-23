@@ -1,18 +1,16 @@
-from loguru import logger
+import datetime
+import random
+
 from telegram import Update
 from telegram.ext import ContextTypes
-from src.domain import dc
 
-import random
-import datetime
+from src.domain import dc
 
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE, log_to_dc=True):
-
     bestie_response_whitelist = [222021705, 148933790]
 
     if update.message.from_user["id"] in bestie_response_whitelist:
-
         if log_to_dc:
             dc.log_command_usage("bestie", update)
 
@@ -20,7 +18,6 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE, log_to_dc=T
 
 
 def random_reply():
-
     replies = [
         "gussa aa ri",
         "nhi ho ra",

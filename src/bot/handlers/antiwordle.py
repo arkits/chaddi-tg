@@ -1,16 +1,15 @@
+import datetime
+import random
+
 from loguru import logger
 from telegram import Update
 from telegram.ext import ContextTypes
-from src.domain import dc
 
-import random
-import datetime
+from src.domain import dc
 
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE, log_to_dc=True):
-
     try:
-
         if not is_wordle_result(update.message.text):
             return
 
@@ -34,7 +33,6 @@ allowed = set("⬛️🟨🟩")
 
 
 def is_wordle_result(message_text: str) -> bool:
-
     if message_text is None:
         return False
 
@@ -71,7 +69,6 @@ def is_wordle_result(message_text: str) -> bool:
 
 
 def random_reply():
-
     replies = [
         "KILL ALL WORDLE TARDS 🔫",
         "WORDLE WAALOO TUMAHRI MAA KAA",

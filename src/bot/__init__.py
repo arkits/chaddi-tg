@@ -4,14 +4,12 @@ from telegram.ext import (
     CommandHandler,
     MessageHandler,
     filters,
-    ContextTypes,
 )
 
-from . import handlers
-from src.domain import config
-from src.domain import tg_logger
-from src.domain import version
+from src.domain import config, tg_logger, version
 from src.domain.scheduler import reschedule_saved_jobs
+
+from . import handlers
 
 app_config = config.get_config()
 
@@ -26,7 +24,7 @@ async def post_init(application: Application) -> None:
 
     v = version.get_version()
 
-    tg_logger.log(
+    await tg_logger.log(
         """
 *chaddi-tg has started!*
 
@@ -50,7 +48,6 @@ async def post_init(application: Application) -> None:
 
 
 def run_telegram_bot():
-
     # Create the Application and pass it your bot's token.
     application = (
         Application.builder()
@@ -98,9 +95,7 @@ def run_telegram_bot():
     application.add_handler(
         MessageHandler(filters.StatusUpdate.ALL, handlers.defaults.status_update)
     )
-    application.add_handler(
-        MessageHandler(filters.Document.VIDEO, handlers.webm.handle)
-    )
+    application.add_handler(MessageHandler(filters.Document.VIDEO, handlers.webm.handle))
     application.add_handler(MessageHandler(filters.ALL, handlers.defaults.all))
 
     # Log all errors
@@ -108,7 +103,9 @@ def run_telegram_bot():
 
     # Start the Bot
     logger.info("[tg] Starting Telegram Bot with Polling")
-    application.run_polling(allowed_updates=["message", "edited_message", "channel_post", "edited_channel_post"])
+    application.run_polling(
+        allowed_updates=["message", "edited_message", "channel_post", "edited_channel_post"]
+    )
 
 
 def get_bot_instance():

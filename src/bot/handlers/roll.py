@@ -1,15 +1,17 @@
+import datetime
 import math
+import random
 import traceback
-from loguru import logger
+
+import ciso8601
 import shortuuid
+from loguru import logger
 from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
-from src.domain import config, dc, util
+
 from src.db import Bakchod, Group, Roll, bakchod_dao, group_dao, roll_dao
-import random
-import datetime
-import ciso8601
+from src.domain import config, dc, util
 
 ROLL_TYPES = [
     "mute_user",
@@ -24,23 +26,18 @@ BOT_USERNAME = app_config.get("TELEGRAM", "BOT_USERNAME")
 
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     dc.log_command_usage("roll", update)
 
     try:
-
         command = _extract_command_from_update(update)
 
         if command == "start":
-
             await handle_command_start(update)
 
         elif command == "reset":
-
             await handle_command_reset(update, context)
 
         else:
-
             await handle_command_default(update)
 
     except Exception as e:
@@ -70,9 +67,7 @@ async def handle_command_default(update: Update):
         )
         return
     else:
-
         if current_roll.expiry <= datetime.datetime.now():
-
             # Handle expired roll
             await update.message.reply_text(
                 text="No active roulette right now. <code>/roll start</code> to start one!",
@@ -81,9 +76,8 @@ async def handle_command_default(update: Update):
             return
 
         else:
-
             pretty_roll_desc = _generate_pretty_roll_description(current_roll)
-            response = "<b>Started new roulette!</b> {}".format(pretty_roll_desc)
+            response = f"<b>Started new roulette!</b> {pretty_roll_desc}"
             await update.message.reply_text(text=response, parse_mode=ParseMode.HTML)
             return
 
@@ -110,14 +104,13 @@ async def handle_command_start(update: Update):
         create_new_roll = True
 
     if create_new_roll:
-
         roll = generate_new_roll(update, group_id)
         if roll is None:
             await update.message.reply_text(text="Couldn't start a new roll :(")
             return
 
         pretty_roll_desc = _generate_pretty_roll_description(roll)
-        response = "<b>Started new roulette!</b> {}".format(pretty_roll_desc)
+        response = f"<b>Started new roulette!</b> {pretty_roll_desc}"
         await update.message.reply_text(text=response, parse_mode=ParseMode.HTML)
         return
 
@@ -128,22 +121,15 @@ async def handle_command_start(update: Update):
 
 
 async def handle_command_reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     if util.is_admin_tg_user(update.message.from_user):
-
         # Remove schedule reset job
         for job in context.job_queue.jobs():
-            if (
-                job.name == "reset_roll_effects"
-                and job.context == update.message.chat_id
-            ):
+            if job.name == "reset_roll_effects" and job.context == update.message.chat_id:
                 logger.info("[roll] Removing pre-scheduled reset_roll_effects job...")
                 job.schedule_removal()
 
         # Schedule callback for resetting roll effects
-        context.job_queue.run_once(
-            reset_roll_effects, 1, context=update.message.chat_id
-        )
+        context.job_queue.run_once(reset_roll_effects, 1, context=update.message.chat_id)
         return
 
     else:
@@ -152,9 +138,7 @@ async def handle_command_reset(update: Update, context: ContextTypes.DEFAULT_TYP
 
 
 async def handle_dice_rolls(dice_value, update, context):
-
     try:
-
         logger.info("[roll] handle_dice_rolls dice_value={}", dice_value)
 
         # Extract Group ID
@@ -183,10 +167,7 @@ async def handle_dice_rolls(dice_value, update, context):
         roller = bakchod_dao.get_bakchod_from_update(update)
 
         if "last_time_rolled" in roller.metadata:
-
-            last_time_rolled = ciso8601.parse_datetime(
-                roller.metadata["last_time_rolled"]
-            )
+            last_time_rolled = ciso8601.parse_datetime(roller.metadata["last_time_rolled"])
 
             five_min_ago = datetime.datetime.now() - datetime.timedelta(minutes=5)
 
@@ -208,7 +189,6 @@ async def handle_dice_rolls(dice_value, update, context):
 
         # WINRAR!!!!!
         if dice_value == roll_number:
-
             logger.info(
                 "[roll] We got a winrar! bakchod={} roll_number={} group_id={}",
                 util.extract_pretty_name_from_bakchod(roller),
@@ -231,7 +211,6 @@ async def handle_dice_rolls(dice_value, update, context):
             victim_metadata = victim.metadata
 
             if current_roll.rule == "mute_user":
-
                 if "censored" in victim_metadata:
                     censored_modifier = victim_metadata["censored"]
                 else:
@@ -248,7 +227,6 @@ async def handle_dice_rolls(dice_value, update, context):
                 victim.save()
 
             elif current_roll.rule == "auto_mom":
-
                 if "auto_mom" in victim_metadata:
                     auto_mom_modifier = victim_metadata["auto_mom"]
                 else:
@@ -265,9 +243,7 @@ async def handle_dice_rolls(dice_value, update, context):
                 victim.save()
 
             elif current_roll.rule == "kick_user":
-
                 try:
-
                     logger.info(
                         "[roll] Kicking User - group_id={} victim.id={}",
                         group_id,
@@ -275,8 +251,7 @@ async def handle_dice_rolls(dice_value, update, context):
                     )
                     await context.bot.send_message(
                         chat_id=update.message.chat_id,
-                        text="BYEEEEEEEEEEEE "
-                        + util.extract_pretty_name_from_bakchod(victim),
+                        text="BYEEEEEEEEEEEE " + util.extract_pretty_name_from_bakchod(victim),
                     )
 
                     # refer to https://python-telegram-bot.readthedocs.io/en/stable/telegram.bot.html#telegram.Bot.kick_chat_member
@@ -300,15 +275,11 @@ async def handle_dice_rolls(dice_value, update, context):
                     )
                     return
 
-            response = "<b>WINRAR!!!</b> {}".format(
-                _generate_pretty_roll_description(current_roll)
-            )
+            response = f"<b>WINRAR!!!</b> {_generate_pretty_roll_description(current_roll)}"
             await update.message.reply_text(text=response, parse_mode=ParseMode.HTML)
 
             # Schedule callback for resetting roll effects in 1 hour
-            context.job_queue.run_once(
-                reset_roll_effects, 3600, context=update.message.chat_id
-            )
+            context.job_queue.run_once(reset_roll_effects, 3600, context=update.message.chat_id)
 
     except Exception as e:
         logger.error(
@@ -321,7 +292,6 @@ async def handle_dice_rolls(dice_value, update, context):
 
 
 def generate_new_roll(update, group_id):
-
     # Roll params
     roll_id = shortuuid.uuid()
     created = None
@@ -337,7 +307,6 @@ def generate_new_roll(update, group_id):
 
     # Build the roll from message params
     if len(params) >= 4:
-
         param_rule = params[2]
         if param_rule in ROLL_TYPES:
             rule = param_rule
@@ -397,7 +366,6 @@ def generate_new_roll(update, group_id):
 
 
 def _extract_command_from_update(update):
-
     command = None
 
     try:
@@ -411,14 +379,13 @@ def _extract_command_from_update(update):
         except:
             command = "status"
 
-    except Exception as e:
+    except Exception:
         pass
 
     return command
 
 
 def _extract_params_from_update(update):
-
     params = None
 
     try:
@@ -427,31 +394,27 @@ def _extract_params_from_update(update):
         query = query.lower()
         params = query.split(" ")
 
-    except Exception as e:
+    except Exception:
         pass
 
     return params
 
 
 def _get_group_id_from_update(update) -> str:
-
     group_id = None
 
     try:
         if (
-            update.message.chat.id is not None
-            and update.message.chat.type == "group"
-            or update.message.chat.type == "supergroup"
-        ):
+            update.message.chat.id is not None and update.message.chat.type == "group"
+        ) or update.message.chat.type == "supergroup":
             group_id = update.message.chat.id
-    except Exception as e:
+    except Exception:
         pass
 
     return group_id
 
 
 def _get_random_roll_type() -> str:
-
     random.seed(datetime.datetime.now())
     random_int = random.randint(0, len(ROLL_TYPES) - 1)
 
@@ -459,75 +422,44 @@ def _get_random_roll_type() -> str:
 
 
 def _generate_pretty_roll_description(roll: Roll) -> str:
-
     pretty_roll = None
 
     try:
-
         if roll.winrar is None:
-
             # Ongoing roll
 
-            pretty_roll = """
-Roll a {} to {} {}!
+            pretty_roll = f"""
+Roll a {roll.goal} to {_pretty_roll_rule(roll.rule)} {util.extract_pretty_name_from_bakchod(roll.victim)}!
 
 <b>Rules:</b>
-- Roll a <b>{}</b> by posting a 🎲  <pre>:dice:</pre>
+- Roll a <b>{roll.goal}</b> by posting a 🎲  <pre>:dice:</pre>
 - Only one roll per 5 mins
 
 <b>Prizes:</b>
-- {} gets {}'d 
-- 💵 YOU WIN {} {} 🎉
-""".format(
-                roll.goal,
-                _pretty_roll_rule(roll.rule),
-                util.extract_pretty_name_from_bakchod(roll.victim),
-                roll.goal,
-                util.extract_pretty_name_from_bakchod(roll.victim),
-                _pretty_roll_rule(roll.rule),
-                roll.prize,
-                util.ROKDA_STRING,
-            )
+- {util.extract_pretty_name_from_bakchod(roll.victim)} gets {_pretty_roll_rule(roll.rule)}'d 
+- 💵 YOU WIN {roll.prize} {util.ROKDA_STRING} 🎉
+"""
 
         else:
-
             # Finished roll
 
             now = datetime.datetime.now()
             td = roll.expiry - now
 
             if roll.rule == "kick_user":
+                pretty_roll = f"""
+{util.extract_pretty_name_from_bakchod(roll.winrar)} won the current roll by rolling a {roll.goal}! 
 
-                pretty_roll = """
-{} won the current roll by rolling a {}! 
-
-- 👋 {} has been kicked from this group!
-- 💵 {} received {}{}!
-""".format(
-                    util.extract_pretty_name_from_bakchod(roll.winrar),
-                    roll.goal,
-                    util.extract_pretty_name_from_bakchod(roll.victim),
-                    util.extract_pretty_name_from_bakchod(roll.winrar),
-                    roll.prize,
-                    util.ROKDA_STRING,
-                )
+- 👋 {util.extract_pretty_name_from_bakchod(roll.victim)} has been kicked from this group!
+- 💵 {util.extract_pretty_name_from_bakchod(roll.winrar)} received {roll.prize}{util.ROKDA_STRING}!
+"""
             else:
+                pretty_roll = f"""
+{util.extract_pretty_name_from_bakchod(roll.winrar)} won the current roll by rolling a {roll.goal}! 
 
-                pretty_roll = """
-{} won the current roll by rolling a {}! 
-
-- 🤪 {} is now {} for {}!
-- 💵 {} received {}{}!
-""".format(
-                    util.extract_pretty_name_from_bakchod(roll.winrar),
-                    roll.goal,
-                    util.extract_pretty_name_from_bakchod(roll.victim),
-                    _pretty_roll_rule(roll.rule),
-                    util.pretty_time_delta(td.total_seconds()),
-                    util.extract_pretty_name_from_bakchod(roll.winrar),
-                    roll.prize,
-                    util.ROKDA_STRING,
-                )
+- 🤪 {util.extract_pretty_name_from_bakchod(roll.victim)} is now {_pretty_roll_rule(roll.rule)} for {util.pretty_time_delta(td.total_seconds())}!
+- 💵 {util.extract_pretty_name_from_bakchod(roll.winrar)} received {roll.prize}{util.ROKDA_STRING}!
+"""
 
     except Exception as e:
         logger.error(
@@ -540,15 +472,13 @@ Roll a {} to {} {}!
 
 
 def _pretty_roll_rule(roll_rule: str) -> str:
-
-    if roll_rule in PRETTY_ROLL_MAPPING.keys():
+    if roll_rule in PRETTY_ROLL_MAPPING:
         return PRETTY_ROLL_MAPPING[roll_rule]
     else:
         return None
 
 
 async def reset_roll_effects(context: ContextTypes.DEFAULT_TYPE):
-
     # Get group_id
     group_id = context.job.context
 
@@ -565,7 +495,6 @@ async def reset_roll_effects(context: ContextTypes.DEFAULT_TYPE):
 
     # Reset victim's modifiers
     if roll.rule == "mute_user":
-
         censored_metadata = victim.metadata["censored"]
         if censored_metadata is not None:
             censored_metadata["group_ids"].remove(group_id)
@@ -574,7 +503,6 @@ async def reset_roll_effects(context: ContextTypes.DEFAULT_TYPE):
             logger.debug("[roll] updated censored_metadata for victim={}", victim)
 
     elif roll.rule == "auto_mom":
-
         auto_mom_metadata = victim.metadata["auto_mom"]
         if auto_mom_metadata is not None:
             auto_mom_metadata["group_ids"].remove(group_id)
@@ -585,8 +513,8 @@ async def reset_roll_effects(context: ContextTypes.DEFAULT_TYPE):
     victim.save()
 
     # Post reset message
-    response = "Roll Modifiers for {} are now removed!".format(
-        util.extract_pretty_name_from_bakchod(victim)
+    response = (
+        f"Roll Modifiers for {util.extract_pretty_name_from_bakchod(victim)} are now removed!"
     )
     await context.bot.send_message(
         group_id,
@@ -597,7 +525,6 @@ async def reset_roll_effects(context: ContextTypes.DEFAULT_TYPE):
 
 
 def _get_random_bakchod_from_group(group_id: str) -> Bakchod:
-
     group = Group.get_by_id(group_id)
 
     groupmembers = group.group_member

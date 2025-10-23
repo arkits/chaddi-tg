@@ -1,9 +1,12 @@
+import traceback
+
 from loguru import logger
 from telegram import Update
-from telegram.ext import ContextTypes
 from telegram.constants import ParseMode
-from src.domain import dc, util, config
-import traceback
+from telegram.ext import ContextTypes
+
+from src.domain import config, dc, util
+
 from . import mom
 
 app_config = config.get_config()
@@ -16,9 +19,7 @@ COMMAND_COST = 200
 
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     try:
-
         dc.log_command_usage("aao", update)
 
         initiator_id = update.message.from_user.id
@@ -28,9 +29,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if not util.paywall_user(initiator_id, COMMAND_COST):
             await update.message.reply_text(
-                "Sorry! You don't have enough ₹okda! Each `/aao` costs {} ₹okda.".format(
-                    COMMAND_COST
-                ),
+                f"Sorry! You don't have enough ₹okda! Each `/aao` costs {COMMAND_COST} ₹okda.",
                 parse_mode=ParseMode.MARKDOWN,
             )
             return
@@ -47,7 +46,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         support_word = get_support_word()
 
-        response = "aao {} {}".format(magic_word, support_word)
+        response = f"aao {magic_word} {support_word}"
         response = response.lower()
 
         logger.info("[aao] generated response={}", response)
@@ -68,7 +67,6 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def extract_magic_word(target_message):
-
     doc = util.get_nlp()(target_message)
 
     # the types on pos that we care about - refer to https://universaldependencies.org/docs/u/pos/
@@ -80,13 +78,10 @@ def extract_magic_word(target_message):
         tokens_sorted[pos_type] = []
 
     for token in doc:
-
         for pos_type in accepted_pos_types:
-
             # logger.debug("token={} - pos={}", token, token.pos_)
 
             if token.pos_ == pos_type:
-
                 if pos_type == "VERB":
                     tokens_sorted[pos_type].append(token.lemma_)
                 else:
@@ -115,7 +110,6 @@ def extract_magic_word(target_message):
 
 
 def get_support_word():
-
     support_words = ["dikhae", "sikhae", "kare"]
 
     support_word = util.choose_random_element_from_list(support_words)

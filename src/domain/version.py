@@ -1,31 +1,25 @@
-from src.domain import util
 import subprocess
 from datetime import datetime
+
 from loguru import logger
+
+from src.domain import util
 
 CHADDI_TG_VERSION = "3.0.0"
 
 GIT_COMMIT_ID = (
-    subprocess.check_output(["git", "rev-parse", "--short", "HEAD"])
-    .strip()
-    .decode("utf-8")
+    subprocess.check_output(["git", "rev-parse", "--short", "HEAD"]).strip().decode("utf-8")
 )
 
 GIT_COMMIT_TIME = util.normalize_datetime(
     datetime.utcfromtimestamp(
-        int(
-            subprocess.check_output(["git", "show", "-s", "--format=%ct"])
-            .strip()
-            .decode("utf-8")
-        )
+        int(subprocess.check_output(["git", "show", "-s", "--format=%ct"]).strip().decode("utf-8"))
     )
 )
 
 
 GIT_COMMIT_MESSAGE = (
-    subprocess.check_output(["git", "show", "-s", "--format=%B"])
-    .strip()
-    .decode("utf-8")
+    subprocess.check_output(["git", "show", "-s", "--format=%B"]).strip().decode("utf-8")
 )
 
 
@@ -41,7 +35,6 @@ logger.info(
 
 
 def get_version():
-
     now = datetime.now()
     uptime = now - TIME_SERVICE_STARTED
 

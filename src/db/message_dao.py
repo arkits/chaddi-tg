@@ -1,12 +1,14 @@
-from telegram import Update
-from . import Bakchod, Message
-from loguru import logger
 import datetime
+
+from loguru import logger
+from telegram import Update
+
 from src.domain import metrics, util
+
+from . import Bakchod, Message
 
 
 def log_message_from_update(update: Update):
-
     # logger.debug("[log] Building Message based on update={}", update.to_json())
 
     from_bakchod = Bakchod.get_by_id(update.message.from_user.id)

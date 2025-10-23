@@ -1,15 +1,13 @@
-from os import path
+import traceback
 import uuid
+
+import openai
 from loguru import logger
 from telegram import Update
 from telegram.ext import ContextTypes
-from telegram.constants import ParseMode
-from src.bot.handlers import mom
-from src.db import Bakchod, bakchod_dao
-from src.domain import dc, util, config
-import traceback
-import openai
 
+from src.db import bakchod_dao
+from src.domain import config, dc, util
 
 app_config = config.get_config()
 
@@ -19,9 +17,7 @@ openai.api_key = app_config.get("OPENAI", "API_KEY")
 
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     try:
-
         dc.log_command_usage("dalle", update)
 
         initiator_id = update.message.from_user.id
@@ -36,14 +32,11 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             logger.info("[dalle] denied request for disabled bakchod={}", b.pretty_name)
             await update.message.reply_text(
-                "/dalle is not enabled for you. Ping @arkits with your TG ID - {}".format(
-                    b.tg_id
-                )
+                f"/dalle is not enabled for you. Ping @arkits with your TG ID - {b.tg_id}"
             )
             return
 
         try:
-
             prompt = extract_prompt(update)
             if prompt is None or prompt == "":
                 logger.error("[dalle] prompt failed validation! prompt={}", prompt)
@@ -58,7 +51,6 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             logger.info("[dalle] prompt={}", prompt)
 
             if COMMAND_ENABLED:
-
                 response = None
 
                 try:
@@ -70,21 +62,15 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         prompt,
                     )
                     await update.message.reply_text(
-                        "Kaise chutiya request tha...  OpenAI ne bola '{}'".format(
-                            e._message
-                        )
+                        f"Kaise chutiya request tha...  OpenAI ne bola '{e._message}'"
                     )
                     return
 
                 image_url = response["data"][0]["url"]
 
-                logger.info(
-                    "[dalle] generated image_url={} prompt='{}'", image_url, prompt
-                )
+                logger.info("[dalle] generated image_url={} prompt='{}'", image_url, prompt)
 
-                resource_path = util.acquire_external_resource(
-                    image_url, "dalle_{}".format(uuid.uuid4())
-                )
+                resource_path = util.acquire_external_resource(image_url, f"dalle_{uuid.uuid4()}")
 
                 with open(resource_path, "rb") as photo_to_upload:
                     logger.info("[dalle] uploading completed photo")
@@ -106,9 +92,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 e,
                 traceback.format_exc(),
             )
-            await update.message.reply_text(
-                "Something has gone wrong! Ping @arkits about this XD"
-            )
+            await update.message.reply_text("Something has gone wrong! Ping @arkits about this XD")
 
         return
 
@@ -122,7 +106,6 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def extract_prompt(update: Update):
-
     prompt = None
 
     if update.message.text:

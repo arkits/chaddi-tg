@@ -1,7 +1,7 @@
-from loguru import logger
 from telegram import Update
-from telegram.ext import ContextTypes
 from telegram.constants import ParseMode
+from telegram.ext import ContextTypes
+
 from src.domain import dc
 
 

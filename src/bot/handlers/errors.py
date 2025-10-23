@@ -1,12 +1,13 @@
+import traceback
+
 from loguru import logger
 from telegram import Update
 from telegram.ext import ContextTypes
-import traceback
+
 from src.domain import tg_logger
 
 
 async def log_error(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     if not update:
         return
 

@@ -1,14 +1,13 @@
 from loguru import logger
 from telegram import Update
-from telegram.ext import ContextTypes
 from telegram.constants import ParseMode
+from telegram.ext import ContextTypes
+
 from src.domain import dc, util, version
 
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE, log_to_dc=True):
-
     if util.is_admin_tg_user(update.message.from_user):
-
         if log_to_dc:
             dc.log_command_usage("version", update)
 
@@ -19,7 +18,6 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE, log_to_dc=T
 
 
 def get_chaddi_version():
-
     v = version.get_version()
 
     response = """

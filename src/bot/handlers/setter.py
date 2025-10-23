@@ -1,15 +1,15 @@
 import math
-from typing import List
+
 from loguru import logger
 from telegram import Update, User
-from telegram.ext import ContextTypes
 from telegram.constants import ParseMode
+from telegram.ext import ContextTypes
+
 from src.db import Bakchod
-from src.domain import util, dc
+from src.domain import dc, util
 
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     dc.log_command_usage("set", update)
 
     message = update.message.text
@@ -30,9 +30,8 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def parse_request(
-    request: List[str], for_bakchod: User, og_bakchod: User, tg_update: Update
+    request: list[str], for_bakchod: User, og_bakchod: User, tg_update: Update
 ) -> str:
-
     try:
         set_type = request[1]
     except IndexError:
@@ -40,7 +39,6 @@ def parse_request(
         return response
 
     if set_type.lower() == "rokda":
-
         try:
             rokda_to_set = float(request[2])
         except IndexError:
@@ -58,19 +56,15 @@ def parse_request(
             return "❌ Not allowed to set rokda."
 
     else:
-
         return "❌ Can't set that."
 
 
 def set_bakchod_rokda(rokda_to_set: float, bakchod_user: User):
-
     b = Bakchod.get_by_id(bakchod_user.id)
 
     b.rokda = rokda_to_set
     b.save()
 
-    reponse = "✅ Set {}'s ₹okda to {}!".format(
-        util.extract_pretty_name_from_bakchod(b), b.rokda
-    )
+    reponse = f"✅ Set {util.extract_pretty_name_from_bakchod(b)}'s ₹okda to {b.rokda}!"
 
     return reponse

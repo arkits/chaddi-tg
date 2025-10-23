@@ -1,20 +1,20 @@
-from datetime import datetime
+import asyncio
 import json
 import traceback
+from datetime import datetime
+
 from loguru import logger
-from telegram import Update
-from src.db import bakchod_dao, group_dao, message_dao
-from . import util
-from . import metrics
-from src.server import socket_manager
-import asyncio
 from playhouse.shortcuts import model_to_dict
+from telegram import Update
+
+from src.db import bakchod_dao, group_dao, message_dao
+from src.server import socket_manager
+
+from . import metrics, util
 
 
 def log_command_usage(command_name: str, update: Update):
-
     try:
-
         if not hasattr(update, "message"):
             logger.debug("[dc] update had no message... fast failing")
             return
@@ -42,7 +42,6 @@ def log_command_usage(command_name: str, update: Update):
 
 
 def sync_persistence_data(update: Update):
-
     if hasattr(update.message, "from_user"):
         from_user = update.message.from_user
     else:
