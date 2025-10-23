@@ -1,28 +1,30 @@
-from . import defaults
-from . import errors
-from . import hi
-from . import start
-from . import help
-from . import about
-from . import rokda
-from . import webm
-from . import superpower
-from . import gamble
-from . import mom
-from . import mom2
-from . import mom3
-from . import setter
-from . import chutiya
-from . import aao
-from . import daan
-from . import version
-from . import quotes
-from . import roll
-from . import translate
-from . import mlai
-from . import ytdl
-from . import tynm
-from . import remind
-from . import antiwordle
-from . import sutta
-from . import dalle
+from . import (
+    aao,
+    about,
+    antiwordle,
+    chutiya,
+    daan,
+    dalle,
+    defaults,
+    errors,
+    gamble,
+    help,
+    hi,
+    mlai,
+    mom,
+    mom2,
+    mom3,
+    quotes,
+    remind,
+    rokda,
+    roll,
+    setter,
+    start,
+    superpower,
+    sutta,
+    translate,
+    tynm,
+    version,
+    webm,
+    ytdl,
+)

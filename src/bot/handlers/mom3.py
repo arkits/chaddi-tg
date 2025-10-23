@@ -1,13 +1,14 @@
-from os import path
-from loguru import logger
-from telegram import Update
-from telegram.ext import ContextTypes
-from telegram.constants import ParseMode
-from src.bot.handlers import mom
-from src.domain import dc, util, config
 import traceback
-from openai import OpenAI
+from os import path
 
+from loguru import logger
+from openai import OpenAI
+from telegram import Update
+from telegram.constants import ParseMode
+from telegram.ext import ContextTypes
+
+from src.bot.handlers import mom
+from src.domain import config, dc, util
 
 app_config = config.get_config()
 
@@ -19,10 +20,9 @@ COMMAND_COST = 200
 
 client = OpenAI(api_key=app_config.get("OPENAI", "API_KEY"))
 
+
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     try:
-
         dc.log_command_usage("mom3", update)
 
         initiator_id = update.message.from_user.id
@@ -32,9 +32,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if not util.paywall_user(initiator_id, COMMAND_COST):
             await update.message.reply_text(
-                "Sorry! You don't have enough ₹okda! Each `/mom3` costs {} ₹okda.".format(
-                    COMMAND_COST
-                ),
+                f"Sorry! You don't have enough ₹okda! Each `/mom3` costs {COMMAND_COST} ₹okda.",
                 parse_mode=ParseMode.MARKDOWN,
             )
             return
@@ -46,20 +44,15 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             logger.info("[mom3] message was None!")
             return
 
-        instructions = open(
-            path.join(util.RESOURCES_DIR, "openai", "mom3-prompt.txt"), "r"
-        ).read()
+        instructions = open(path.join(util.RESOURCES_DIR, "openai", "mom3-prompt.txt")).read()
 
-
-        input = "User({}): {}".format(protagonist, message[:1000])
+        input = f"User({protagonist}): {message[:1000]}"
         input += "\nResponse: "
 
         logger.debug("[mom3] prompt={} \n {}", instructions, input)
 
         response = client.responses.create(
-            model="gpt-5-mini",
-            instructions=instructions,
-            input=input
+            model="gpt-5-mini", instructions=instructions, input=input
         )
 
         output_text = response.output_text.strip()

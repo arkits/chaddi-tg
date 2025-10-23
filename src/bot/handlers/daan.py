@@ -1,11 +1,13 @@
 import math
-from src.db import bakchod_dao
+import traceback
+
 from loguru import logger
 from telegram import Update
-from telegram.ext import ContextTypes
 from telegram.constants import ParseMode
-from src.domain import dc, util, config
-import traceback
+from telegram.ext import ContextTypes
+
+from src.db import bakchod_dao
+from src.domain import config, dc, util
 
 app_config = config.get_config()
 
@@ -17,9 +19,7 @@ COMMAND_COST = 200
 
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     try:
-
         dc.log_command_usage("daan", update)
 
         # Extract query...
@@ -34,9 +34,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         # Extract Sender
-        sender = bakchod_dao.get_or_create_bakchod_from_tg_user(
-            update.message.from_user
-        )
+        sender = bakchod_dao.get_or_create_bakchod_from_tg_user(update.message.from_user)
 
         # Extract Receiver
         receiver = None
@@ -61,7 +59,6 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             # Last attempt... try to lookup username in DB
             if receiver is None:
-
                 receiver_username = query[1]
 
                 # Remove the "@" prefix
@@ -87,15 +84,13 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             daan = float("".join(donation))
             daan = round(daan, 2)
             daan = abs(daan)
-        except Exception as e:
+        except Exception:
             await update.message.reply_text("Kitna ₹okda be???")
             return
 
         if not math.isfinite(daan):
             await update.message.reply_text(
-                "Yeh dekho chutiyapa chal ra hai. Setting {}'s rokda to 0!".format(
-                    util.extract_pretty_name_from_bakchod(sender)
-                )
+                f"Yeh dekho chutiyapa chal ra hai. Setting {util.extract_pretty_name_from_bakchod(sender)}'s rokda to 0!"
             )
             sender.rokda = 0
             sender.save()
@@ -116,9 +111,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Sender is trying to daan to themselves... :thinking_face:
         if sender.tg_id == receiver.tg_id:
-            logger.info(
-                "[daan] Sender is trying to daan to themselves... :thinking_face:"
-            )
+            logger.info("[daan] Sender is trying to daan to themselves... :thinking_face:")
             file_id = "CAADAwADrQADnozgCI_qxocBgD_OFgQ"
             sticker_to_send = file_id
             await update.message.reply_sticker(sticker=sticker_to_send)
@@ -141,11 +134,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             receiver.rokda,
         )
 
-        response = "{} gave {} 🤲 a daan of {} ₹okda! 🎉 ".format(
-            util.extract_pretty_name_from_bakchod(sender),
-            util.extract_pretty_name_from_bakchod(receiver),
-            daan,
-        )
+        response = f"{util.extract_pretty_name_from_bakchod(sender)} gave {util.extract_pretty_name_from_bakchod(receiver)} 🤲 a daan of {daan} ₹okda! 🎉 "
 
         logger.info("[daan] returning response='{}'", response)
 

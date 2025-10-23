@@ -1,13 +1,15 @@
-from loguru import logger
-from telegram import Update
-from telegram.ext import ContextTypes
-from telegram.constants import ParseMode
-from src.domain import dc, util, config
+import datetime
 import json
 import random
-import datetime
 import traceback
+
+from loguru import logger
 from rake_nltk import Rake
+from telegram import Update
+from telegram.constants import ParseMode
+from telegram.ext import ContextTypes
+
+from src.domain import config, dc, util
 
 app_config = config.get_config()
 
@@ -19,15 +21,11 @@ COMMAND_COST = 200
 
 rake = Rake()
 
-preposition_to_verb_map = json.loads(
-    open("resources/preposition-to-verb-map.json", "r").read()
-)
+preposition_to_verb_map = json.loads(open("resources/preposition-to-verb-map.json").read())
 
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     try:
-
         dc.log_command_usage("mom", update)
 
         random.seed(datetime.datetime.now())
@@ -50,9 +48,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Check if Bakchod has enough rokda to do a /mom...
         if not util.paywall_user(initiator_user.id, COMMAND_COST):
             await update.message.reply_text(
-                "Sorry! You don't have enough ₹okda! Each /mom costs {} ₹okda.".format(
-                    COMMAND_COST
-                )
+                f"Sorry! You don't have enough ₹okda! Each /mom costs {COMMAND_COST} ₹okda."
             )
             return
 
@@ -82,9 +78,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 # Protect the users in the blacklist
                 await update.message.reply_text(
-                    "{} is protected by a 👁️ Nazar Raksha Kavach".format(
-                        util.extract_pretty_name_from_tg_user(recipient)
-                    )
+                    f"{util.extract_pretty_name_from_tg_user(recipient)} is protected by a 👁️ Nazar Raksha Kavach"
                 )
                 return
 
@@ -123,9 +117,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_to_message.reply_text(response)
         else:
             # User has chance to get protected
-            await update.message.reply_text(
-                recipient + " is protected by a 👁️ Nazar Raksha Kavach"
-            )
+            await update.message.reply_text(recipient + " is protected by a 👁️ Nazar Raksha Kavach")
 
         return
 
@@ -139,7 +131,6 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def extract_target_message(update: Update):
-
     target_message = None
 
     if update.message.reply_to_message:
@@ -155,7 +146,6 @@ def extract_target_message(update: Update):
 
 
 def rake_joke(message, protagonist):
-
     # Extract a phrase from the message
     rake.extract_keywords_from_text(message)
     phrase = rake.get_ranked_phrases()[0]
@@ -183,7 +173,6 @@ def spacy_joke(message, protagonist):
 # !! SEXISM !!
 # make a bad joke about it
 def joke_mom(sentence, protagonist, force=False):
-
     random.seed(datetime.datetime.now())
 
     target = "your mom"
@@ -197,25 +186,24 @@ def joke_mom(sentence, protagonist, force=False):
     if sentence is not None:
         verb = get_verb(sentence)
         if verb != 0:
-            return "{} {} {} last night".format(protagonist, verb, target)
+            return f"{protagonist} {verb} {target} last night"
         else:
             adjective = get_POS(sentence, "ADJ")
             if adjective != 0:
-                return "{} is nice but you are {}".format(protagonist, adjective)
+                return f"{protagonist} is nice but you are {adjective}"
             else:
                 propn = get_POS(sentence, "PROPN")
                 if propn != 0:
                     past = get_verb_past(propn)
-                    return "{} {} {} last night".format(protagonist, past, target)
+                    return f"{protagonist} {past} {target} last night"
                 else:
                     return random_reply(protagonist)
     else:
-        return "{}, kripaya aapna aadhaar link kare".format(protagonist)
+        return f"{protagonist}, kripaya aapna aadhaar link kare"
 
 
 # return the first relevant part of speech tag
 def get_POS(sentence, POS):
-
     doc = util.get_nlp()(sentence)
     for token in doc:
         if token.pos_ == POS:
@@ -225,7 +213,6 @@ def get_POS(sentence, POS):
 
 # return a random verb from the sentence
 def get_verb(sentence):
-
     doc = util.get_nlp()(sentence)
 
     verbs = []
@@ -235,16 +222,13 @@ def get_verb(sentence):
             verbs.append(str(token.lemma_))
 
     if verbs:
-
         verbPast = get_verb_past(random.choice(verbs))
         return verbPast
 
     else:
-
         noun = get_POS(sentence, "NOUN")
 
         if noun:
-
             # see if the noun has a verb form
             verb_form_past = get_verb_past(noun)
 
@@ -256,7 +240,6 @@ def get_verb(sentence):
 
 # return simple past form of verb
 def get_verb_past(verb):
-
     verb_past_lookup = util.get_verb_past_lookup()
 
     try:
@@ -273,9 +256,8 @@ def get_verb_past(verb):
 
 
 def random_reply(protagonist):
-
     replies = [
-        "{} should get a life".format(protagonist),
+        f"{protagonist} should get a life",
         "haaaaaaaaaaaaaaaat",
         "bhaaaaaaaaaaaaaaak",
         "arrey isko hatao re",
@@ -291,7 +273,6 @@ def random_reply(protagonist):
 
 # Extracts a random verb from the sentence
 def extract_random_verb(sentence):
-
     doc = util.get_nlp()(sentence)
 
     verbs = []

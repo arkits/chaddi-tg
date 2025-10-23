@@ -1,5 +1,6 @@
 import configparser
 import os
+
 from loguru import logger
 
 profile_name = os.getenv("CHADDI_BOT_PROFILE")
@@ -11,7 +12,7 @@ config = configparser.ConfigParser()
 
 logger.debug("cwd is {}", os.getcwd())
 logger.info("Loading config - {}", profile_name)
-config.read("config/{}.ini".format(profile_name))
+config.read(f"config/{profile_name}.ini")
 
 
 def get_config():

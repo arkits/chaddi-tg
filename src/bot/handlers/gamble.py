@@ -1,18 +1,18 @@
+import datetime
+import random
 import traceback
+
+import ciso8601
 from loguru import logger
 from telegram import Update
 from telegram.ext import ContextTypes
+
 from src.db import Bakchod, bakchod_dao
 from src.domain import dc, util
-import datetime
-import random
-import ciso8601
 
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     try:
-
         dc.log_command_usage("gamble", update)
 
         b = bakchod_dao.get_or_create_bakchod_from_tg_user(update.message.from_user)
@@ -35,12 +35,9 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def gamble(bakchod: Bakchod, update: Update):
-
     response = None
 
-    random_bakchod = util.get_random_bakchod_from_group(
-        str(update.message.chat.id), bakchod.tg_id
-    )
+    random_bakchod = util.get_random_bakchod_from_group(str(update.message.chat.id), bakchod.tg_id)
 
     roll = random.random()
 
@@ -56,9 +53,7 @@ def gamble(bakchod: Bakchod, update: Update):
         response = "You ballin now fam. just won 300 ₹okda"
         bakchod.rokda = bakchod.rokda + 300
     elif roll > 0.85:
-        response = "You won 200 ₹okda and gifted 15 to {}".format(
-            random_bakchod_pretty_name
-        )
+        response = f"You won 200 ₹okda and gifted 15 to {random_bakchod_pretty_name}"
         bakchod.rokda = bakchod.rokda + 200
         random_bakchod.rokda += 15
     elif roll > 0.75:
@@ -71,39 +66,33 @@ def gamble(bakchod: Bakchod, update: Update):
         response = "Your wallet got stolen in the local train, good thing ₹okda are digital. Take +1 ₹okda in pity"
         bakchod.rokda = bakchod.rokda + 1
     elif roll > 0.45:
-        response = "{} brought you chai and you tipped him 100 ₹okda".format(
-            random_bakchod_pretty_name
-        )
+        response = f"{random_bakchod_pretty_name} brought you chai and you tipped him 100 ₹okda"
         bakchod.rokda = bakchod.rokda - 100
         random_bakchod.rokda += 100
     elif roll > 0.35:
         response = "No win / no loss... but you still paid entry fee of 250 ₹okda!"
         bakchod.rokda = bakchod.rokda - 250
     elif roll > 0.25:
-        response = "You got drunk at the bar and drove back home... and also got a chalan of 375 ₹okda"
+        response = (
+            "You got drunk at the bar and drove back home... and also got a chalan of 375 ₹okda"
+        )
         bakchod.rokda = bakchod.rokda - 375
     elif roll > 0.15:
-        response = "You actually won... but while leaving the casino you got mugged by {} and lost 500 ₹okda!".format(
-            random_bakchod_pretty_name
-        )
+        response = f"You actually won... but while leaving the casino you got mugged by {random_bakchod_pretty_name} and lost 500 ₹okda!"
         bakchod.rokda = bakchod.rokda - 500
         random_bakchod.rokda += 500
     elif roll > 0.01:
         response = "CBI Raided ChaddiInc... That 1000 you just won was derokdatized!"
         bakchod.rokda = bakchod.rokda - 1000
     elif roll > 0.001:
-        response = "You lost your entire fortune (and Paul's Kwid) to {}. Gambling can suck!".format(
-            random_bakchod_pretty_name
-        )
+        response = f"You lost your entire fortune (and Paul's Kwid) to {random_bakchod_pretty_name}. Gambling can suck!"
         random_bakchod.rokda += bakchod.rokda
         bakchod.rokda = 1
 
     # Close their accounts at 0 if they're in negatives
     if bakchod.rokda < 0:
         bakchod.rokda = 0
-        response = (
-            response + " You're bankrupt with 0 ₹okda, enroll into ChaddiInc Narega!"
-        )
+        response = response + " You're bankrupt with 0 ₹okda, enroll into ChaddiInc Narega!"
 
     random_bakchod.save()
 
@@ -121,15 +110,11 @@ def gamble(bakchod: Bakchod, update: Update):
 
 
 def can_bakchod_gamble(bakchod: Bakchod):
-
     can_gamble = True
     response = None
 
     if "last_time_gambled" in bakchod.metadata:
-
-        last_time_gambled = ciso8601.parse_datetime(
-            bakchod.metadata["last_time_gambled"]
-        )
+        last_time_gambled = ciso8601.parse_datetime(bakchod.metadata["last_time_gambled"])
 
         logger.info("[gamble] metadata['last_time_gambled']={}", last_time_gambled)
 

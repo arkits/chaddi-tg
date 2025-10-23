@@ -1,17 +1,18 @@
-from datetime import datetime
 import json
+import random
 import time
+from datetime import datetime
+
 from loguru import logger
 from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
+
 from src.db import Bakchod, ScheduledJob, scheduledjob_dao
 from src.domain import dc, util
-import random
 
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     dc.log_command_usage("remind", update)
 
     chat_id = update.message.chat_id
@@ -25,11 +26,8 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_to_message_id = update.message.reply_to_message.message_id
 
     try:
-
         # check if user can create reminder
-        reminders_created = scheduledjob_dao.get_scheduledjobs_by_bakchod(
-            from_bakchod_id
-        )
+        reminders_created = scheduledjob_dao.get_scheduledjobs_by_bakchod(from_bakchod_id)
         if len(reminders_created) > 10:
             await update.message.reply_text(
                 text="You have created too many reminders! Please cancel your previous ones, or wait for them to complete.",
@@ -101,15 +99,13 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
         await update.message.reply_text(
-            """
+            f"""
 <b>✅ Reminder set!</b>
 
-I will reply to you in {} as a reminder.
+I will reply to you in {util.pretty_time_delta(due_seconds)} as a reminder.
 
-<b>Reminder ID:</b> {}
-""".format(
-                util.pretty_time_delta(due_seconds), sj.job_id
-            ),
+<b>Reminder ID:</b> {sj.job_id}
+""",
             parse_mode=ParseMode.HTML,
         )
 
@@ -121,7 +117,7 @@ I will reply to you in {} as a reminder.
 
 
 def build_job_name(chat_id, from_bakchod_id, job_id):
-    return "reminder/{}/{}/{}".format(str(chat_id), str(from_bakchod_id), str(job_id))
+    return f"reminder/{chat_id!s}/{from_bakchod_id!s}/{job_id!s}"
 
 
 def remove_job_if_exists(name: str, context: ContextTypes.DEFAULT_TYPE) -> bool:
@@ -142,23 +138,17 @@ REMINDER_RESPONSE_GREETINGS = [
 
 
 async def reminder_handler(context: ContextTypes.DEFAULT_TYPE) -> None:
-
     try:
-
         # extract job_context
         job = context.job
         job_context = json.loads(job.context)
 
-        logger.debug(
-            "[reminder_handler] job={} job_context={}", job.__dict__, job_context
-        )
+        logger.debug("[reminder_handler] job={} job_context={}", job.__dict__, job_context)
 
         # build reply_text
-        reply_text = """
-{}
-""".format(
-            random.choice(REMINDER_RESPONSE_GREETINGS),
-        )
+        reply_text = f"""
+{random.choice(REMINDER_RESPONSE_GREETINGS)}
+"""
 
         # handle reminder_message
         if job_context["reminder_message"] != "":
@@ -166,9 +156,7 @@ async def reminder_handler(context: ContextTypes.DEFAULT_TYPE) -> None:
                 reply_text
                 + """
 <b>> {}</b>
-""".format(
-                    job_context["reminder_message"]
-                )
+""".format(job_context["reminder_message"])
             )
 
         # send the message
@@ -187,12 +175,9 @@ async def reminder_handler(context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 def parse_reminder_due(args):
-
     due_seconds = 0
     for idx, a in enumerate(args):
-
         if a[0].isdigit():
-
             digit = ""
             value_indicator = ""
 
@@ -201,9 +186,7 @@ def parse_reminder_due(args):
                 try:
                     value_indicator = args[idx + 1]
                 except IndexError:
-                    logger.trace(
-                        "Caught IndexError, defaulting value_indicator to seconds"
-                    )
+                    logger.trace("Caught IndexError, defaulting value_indicator to seconds")
             else:
                 # handle case where digit and value indicator are together
                 for char in a:
@@ -215,13 +198,9 @@ def parse_reminder_due(args):
                 digit = int(digit)
 
             value_indicator = value_indicator.lower()
-            logger.trace("digit={} value_indicator={}".format(digit, value_indicator))
+            logger.trace(f"digit={digit} value_indicator={value_indicator}")
 
-            if (
-                value_indicator == "min"
-                or value_indicator == "mins"
-                or value_indicator == "m"
-            ):
+            if value_indicator == "min" or value_indicator == "mins" or value_indicator == "m":
                 digit = digit * 60
 
             if (
@@ -233,17 +212,13 @@ def parse_reminder_due(args):
             ):
                 digit = digit * 60 * 60
 
-            if (
-                value_indicator == "day"
-                or value_indicator == "days"
-                or value_indicator == "d"
-            ):
+            if value_indicator == "day" or value_indicator == "days" or value_indicator == "d":
                 digit = digit * 60 * 60 * 60
 
             due_seconds = due_seconds + digit
 
         else:
-            logger.trace("Not digit... continuing - a={}".format(a))
+            logger.trace(f"Not digit... continuing - a={a}")
             continue
 
     return due_seconds

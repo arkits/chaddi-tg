@@ -1,16 +1,16 @@
+import inspect
 import json
 import math
-import inspect
 
+from fastapi import APIRouter, Request
+from loguru import logger
 from peewee import DoesNotExist, fn
 from playhouse.shortcuts import model_to_dict
-from src.db import Bakchod, Group, Message, Quote, group_dao
-from fastapi import APIRouter, Request
-from starlette.responses import JSONResponse
-from loguru import logger
-from src import bot
 from pydantic import BaseModel
+from starlette.responses import JSONResponse
 
+from src import bot
+from src.db import Bakchod, Group, Message, Quote, group_dao
 from src.domain import util
 
 router = APIRouter()
@@ -29,7 +29,6 @@ class SendMsgParams(BaseModel):
 
 @router.post("/bot/send_msg", response_class=JSONResponse)
 async def post_api_bot_send_msg(request: Request, send_msg_params: SendMsgParams):
-
     logger.info("post_api_bot_send_msg send_msg_params={}", send_msg_params)
 
     response_message = {
@@ -37,7 +36,6 @@ async def post_api_bot_send_msg(request: Request, send_msg_params: SendMsgParams
     }
 
     try:
-
         bot_instance = bot.get_bot_instance()
         if bot_instance is None:
             raise Exception("Failed to get_bot_instance")
@@ -62,7 +60,6 @@ class SetBakchodRokdaParams(BaseModel):
 async def post_api_set_bakchod_rokda(
     request: Request, set_bakchod_rokda_params: SetBakchodRokdaParams
 ):
-
     logger.info(
         "post_api_set_bakchod_rokda set_bakchod_rokda_params={}",
         set_bakchod_rokda_params,
@@ -73,7 +70,6 @@ async def post_api_set_bakchod_rokda(
     }
 
     try:
-
         b = Bakchod.get_by_id(set_bakchod_rokda_params.bakchod_id)
         if b is None:
             raise Exception("Unable to find Bakchod")
@@ -102,7 +98,6 @@ class SetBakchodMetadataParams(BaseModel):
 async def post_api_set_bakchod_metadata(
     request: Request, set_bakchod_metadata_params: SetBakchodMetadataParams
 ):
-
     logger.info(
         "post_api_set_bakchod_metadata set_bakchod_metadata_params={}",
         set_bakchod_metadata_params,
@@ -113,7 +108,6 @@ async def post_api_set_bakchod_metadata(
     }
 
     try:
-
         b = Bakchod.get_by_id(set_bakchod_metadata_params.bakchod_id)
         if b is None:
             raise Exception("Unable to find Bakchod")
@@ -136,7 +130,6 @@ async def post_api_set_bakchod_metadata(
 
 @router.get("/quotes", response_class=JSONResponse)
 async def get_api_quotes(request: Request, page_number: int = 1):
-
     items_per_page = 50
 
     logger.info("get_api_quotes page_number={}", page_number)
@@ -149,7 +142,6 @@ async def get_api_quotes(request: Request, page_number: int = 1):
     }
 
     try:
-
         quotes = (
             Quote.select()
             .order_by(Quote.created.desc())
@@ -162,9 +154,7 @@ async def get_api_quotes(request: Request, page_number: int = 1):
                 "quote_id": quote.quote_id,
                 "created": str(quote.created),
                 "text": quote.text,
-                "author_bakchod": util.extract_pretty_name_from_bakchod(
-                    quote.author_bakchod
-                ),
+                "author_bakchod": util.extract_pretty_name_from_bakchod(quote.author_bakchod),
                 "quoted_in_group": quote.quoted_in_group.name,
                 "quote_capture_bakchod": util.extract_pretty_name_from_bakchod(
                     quote.quote_capture_bakchod
@@ -184,11 +174,9 @@ async def get_api_quotes(request: Request, page_number: int = 1):
 
 @router.get("/quotes/{quote_id}", response_class=JSONResponse)
 async def get_api_quote_details(request: Request, quote_id: str = "random"):
-
     logger.info("get_api_quotes quote_id={}", quote_id)
 
     try:
-
         q = None
 
         if quote_id == "random":
@@ -202,9 +190,7 @@ async def get_api_quote_details(request: Request, quote_id: str = "random"):
             "text": q.text,
             "author_bakchod": util.extract_pretty_name_from_bakchod(q.author_bakchod),
             "quoted_in_group": q.quoted_in_group.name,
-            "quote_capture_bakchod": util.extract_pretty_name_from_bakchod(
-                q.quote_capture_bakchod
-            ),
+            "quote_capture_bakchod": util.extract_pretty_name_from_bakchod(q.quote_capture_bakchod),
         }
 
         return JSONResponse(content=response_message, status_code=200)
@@ -223,7 +209,6 @@ async def get_api_quote_details(request: Request, quote_id: str = "random"):
 
 @router.get("/groups", response_class=JSONResponse)
 async def get_api_groups(request: Request, page_number: int = 1):
-
     items_per_page = 50
 
     logger.info("get_api_groups page_number={}", page_number)
@@ -236,7 +221,6 @@ async def get_api_groups(request: Request, page_number: int = 1):
     }
 
     try:
-
         groups = (
             Group.select()
             .order_by(Group.updated.desc())
@@ -265,11 +249,9 @@ async def get_api_groups(request: Request, page_number: int = 1):
 
 @router.get("/groups/{group_id}", response_class=JSONResponse)
 async def get_api_group_details(request: Request, group_id):
-
     response = {}
 
     try:
-
         if group_id is None:
             raise Exception("group_id was None")
 
@@ -287,9 +269,7 @@ async def get_api_group_details(request: Request, group_id):
 async def get_api_group_messages(
     request: Request, group_id, page_number: int = 1, include_update: bool = False
 ):
-
     try:
-
         items_per_page = 50
 
         if group_id is None:
@@ -309,9 +289,7 @@ async def get_api_group_messages(
 
         total_pages = total_messages // items_per_page + 1
 
-        messages = group_dao.get_all_messages_by_group_id(
-            group_id, page_number, items_per_page
-        )
+        messages = group_dao.get_all_messages_by_group_id(group_id, page_number, items_per_page)
 
         response = {
             "current_page": page_number,
@@ -344,7 +322,6 @@ async def get_api_group_messages(
 
 @router.get("/bakchods", response_class=JSONResponse)
 async def get_api_bakchods(request: Request, page_number: int = 1):
-
     items_per_page = 50
 
     logger.info("get_api_bakchods page_number={}", page_number)
@@ -357,7 +334,6 @@ async def get_api_bakchods(request: Request, page_number: int = 1):
     }
 
     try:
-
         bakchods = (
             Bakchod.select()
             .order_by(Bakchod.updated.desc())
@@ -380,19 +356,16 @@ async def get_api_bakchods(request: Request, page_number: int = 1):
 
 @router.get("/bakchods/{tg_id}", response_class=JSONResponse)
 async def get_api_bakchod_details(request: Request, tg_id):
-
     try:
-
         if tg_id is None:
             raise Exception("tg_id was None")
 
         try:
-
             b = Bakchod.get_by_id(tg_id)
             response = quick_model_to_dict(b)
             return JSONResponse(content=response, status_code=200)
 
-        except Exception as e:
+        except Exception:
             raise Exception("Bakchod not found")
 
     except Exception as e:
@@ -405,9 +378,8 @@ def quick_model_to_dict(model):
 
 
 def handle_http_error(error_description, status_code):
-
     error_response = {
-        "error": "Caught fatal exception in {}".format(inspect.stack()[1][3]),
+        "error": f"Caught fatal exception in {inspect.stack()[1][3]}",
         "error_description": error_description,
     }
 

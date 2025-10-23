@@ -1,8 +1,9 @@
-from src.domain import config
+import json
 
 from peewee import *
 from playhouse.postgres_ext import *
-import json
+
+from src.domain import config
 
 app_config = config.get_config()
 

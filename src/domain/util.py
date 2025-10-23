@@ -1,15 +1,17 @@
-from loguru import logger
-import requests
-from telegram import Update
-from telegram import User
+import json
 import os
 import random
-from datetime import datetime, timezone
-from src.db import Bakchod, GroupMember
+from datetime import datetime
+
 import en_core_web_sm
-from . import config
-import json
 import pytz
+import requests
+from loguru import logger
+from telegram import Update, User
+
+from src.db import Bakchod, GroupMember
+
+from . import config
 
 app_config = config.get_config()
 
@@ -25,12 +27,12 @@ IST_TIMEZONE = pytz.timezone("Asia/Kolkata")
 UTC_TIMEZONE = pytz.timezone("UTC")
 
 # Read verbLookupTable on startup
-verb_past_lookup_file = open("resources/verb-past-lookup.json", "r")
+verb_past_lookup_file = open("resources/verb-past-lookup.json")
 verb_past_lookup = json.loads(verb_past_lookup_file.read())
 
 
 def pretty_print_rokda(r):
-    return "{:,}".format(round(r, 2))
+    return f"{round(r, 2):,}"
 
 
 def get_verb_past_lookup():
@@ -72,21 +74,16 @@ def delete_file(file):
 
 
 def acquire_external_resource(resource_url, resource_name):
-
     resource_path = os.path.join(RESOURCES_DIR, "external", resource_name)
 
     if os.path.exists(resource_path):
-
         logger.info(
             "[acquire_external_resource] resource already exist. not dowloading - resource_path={}",
             resource_path,
         )
 
     else:
-
-        logger.info(
-            "[acquire_external_resource] downloading resource_url={}", resource_url
-        )
+        logger.info("[acquire_external_resource] downloading resource_url={}", resource_url)
 
         r = requests.get(resource_url, allow_redirects=True)
         open(resource_path, "wb").write(r.content)
@@ -116,10 +113,7 @@ def pretty_time_delta(seconds):
 
 
 def get_random_bakchod_from_group(group_id: str, bakchod_id_to_avoid: str) -> Bakchod:
-
-    groupmembers = (
-        GroupMember.select().where(GroupMember.group_id == group_id).execute()
-    )
+    groupmembers = GroupMember.select().where(GroupMember.group_id == group_id).execute()
 
     random_groupmember = choose_random_element_from_list(groupmembers)
 
@@ -137,7 +131,6 @@ def is_admin_tg_user(user: User):
 
 
 def paywall_user(bakchod_id: str, cost):
-
     b = Bakchod.get_by_id(bakchod_id)
 
     if b is not None:
@@ -153,24 +146,20 @@ def paywall_user(bakchod_id: str, cost):
 
 
 def get_group_id_from_update(update: Update):
-
     group_id = None
 
     try:
         if (
-            update.message.chat.id is not None
-            and update.message.chat.type == "group"
-            or update.message.chat.type == "supergroup"
-        ):
+            update.message.chat.id is not None and update.message.chat.type == "group"
+        ) or update.message.chat.type == "supergroup":
             group_id = update.message.chat.id
-    except Exception as e:
+    except Exception:
         pass
 
     return group_id
 
 
 def normalize_datetime(dt: datetime):
-
     if dt.tzinfo is None:
         dt = UTC_TIMEZONE.localize(dt)
 

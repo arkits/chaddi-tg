@@ -1,31 +1,26 @@
-from telegram import Update
-from loguru import logger
 import datetime
+
+import shortuuid
+from loguru import logger
+from telegram import Update
+
 from src.db import Quote, bakchod_dao, group_dao
 from src.domain import metrics, util
-import shortuuid
 
 
 def add_quote_from_update(update: Update) -> Quote:
-
     quoted_message = update.message.reply_to_message
 
     if update.message.reply_to_message.forward_from:
-
         # if the message is a forwarded message, then use the original author
         author_bakchod = bakchod_dao.get_or_create_bakchod_from_tg_user(
             update.message.reply_to_message.forward_from
         )
     else:
-
         # otherwise, use the author of the message
-        author_bakchod = bakchod_dao.get_or_create_bakchod_from_tg_user(
-            quoted_message.from_user
-        )
+        author_bakchod = bakchod_dao.get_or_create_bakchod_from_tg_user(quoted_message.from_user)
 
-    quote_capture_bakchod = bakchod_dao.get_or_create_bakchod_from_tg_user(
-        update.message.from_user
-    )
+    quote_capture_bakchod = bakchod_dao.get_or_create_bakchod_from_tg_user(update.message.from_user)
 
     quoted_in_group = group_dao.get_or_create_group_from_chat(quoted_message.chat)
 

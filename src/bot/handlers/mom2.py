@@ -1,11 +1,13 @@
+import traceback
+
 from loguru import logger
 from telegram import Update
-from telegram.ext import ContextTypes
 from telegram.constants import ParseMode
-from src.domain import dc, util, config
-import traceback
-from . import mom
+from telegram.ext import ContextTypes
 
+from src.domain import config, dc, util
+
+from . import mom
 
 app_config = config.get_config()
 
@@ -17,9 +19,7 @@ COMMAND_COST = 200
 
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     try:
-
         dc.log_command_usage("mom2", update)
 
         initiator_id = update.message.from_user.id
@@ -29,9 +29,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if not util.paywall_user(initiator_id, COMMAND_COST):
             await update.message.reply_text(
-                "Sorry! You don't have enough ₹okda! Each `/mom2` costs {} ₹okda.".format(
-                    COMMAND_COST
-                ),
+                f"Sorry! You don't have enough ₹okda! Each `/mom2` costs {COMMAND_COST} ₹okda.",
                 parse_mode=ParseMode.MARKDOWN,
             )
             return

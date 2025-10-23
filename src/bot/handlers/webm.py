@@ -1,19 +1,19 @@
-from loguru import logger
-from telegram import Update
-from telegram.ext import ContextTypes
-from src.domain import dc, util
 import datetime
 import subprocess
 import traceback
+
+from loguru import logger
+from telegram import Update
+from telegram.ext import ContextTypes
+
+from src.domain import dc, util
 
 WEBM_RESOURCES_DIR = "resources/webm_conversions/"
 CUSTOM_TIMEOUT_SECONDS = 5000
 
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     try:
-
         document = update.message.document
 
         # return if there is no document associated with the message
@@ -32,27 +32,20 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         message = await update.message.reply_text("Starting webm conversion (＠＾◡＾)")
 
         try:
-
             # Count time taken for webm conversion
             time_start = datetime.datetime.now()
 
             # Download the webm file
-            logger.info(
-                "[webm] Starting webm download - " + str(document.file_id) + ".webm"
-            )
+            logger.info("[webm] Starting webm download - " + str(document.file_id) + ".webm")
             webm_file = await context.bot.get_file(document.file_id)
             await webm_file.download_to_drive(
                 file_path=WEBM_RESOURCES_DIR + str(document.file_id) + ".webm",
             )
-            logger.info(
-                "[webm] Finished downloading webm - " + str(document.file_id) + ".webm"
-            )
+            logger.info("[webm] Finished downloading webm - " + str(document.file_id) + ".webm")
 
             # Webm to mp4 conversion via ffmpeg
             logger.info(
-                "[webm] Starting webm conversion with ffmpeg - "
-                + str(document.file_id)
-                + ".webm"
+                "[webm] Starting webm conversion with ffmpeg - " + str(document.file_id) + ".webm"
             )
 
             ffmpeg_conversion = subprocess.call(
@@ -87,9 +80,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 pretty_diff,
             )
 
-            original_sender = util.extract_pretty_name_from_tg_user(
-                update.message.from_user
-            )
+            original_sender = util.extract_pretty_name_from_tg_user(update.message.from_user)
 
             caption = build_webm_conversion_response(
                 original_sender, pretty_diff, document.file_name, update.message.caption
@@ -132,23 +123,17 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
-def build_webm_conversion_response(
-    original_sender, pretty_diff, file_name, caption_text
-):
-
-    responses = ["{} uploaded {}".format(original_sender, file_name)]
+def build_webm_conversion_response(original_sender, pretty_diff, file_name, caption_text):
+    responses = [f"{original_sender} uploaded {file_name}"]
 
     if caption_text is not None:
-
-        c = """
+        c = f"""
 ------------------------------------
-{}
+{caption_text}
 ------------------------------------
-""".format(
-            caption_text
-        )
+"""
         responses.append(c)
 
-    responses.append("(converted in {})".format(pretty_diff))
+    responses.append(f"(converted in {pretty_diff})")
 
     return "".join(responses)

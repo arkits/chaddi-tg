@@ -1,16 +1,17 @@
-from os import path
+import datetime
 import os
 import random
+import textwrap
 import traceback
-from telegram import Update
-from telegram.constants import ParseMode
-from telegram.ext import ContextTypes
-from src.domain import dc, util
+import uuid
+from os import path
+
 from loguru import logger
 from PIL import Image, ImageDraw, ImageFont, ImageOps
-import textwrap
-import uuid
-import datetime
+from telegram import Update
+from telegram.ext import ContextTypes
+
+from src.domain import dc, util
 
 MLAI_RESOURCES_DIR = path.join(util.RESOURCES_DIR, "mlai")
 EXTERNAL_DIR = path.join(util.RESOURCES_DIR, "external")
@@ -30,11 +31,9 @@ NM_IMG_LOCATIONS = ["bottom_right", "bottom_left"]
 
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     random.seed(datetime.datetime.now())
 
     try:
-
         dc.log_command_usage("tynm", update)
 
         if update.message.reply_to_message is None:
@@ -50,14 +49,11 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Handle photo message
         if update.message.reply_to_message.photo:
-
             file = await acquire_file(update, context)
 
             src_img = Image.open(build_file_path(file))
             src_img_width, src_img_height = src_img.size
-            logger.debug(
-                "src_img_width={} src_img_height={}", src_img_width, src_img_height
-            )
+            logger.debug("src_img_width={} src_img_height={}", src_img_width, src_img_height)
 
             # Place NM_IMG
             nm_img_location = random.choice(NM_IMG_LOCATIONS)
@@ -76,7 +72,6 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Handle text message
         elif update.message.reply_to_message.text:
-
             unsplash_photo_path = None
 
             text = update.message.reply_to_message.text
@@ -89,14 +84,13 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             # Add unsplash background
             try:
-
                 # Download image from unsplash
-                unsplash_img_url = "https://source.unsplash.com/random/{}x{}/?nature,water,india".format(
-                    x1, y1
+                unsplash_img_url = (
+                    f"https://source.unsplash.com/random/{x1}x{y1}/?nature,water,india"
                 )
 
                 unsplash_photo_path = util.acquire_external_resource(
-                    unsplash_img_url, "{}.jpg".format(uuid.uuid4())
+                    unsplash_img_url, f"{uuid.uuid4()}.jpg"
                 )
                 unsplash_photo = Image.open(unsplash_photo_path).resize((x1, y1))
 
@@ -114,21 +108,16 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             # Add user profile picture background
             try:
-
                 # User profile picture composition
                 user_id = update.message.reply_to_message.from_user.id
-                user_profile_photo_path = path.join(
-                    EXTERNAL_DIR, str(user_id) + ".webp"
-                )
+                user_profile_photo_path = path.join(EXTERNAL_DIR, str(user_id) + ".webp")
 
-                user_profile_photos = await update.message.reply_to_message.from_user.get_profile_photos(
-                    limit=1
+                user_profile_photos = (
+                    await update.message.reply_to_message.from_user.get_profile_photos(limit=1)
                 )
                 user_profile_photo = user_profile_photos.photos[0]
                 user_profile_photo_file_id = user_profile_photo[-1].file_id
-                user_profile_photo_file = await context.bot.get_file(
-                    user_profile_photo_file_id
-                )
+                user_profile_photo_file = await context.bot.get_file(user_profile_photo_file_id)
                 await user_profile_photo_file.download_to_drive(user_profile_photo_path)
 
                 user_profile_photo_img = (
@@ -188,13 +177,9 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 font_subtitle_size,
             )
 
-            random_font_caption = util.choose_random_element_from_list(
-                os.listdir(FONTS_DIR)
-            )
+            random_font_caption = util.choose_random_element_from_list(os.listdir(FONTS_DIR))
 
-            random_font_username = util.choose_random_element_from_list(
-                os.listdir(FONTS_DIR)
-            )
+            random_font_username = util.choose_random_element_from_list(os.listdir(FONTS_DIR))
 
             logger.debug(
                 "random_font_caption={} random_font_username={}",
@@ -203,23 +188,17 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
 
             font_caption = ImageFont.truetype(
-                path.join(
-                    os.getcwd(), util.RESOURCES_DIR, "fonts", random_font_caption
-                ),
+                path.join(os.getcwd(), util.RESOURCES_DIR, "fonts", random_font_caption),
                 font_caption_size,
             )
 
             font_subtitle = ImageFont.truetype(
-                path.join(
-                    os.getcwd(), util.RESOURCES_DIR, "fonts", random_font_username
-                ),
+                path.join(os.getcwd(), util.RESOURCES_DIR, "fonts", random_font_username),
                 font_subtitle_size,
             )
 
             font_username = ImageFont.truetype(
-                path.join(
-                    os.getcwd(), util.RESOURCES_DIR, "fonts", random_font_username
-                ),
+                path.join(os.getcwd(), util.RESOURCES_DIR, "fonts", random_font_username),
                 font_username_size,
             )
 
@@ -234,18 +213,17 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             # Generate the timestamp of the message
             timestamp = util.normalize_datetime(update.message.reply_to_message.date)
             timestamp_str = timestamp.strftime("%d/%m/%Y, %I:%M %p")
-            timestamp_str += "\n {}".format(update.message.reply_to_message.chat.title)
+            timestamp_str += f"\n {update.message.reply_to_message.chat.title}"
             timestamp_w, timestamp_h = draw.textsize(timestamp_str, font=font_subtitle)
 
             # Calculate the position of the caption
-            caption_x, caption_y = 100, (y1 / 2) - (
-                (caption_h + username_h + timestamp_h + 20 + 10) / 2
+            caption_x, caption_y = (
+                100,
+                (y1 / 2) - ((caption_h + username_h + timestamp_h + 20 + 10) / 2),
             )
 
             # Draw the caption
-            draw.text(
-                (caption_x, caption_y), caption, font=font_caption, fill=(255, 255, 255)
-            )
+            draw.text((caption_x, caption_y), caption, font=font_caption, fill=(255, 255, 255))
 
             # Draw the username
             draw.text(
@@ -270,7 +248,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
 
             # Generate filename and file path
-            filename = "{}-{}".format(update.message.chat.id, update.message.message_id)
+            filename = f"{update.message.chat.id}-{update.message.message_id}"
             img_path = path.join(EXTERNAL_DIR, filename + PNG_EXTENSION)
 
             # Save the image
@@ -296,15 +274,12 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def generate_wrapped_caption(text):
-
     caption = ""
 
     lines = text.split("\n")
 
     for line in lines:
-
         if len(line) > 65:
-
             w = textwrap.TextWrapper(width=60, break_long_words=False)
             line = "\n".join(w.wrap(line))
 
@@ -316,7 +291,6 @@ def generate_wrapped_caption(text):
 
 
 def place_image(src_img: Image, placement_img: Image, scale=2, location="bottom_right"):
-
     src_img_width, src_img_height = src_img.size
     placement_img_width, placement_img_height = placement_img.size
 
@@ -341,7 +315,6 @@ def place_image(src_img: Image, placement_img: Image, scale=2, location="bottom_
     )
 
     if location == "bottom_right":
-
         src_img.paste(
             placement_img,
             (src_img_width - placement_img_width, src_img_height - placement_img_width),
@@ -349,7 +322,6 @@ def place_image(src_img: Image, placement_img: Image, scale=2, location="bottom_
         )
 
     elif location == "bottom_left":
-
         placement_img = ImageOps.mirror(placement_img)
 
         src_img.paste(
@@ -362,11 +334,8 @@ def place_image(src_img: Image, placement_img: Image, scale=2, location="bottom_
 
 
 async def acquire_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     # Extract file ID from update
-    file_id = str(
-        update.message.reply_to_message.photo[-1].file_id
-    )  # TODO: handle video and gifs?
+    file_id = str(update.message.reply_to_message.photo[-1].file_id)  # TODO: handle video and gifs?
 
     logger.info("[tynm] Starting file download file_id={}", file_id)
     file_handle = await context.bot.get_file(file_id)

@@ -1,11 +1,11 @@
 import uvicorn
-from loguru import logger
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from starlette_exporter import PrometheusMiddleware, handle_metrics
+from fastapi.staticfiles import StaticFiles
 from fastapi_socketio import SocketManager
+from loguru import logger
+from starlette_exporter import PrometheusMiddleware, handle_metrics
 
 from src.domain import config, version
 
@@ -45,8 +45,7 @@ app.add_middleware(
 )
 app.add_route("/metrics", handle_metrics)
 
-from src.server.routes import api_routes
-from src.server.routes import ui_routes
+from src.server.routes import api_routes, ui_routes
 
 app.include_router(api_routes.router, prefix="/api", tags=["api"])
 
@@ -56,7 +55,6 @@ from src.server.routes import sio_routes
 
 
 def run_server():
-
     logger.info(
         "[server] Starting Server on http://localhost:{}",
         app_config.get("SERVER", "PORT"),

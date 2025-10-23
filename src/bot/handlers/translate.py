@@ -1,18 +1,18 @@
+import traceback
+
+from googletrans import Translator
 from loguru import logger
 from telegram import Update
-from telegram.ext import ContextTypes
 from telegram.constants import ParseMode
+from telegram.ext import ContextTypes
+
 from src.domain import dc
-import traceback
-from googletrans import Translator
 
 translator = Translator()
 
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     try:
-
         dc.log_command_usage("translate", update)
 
         if update.message.reply_to_message is None:
@@ -60,25 +60,20 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
 
         try:
-            translated = translator.translate(
-                text=text_to_translate, dest=target_language
-            )
+            translated = translator.translate(text=text_to_translate, dest=target_language)
             logger.info("[translate] translated={}", translated)
 
-            reply_text = """
-{}
+            reply_text = f"""
+{translated.text}
 
 ```
-ℹ️ Translated from {} to {}
+ℹ️ Translated from {translated.src.upper()} to {translated.dest.upper()}
 ```
-""".format(
-                translated.text, translated.src.upper(), translated.dest.upper()
-            )
+"""
 
             await update.message.reply_text(reply_text, parse_mode=ParseMode.MARKDOWN)
 
         except Exception as e:
-
             logger.error(
                 "[translate] Caught error in googletrans text_to_translate={} e={}",
                 text_to_translate,
@@ -86,12 +81,11 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
 
             await update.message.reply_text(
-                "Failed to translate :( googletrans error={}".format(e),
+                f"Failed to translate :( googletrans error={e}",
                 parse_mode=ParseMode.MARKDOWN,
             )
 
     except Exception as e:
-
         logger.error(
             "Caught Error in translate.handle - {} \n {}",
             e,
