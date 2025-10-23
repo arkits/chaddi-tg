@@ -10,9 +10,9 @@ source .venv/bin/activate
 
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 
-echo ">>> pip installing"
-pip install -r requirements.txt
-echo ""
+# echo ">>> pip installing"
+# pip install -r requirements.txt
+# echo ""
 
 cd src
 
