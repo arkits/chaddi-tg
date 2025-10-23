@@ -5,7 +5,7 @@ from src.bot.handlers import mom
 from src.domain import dc, util, config
 from telegram import ParseMode
 import traceback
-import openai
+from openai import OpenAI
 
 
 app_config = config.get_config()
@@ -16,8 +16,7 @@ mom_response_blacklist = [BOT_USERNAME]
 
 COMMAND_COST = 200
 
-openai.api_key = app_config.get("OPENAI", "API_KEY")
-
+client = OpenAI(api_key=app_config.get("OPENAI", "API_KEY"))
 
 def handle(update: Update, context):
 
@@ -46,27 +45,27 @@ def handle(update: Update, context):
             logger.info("[mom3] message was None!")
             return
 
-        prompt = open(
+        instructions = open(
             path.join(util.RESOURCES_DIR, "openai", "mom3-prompt.txt"), "r"
         ).read()
-        prompt += "\n\nUser: " + message[:200]
-        prompt += "\nResponse: "
 
-        logger.debug("[mom3] prompt={}", prompt)
 
-        response = openai.Completion.create(
-            engine="gpt-5-nano",
-            prompt=prompt,
-            temperature=0.5,
-            max_tokens=60,
-            top_p=0.3,
-            frequency_penalty=0.5,
-            presence_penalty=0,
+        input = "User({}): {}".format(protagonist, message[:1000])
+        input += "\nResponse: "
+
+        logger.debug("[mom3] prompt={} \n {}", instructions, input)
+
+        response = client.responses.create(
+            model="gpt-5-mini",
+            instructions=instructions,
+            input=input
         )
 
-        logger.info("[mom3] openai response='{}'", response)
+        output_text = response.output_text.strip()
 
-        response = "{}".format(response["choices"][0]["text"])
+        logger.info("[mom3] openai response='{}'", output_text)
+
+        response = output_text
 
         if update.message.reply_to_message:
             update.message.reply_to_message.reply_text(response)
