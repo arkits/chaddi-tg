@@ -1,6 +1,5 @@
 from peewee import DoesNotExist
-from telegram import Update
-from telegram.chat import Chat
+from telegram import Update, Chat
 from src.db import Bakchod, Group, GroupMember, Message
 from loguru import logger
 import datetime

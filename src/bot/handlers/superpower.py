@@ -1,4 +1,4 @@
-from telegram.ext import CallbackContext
+from telegram.ext import ContextTypes
 from telegram import Update
 from loguru import logger
 from src.domain import dc, util
@@ -6,7 +6,7 @@ from datetime import datetime
 import pytz
 
 
-def handle(update: Update, context: CallbackContext):
+async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
 
@@ -16,7 +16,7 @@ def handle(update: Update, context: CallbackContext):
 
         logger.info("[superpower] Returning response={}", response)
 
-        update.message.reply_text(response)
+        await update.message.reply_text(response)
 
     except Exception as e:
         logger.error("Caught Exception in superpower.handle - e={}", e)

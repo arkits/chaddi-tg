@@ -61,12 +61,8 @@ $ docker-compose up -d grafana prometheus
 # Create a database for persistence
 $ psql -c "CREATE DATABASE chaddi_tg"
 
-# Setup Python virtualenv
-$ python3 -m venv .venv
-$ source .venv/bin/activate
-
-# Install the Python libs
-$ pip install -r requirments.txt
+# Install dependencies using uv
+$ uv sync
 
 # Run Chaddi!
 $ ./run.sh
@@ -88,8 +84,4 @@ If you get any errors related to `cryptography`, please refer to - https://crypt
 
 **Spacy**
 
-To download the latest Spacy language model -
-
-```bash
-python -m spacy download en_core_web_sm
-```
+The Spacy language model is automatically installed via the dependencies in pyproject.toml.

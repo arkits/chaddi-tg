@@ -1,7 +1,7 @@
 from loguru import logger
 import requests
-from telegram import update
-from telegram.user import User
+from telegram import Update
+from telegram import User
 import os
 import random
 from datetime import datetime, timezone
@@ -152,7 +152,7 @@ def paywall_user(bakchod_id: str, cost):
         return False
 
 
-def get_group_id_from_update(update: update):
+def get_group_id_from_update(update: Update):
 
     group_id = None
 

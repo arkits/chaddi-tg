@@ -1,5 +1,6 @@
 from loguru import logger
-from peewee import Update
+from telegram import Update
+from telegram.ext import ContextTypes
 from src.domain import dc, util
 import datetime
 import subprocess
@@ -9,7 +10,7 @@ WEBM_RESOURCES_DIR = "resources/webm_conversions/"
 CUSTOM_TIMEOUT_SECONDS = 5000
 
 
-def handle(update: Update, context):
+async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
 
@@ -28,7 +29,7 @@ def handle(update: Update, context):
 
         dc.log_command_usage("webm", update)
 
-        message = update.message.reply_text("Starting webm conversion (＠＾◡＾)")
+        message = await update.message.reply_text("Starting webm conversion (＠＾◡＾)")
 
         try:
 
@@ -39,10 +40,9 @@ def handle(update: Update, context):
             logger.info(
                 "[webm] Starting webm download - " + str(document.file_id) + ".webm"
             )
-            webm_file = context.bot.get_file(document.file_id)
-            webm_file.download(
-                custom_path=WEBM_RESOURCES_DIR + str(document.file_id) + ".webm",
-                timeout=CUSTOM_TIMEOUT_SECONDS,
+            webm_file = await context.bot.get_file(document.file_id)
+            await webm_file.download_to_drive(
+                file_path=WEBM_RESOURCES_DIR + str(document.file_id) + ".webm",
             )
             logger.info(
                 "[webm] Finished downloading webm - " + str(document.file_id) + ".webm"
@@ -73,7 +73,7 @@ def handle(update: Update, context):
                     ffmpeg_conversion,
                 )
 
-                message.edit_text(text="(｡•́︿•̀｡) webm conversion failed (｡•́︿•̀｡)")
+                await message.edit_text(text="(｡•́︿•̀｡) webm conversion failed (｡•́︿•̀｡)")
                 return
 
             # Calculate time taken to convert
@@ -100,15 +100,15 @@ def handle(update: Update, context):
                 str(document.file_id),
                 caption,
             )
-            context.bot.send_video(
+            await context.bot.send_video(
                 chat_id=update.message.chat_id,
                 video=open(WEBM_RESOURCES_DIR + str(document.file_id) + ".mp4", "rb"),
-                timeout=CUSTOM_TIMEOUT_SECONDS,
+                write_timeout=CUSTOM_TIMEOUT_SECONDS,
                 caption=caption,
             )
 
             try:
-                message.delete()
+                await message.delete()
             except Exception as e:
                 logger.error("[webm] failed to delete message! error={}", e)
 
@@ -122,7 +122,7 @@ def handle(update: Update, context):
                 traceback.format_exc(),
             )
 
-            message.edit_text(text="(｡•́︿•̀｡) webm conversion failed (｡•́︿•̀｡)")
+            await message.edit_text(text="(｡•́︿•̀｡) webm conversion failed (｡•́︿•̀｡)")
 
     except Exception as e:
         logger.error(

@@ -4,4 +4,4 @@ export PYTHONPATH=$PYTHONPATH:$(pwd)
 
 cd src
 
-python chaddi.py
+uv run python chaddi.py

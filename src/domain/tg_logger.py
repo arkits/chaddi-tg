@@ -1,7 +1,7 @@
 from loguru import logger
 from src import bot
 from src.domain import config
-from telegram import ParseMode
+from telegram.constants import ParseMode
 import traceback
 
 app_config = config.get_config()

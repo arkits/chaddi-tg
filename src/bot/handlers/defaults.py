@@ -4,14 +4,14 @@ import traceback
 from loguru import logger
 from peewee import DoesNotExist
 from telegram import Update
-from telegram.ext import CallbackContext
+from telegram.ext import ContextTypes
 from src.bot.handlers import roll, mom
 from src.domain import dc, rokda, util
 from src.db import Bakchod, EMPTY_JSON, GroupMember, bakchod_dao, group_dao
 from . import hi, bestie, antiwordle
 
 
-def all(update: Update, context: CallbackContext) -> None:
+async def all(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     dc.sync_persistence_data(update)
 
     # If the update was related to a message send from a user...
@@ -27,17 +27,17 @@ def all(update: Update, context: CallbackContext) -> None:
     b.updated = datetime.now()
     b.save()
 
-    handle_bakchod_metadata_effects(update, context, b)
+    await handle_bakchod_metadata_effects(update, context, b)
 
-    handle_dice_rolls(update, context)
+    await handle_dice_rolls(update, context)
 
-    handle_message_matching(update, context)
+    await handle_message_matching(update, context)
 
-    antiwordle.handle(update, context)
+    await antiwordle.handle(update, context)
 
 
-def handle_bakchod_metadata_effects(
-    update: Update, context: CallbackContext, bakchod: Bakchod
+async def handle_bakchod_metadata_effects(
+    update: Update, context: ContextTypes.DEFAULT_TYPE, bakchod: Bakchod
 ):
 
     if bakchod.metadata is None:
@@ -75,7 +75,7 @@ def handle_bakchod_metadata_effects(
 
                         continue
 
-                    context.bot.forward_message(
+                    await context.bot.forward_message(
                         chat_id=route_message_props["to_group"],
                         from_chat_id=update.message.chat_id,
                         message_id=update.message.message_id,
@@ -93,7 +93,7 @@ def handle_bakchod_metadata_effects(
                     )
 
                     try:
-                        bot.delete_message(
+                        await bot.delete_message(
                             chat_id=update.message.chat_id,
                             message_id=update.message.message_id,
                         )
@@ -103,7 +103,7 @@ def handle_bakchod_metadata_effects(
                             e,
                             traceback.format_exc(),
                         )
-                        bot.send_message(
+                        await bot.send_message(
                             chat_id=update.message.chat_id,
                             text="Looks like I'm not able to delete messages... Please check the Group permissions!",
                         )
@@ -126,7 +126,7 @@ def handle_bakchod_metadata_effects(
 
                         response = mom.joke_mom(update.message.text, "Chaddi", True)
 
-                        update.message.reply_text(response)
+                        await update.message.reply_text(response)
                         return
 
     except Exception as e:
@@ -135,7 +135,7 @@ def handle_bakchod_metadata_effects(
     return
 
 
-def handle_message_matching(update: Update, context: CallbackContext):
+async def handle_message_matching(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     message_text = update.message.text
 
@@ -143,16 +143,16 @@ def handle_message_matching(update: Update, context: CallbackContext):
 
         # Handle 'hi' messages
         if "hi" == message_text.lower():
-            hi.handle(update, context, log_to_dc=False)
+            await hi.handle(update, context, log_to_dc=False)
 
         # Handle bestie messages
         if "bestie" in message_text.lower():
-            bestie.handle(update, context, log_to_dc=False)
+            await bestie.handle(update, context, log_to_dc=False)
 
     return
 
 
-def handle_dice_rolls(update: Update, context: CallbackContext):
+async def handle_dice_rolls(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     dice = update.message.dice
 
@@ -160,12 +160,12 @@ def handle_dice_rolls(update: Update, context: CallbackContext):
         return
 
     if dice.emoji == "🎲":
-        roll.handle_dice_rolls(dice.value, update, context)
+        await roll.handle_dice_rolls(dice.value, update, context)
 
     return
 
 
-def status_update(update: Update, context: CallbackContext) -> None:
+async def status_update(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     g = group_dao.get_group_from_update(update)
 

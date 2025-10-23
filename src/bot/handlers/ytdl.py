@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 from loguru import logger
 from telegram import Update
+from telegram.ext import ContextTypes
 from src.domain import dc, util, config
 import youtube_dl
 import traceback
@@ -20,9 +21,9 @@ YTDL_OPTS = {
 ydl = youtube_dl.YoutubeDL(YTDL_OPTS)
 
 
-def handle(
+async def handle(
     update: Update,
-    context,
+    context: ContextTypes.DEFAULT_TYPE,
 ):
 
     dc.log_command_usage("ytdl", update)
@@ -35,7 +36,7 @@ def handle(
         video_url = message_params[1]
         logger.info("[ytdl] video_url={}", video_url)
 
-        message = update.message.reply_text("Downloading video via youtube-dl (＠＾◡＾)")
+        message = await update.message.reply_text("Downloading video via youtube-dl (＠＾◡＾)")
 
         try:
 
@@ -61,7 +62,7 @@ def handle(
                 p.join()
 
             if p_killed:
-                message.edit_text(
+                await message.edit_text(
                     "Download cancelled... took too long ヽ(`⌒´メ)ノ Try again with please (⌒_⌒;)"
                 )
                 return
@@ -84,19 +85,19 @@ URL: {}
             )
 
             logger.debug("[ytdl] replying to the request message with downloaded video")
-            message.edit_text("Uploading video (－.－)...zzz")
-            update.message.reply_video(
+            await message.edit_text("Uploading video (－.－)...zzz")
+            await update.message.reply_video(
                 timeout=5000,
                 video=open(downloaded_video_path, "rb"),
                 caption=caption,
             )
 
-            message.delete()
+            await message.delete()
             util.delete_file(downloaded_video_path)
 
         except Exception as e:
             logger.error("[ytdl] Caught error in ytdl download e={}", e)
-            message.edit_text("Error downloading the video! (〃＞＿＜;〃) {}".format(e))
+            await message.edit_text("Error downloading the video! (〃＞＿＜;〃) {}".format(e))
             raise e
 
     except Exception as e:

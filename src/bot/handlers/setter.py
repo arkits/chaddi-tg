@@ -1,14 +1,14 @@
 import math
 from typing import List
 from loguru import logger
-from telegram.user import User
+from telegram import Update, User
+from telegram.ext import ContextTypes
+from telegram.constants import ParseMode
 from src.db import Bakchod
 from src.domain import util, dc
-from telegram import ParseMode
-from telegram import Update
 
 
-def handle(update: Update, context):
+async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     dc.log_command_usage("set", update)
 
@@ -26,7 +26,7 @@ def handle(update: Update, context):
 
     logger.info("[set] returning response='{}'", response)
 
-    update.message.reply_text(text=response, parse_mode=ParseMode.MARKDOWN)
+    await update.message.reply_text(text=response, parse_mode=ParseMode.MARKDOWN)
 
 
 def parse_request(

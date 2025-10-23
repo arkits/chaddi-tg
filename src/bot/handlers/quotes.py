@@ -1,6 +1,8 @@
 from loguru import logger
 from peewee import DoesNotExist
-from telegram import Update, ParseMode
+from telegram import Update
+from telegram.ext import ContextTypes
+from telegram.constants import ParseMode
 from src.domain import dc, util, config
 from src.db import Quote, quote as quote_dao
 import random
@@ -17,7 +19,7 @@ MESSAGE_TRY_ADDING = (
 MESSAGE_ADDED_QUOTE = "✏️ Rote memorization successful! You can retrive this Quote by posting <code>/quotes get {}</code>"
 
 
-def handle(update: Update, context):
+async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
 
@@ -40,14 +42,14 @@ def handle(update: Update, context):
             if update.message.reply_to_message.text:
                 q = quote_dao.add_quote_from_update(update)
                 response = MESSAGE_ADDED_QUOTE.format(q.quote_id)
-                update.message.reply_text(text=response, parse_mode=ParseMode.HTML)
+                await update.message.reply_text(text=response, parse_mode=ParseMode.HTML)
 
         elif command == "remove":
             if util.is_admin_tg_user(update.message.from_user):
                 try:
                     id_to_remove = query[2]
                 except:
-                    update.message.reply_text(
+                    await update.message.reply_text(
                         text="Please include the Quote ID you want to remove!",
                         parse_mode=ParseMode.HTML,
                     )
@@ -63,7 +65,7 @@ def handle(update: Update, context):
             else:
                 response = "Chal kat re bsdk!"
 
-            update.message.reply_text(text=response, parse_mode=ParseMode.HTML)
+            await update.message.reply_text(text=response, parse_mode=ParseMode.HTML)
 
         elif command == "get":
 
@@ -72,7 +74,7 @@ def handle(update: Update, context):
             try:
                 quote_id = query[2]
             except:
-                update.message.reply_text(
+                await update.message.reply_text(
                     text="Please include the Quote ID you want to get!",
                     parse_mode=ParseMode.HTML,
                 )
@@ -86,7 +88,7 @@ def handle(update: Update, context):
 
                 group_id = util.get_group_id_from_update(update)
                 if group_id is None:
-                    update.message.reply_text(text="Can't run this command here!")
+                    await update.message.reply_text(text="Can't run this command here!")
                     return
 
                 # Return a random quote
@@ -94,7 +96,7 @@ def handle(update: Update, context):
 
                 if quote is None:
                     logger.info("[quotes] No quotes found! - group_id={}", group_id)
-                    update.message.reply_text(
+                    await update.message.reply_text(
                         text="No quotes found for this Group! You can add quotes with `/quotes add`",
                         parse_mode=ParseMode.MARKDOWN,
                     )
@@ -106,13 +108,13 @@ def handle(update: Update, context):
 
             pretty_quote = generate_pretty_quote(quote)
             response = response + pretty_quote
-            update.message.reply_text(text=response, parse_mode=ParseMode.HTML)
+            await update.message.reply_text(text=response, parse_mode=ParseMode.HTML)
 
         else:
 
             group_id = util.get_group_id_from_update(update)
             if group_id is None:
-                update.message.reply_text(text="Can't run this command here!")
+                await update.message.reply_text(text="Can't run this command here!")
                 return
 
             quote = get_random_quote_from_group(group_id)
@@ -121,7 +123,7 @@ def handle(update: Update, context):
 
             pretty_quote = pretty_quote + "\n" + MESSAGE_TRY_ADDING
 
-            update.message.reply_text(text=pretty_quote, parse_mode=ParseMode.HTML)
+            await update.message.reply_text(text=pretty_quote, parse_mode=ParseMode.HTML)
 
     except Exception as e:
         logger.error(

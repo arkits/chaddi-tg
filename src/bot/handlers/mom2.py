@@ -1,7 +1,8 @@
 from loguru import logger
 from telegram import Update
+from telegram.ext import ContextTypes
+from telegram.constants import ParseMode
 from src.domain import dc, util, config
-from telegram import ParseMode
 import traceback
 from . import mom
 
@@ -15,7 +16,7 @@ mom_response_blacklist = [BOT_USERNAME]
 COMMAND_COST = 200
 
 
-def handle(update: Update, context):
+async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
 
@@ -27,7 +28,7 @@ def handle(update: Update, context):
             return
 
         if not util.paywall_user(initiator_id, COMMAND_COST):
-            update.message.reply_text(
+            await update.message.reply_text(
                 "Sorry! You don't have enough ₹okda! Each `/mom2` costs {} ₹okda.".format(
                     COMMAND_COST
                 ),
@@ -47,10 +48,10 @@ def handle(update: Update, context):
         logger.info("[mom2] returning response='{}'", response)
 
         if update.message.reply_to_message:
-            update.message.reply_to_message.reply_text(response)
+            await update.message.reply_to_message.reply_text(response)
             return
         else:
-            update.message.reply_text(response)
+            await update.message.reply_text(response)
             return
 
     except Exception as e:
