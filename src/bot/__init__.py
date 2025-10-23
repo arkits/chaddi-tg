@@ -34,9 +34,8 @@ def run_telegram_bot():
     dispatcher.add_handler(CommandHandler("gamble", handlers.gamble.handle))
     dispatcher.add_handler(CommandHandler("sutta", handlers.sutta.handle))
 
-    dispatcher.add_handler(CommandHandler("mom", handlers.mom.handle))
+    dispatcher.add_handler(CommandHandler("mom", handlers.mom3.handle))
     dispatcher.add_handler(CommandHandler("mom2", handlers.mom2.handle))
-    dispatcher.add_handler(CommandHandler("mom3", handlers.mom3.handle))
 
     dispatcher.add_handler(CommandHandler("set", handlers.setter.handle))
     dispatcher.add_handler(CommandHandler("chutiya", handlers.chutiya.handle))
