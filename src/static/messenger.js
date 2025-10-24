@@ -15,6 +15,7 @@ const state = {
     hasMore: true,
   },
   selectedGroupId: null,
+  deeplinkGroupId: null,
 };
 
 // DOM Elements
@@ -29,6 +30,13 @@ const selectedGroupId = document.getElementById('selectedGroupId');
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+  // Check for deep link group_id in URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const groupId = urlParams.get('group_id');
+  if (groupId) {
+    state.deeplinkGroupId = groupId;
+  }
+
   loadGroups();
   setupScrollListeners();
 });
@@ -59,6 +67,18 @@ async function loadGroups() {
     data.groups.forEach(group => renderGroup(group));
 
     state.groups.currentPage++;
+
+    // Check for deep link after first page load
+    if (state.groups.currentPage === 2 && state.deeplinkGroupId) {
+      const group = state.groups.data.find(g => g.group_id == state.deeplinkGroupId);
+      if (group) {
+        selectGroup(group);
+        state.deeplinkGroupId = null; // Clear after use
+      } else if (state.groups.hasMore) {
+        // Group not found yet, load more pages
+        await loadGroups();
+      }
+    }
   } catch (error) {
     console.error('Error loading groups:', error);
     groupsList.innerHTML = '<div class="loading-indicator" style="color: #dc3545;">Error loading groups</div>';
@@ -99,7 +119,12 @@ function selectGroup(group) {
   document.querySelectorAll('.group-item').forEach(item => {
     item.classList.remove('active');
   });
-  document.querySelector(`[data-group-id="${group.group_id}"]`).classList.add('active');
+  const selectedElement = document.querySelector(`[data-group-id="${group.group_id}"]`);
+  if (selectedElement) {
+    selectedElement.classList.add('active');
+    // Scroll the selected group into view
+    selectedElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
 
   selectedGroupName.textContent = group.name;
   selectedGroupId.textContent = `ID: ${group.group_id}`;

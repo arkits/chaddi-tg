@@ -3,30 +3,6 @@
 {% block head %}
 {{ super() }}
 <style>
-  .hero-card {
-    background: #1a1d1f;
-    border: 1px solid #2d3135;
-    border-radius: 16px;
-    padding: 2.5rem;
-    margin-bottom: 2rem;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-  }
-
-  .hero-title {
-    font-size: 2.5rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, #5ca7ff 0%, #0d6efd 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 0.5rem;
-  }
-
-  .hero-subtitle {
-    color: #8b8d90;
-    font-size: 1.125rem;
-  }
-
   .metrics-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -188,12 +164,6 @@
 {% endblock %}
 {% block content %}
 <div class="container-lg" style="padding-top: 2rem;">
-  <!-- Hero Section -->
-  <div class="hero-card">
-    <h1 class="hero-title">chaddi-tg Dashboard</h1>
-    <p class="hero-subtitle">Monitor your Telegram bot activity and statistics in real-time</p>
-  </div>
-
   <!-- Main Metrics -->
   <h2 class="section-title">📊 Overview</h2>
   <div class="metrics-grid">
