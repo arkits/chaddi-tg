@@ -7,7 +7,7 @@ from telegram.ext import ContextTypes
 
 from src.domain import config, dc, util
 
-from . import mom
+from . import mom_spacy
 
 app_config = config.get_config()
 
@@ -34,7 +34,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             return
 
-        target_message = mom.extract_target_message(update)
+        target_message = mom_spacy.extract_target_message(update)
         if target_message is None:
             logger.info("[aao] target_message was None!")
             return

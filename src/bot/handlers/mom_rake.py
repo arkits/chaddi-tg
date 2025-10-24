@@ -7,7 +7,7 @@ from telegram.ext import ContextTypes
 
 from src.domain import config, dc, util
 
-from . import mom
+from . import mom_spacy
 
 app_config = config.get_config()
 
@@ -36,12 +36,12 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         protagonist = util.extract_pretty_name_from_tg_user(update.message.from_user)
 
-        message = mom.extract_target_message(update)
+        message = mom_spacy.extract_target_message(update)
         if message is None:
             logger.info("[mom2] message was None!")
             return
 
-        response = mom.rake_joke(message, protagonist)
+        response = mom_spacy.rake_joke(message, protagonist)
 
         logger.info("[mom2] returning response='{}'", response)
 

@@ -7,7 +7,7 @@ from peewee import DoesNotExist
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from src.bot.handlers import mom, roll
+from src.bot.handlers import mom_spacy, roll
 from src.db import EMPTY_JSON, Bakchod, GroupMember, bakchod_dao, group_dao
 from src.domain import dc, rokda, util
 
@@ -114,7 +114,7 @@ async def handle_bakchod_metadata_effects(
                             update.message.text,
                         )
 
-                        response = mom.joke_mom(update.message.text, "Chaddi", True)
+                        response = mom_spacy.joke_mom(update.message.text, "Chaddi", True)
 
                         await update.message.reply_text(response)
                         return

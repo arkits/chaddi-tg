@@ -7,7 +7,7 @@ from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
-from src.bot.handlers import mom
+from src.bot.handlers import mom_spacy
 from src.domain import config, dc, util
 
 app_config = config.get_config()
@@ -32,21 +32,21 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if not util.paywall_user(initiator_id, COMMAND_COST):
             await update.message.reply_text(
-                f"Sorry! You don't have enough ₹okda! Each `/mom3` costs {COMMAND_COST} ₹okda.",
+                f"Sorry! You don't have enough ₹okda! Each `/mom` costs {COMMAND_COST} ₹okda.",
                 parse_mode=ParseMode.MARKDOWN,
             )
             return
 
         protagonist = util.extract_pretty_name_from_tg_user(update.message.from_user)
 
-        message = mom.extract_target_message(update)
+        message = mom_spacy.extract_target_message(update)
         if message is None:
             logger.info("[mom3] message was None!")
             return
 
         # Send immediate response
         if update.message.reply_to_message:
-            sent_message = await update.message.reply_to_message.reply_text("generating response...")
+            sent_message = await update.message.reply_to_message.reply_text("٩(◕‿◕｡)۶ generating response...")
         else:
             sent_message = await update.message.reply_text("generating response...")
 
@@ -57,13 +57,39 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         logger.debug("[mom3] prompt={} \n {}", instructions, input)
 
-        response = client.responses.create(
-            model="gpt-5-mini", instructions=instructions, input=input
+        # Generate multiple jokes
+        num_jokes = 4
+        jokes = []
+
+        logger.info("[mom3] generating {} jokes...", num_jokes)
+
+        for i in range(num_jokes):
+            response = client.responses.create(
+                model="gpt-5-mini", instructions=instructions, input=input
+            )
+            joke = response.output_text.strip()
+            jokes.append(joke)
+            logger.info("[mom3] joke {}: '{}'", i + 1, joke)
+
+        # Now have LLM pick the funniest one
+        logger.info("[mom3] asking LLM to pick the funniest joke...")
+        await sent_message.edit_text("(o´▽`o) generating clap back...")
+
+        selection_prompt = "You are a comedy expert. From the following mom jokes, pick the funniest one. Only return the joke itself, nothing else.\n\n"
+        for i, joke in enumerate(jokes, 1):
+            selection_prompt += f"Joke {i}: {joke}\n\n"
+
+        logger.debug("[mom3] selection prompt: {}", selection_prompt)
+
+        selection_response = client.responses.create(
+            model="gpt-5-mini",
+            instructions="You are a comedy expert evaluating jokes. Pick the funniest joke and return ONLY that joke, word for word, with no additional commentary.",
+            input=selection_prompt
         )
 
-        output_text = response.output_text.strip()
+        output_text = selection_response.output_text.strip()
 
-        logger.info("[mom3] openai response='{}'", output_text)
+        logger.info("[mom3] selected joke: '{}'", output_text)
 
         response = output_text
 
