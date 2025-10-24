@@ -377,6 +377,144 @@ def quick_model_to_dict(model):
     return json.loads(json.dumps(model_to_dict(model), sort_keys=True, default=str))
 
 
+@router.get("/dashboard/metrics", response_class=JSONResponse)
+async def get_dashboard_metrics(request: Request):
+    """Get basic dashboard metrics"""
+    try:
+        from datetime import datetime, timedelta
+
+        bakchods_count = Bakchod.select().count()
+        groups_count = Group.select().count()
+        messages_count = Message.select().count()
+        quotes_count = Quote.select().count()
+
+        from src.db import Roll, ScheduledJob
+
+        roll_count = Roll.select().count()
+        jobs_count = ScheduledJob.select().count()
+
+        # Get recent activity stats (last 24 hours)
+        last_24h = datetime.now() - timedelta(hours=24)
+        recent_messages = Message.select().where(Message.time_sent >= last_24h).count()
+        recent_bakchods = Bakchod.select().where(Bakchod.lastseen >= last_24h).count()
+
+        response = {
+            "bakchods_count": bakchods_count,
+            "groups_count": groups_count,
+            "messages_count": messages_count,
+            "quotes_count": quotes_count,
+            "roll_count": roll_count,
+            "jobs_count": jobs_count,
+            "recent_messages": recent_messages,
+            "recent_bakchods": recent_bakchods,
+        }
+
+        return JSONResponse(content=response, status_code=200)
+
+    except Exception as e:
+        logger.error("Caught Exception - e={}", e)
+        return handle_http_error(str(e), 500)
+
+
+@router.get("/dashboard/activity", response_class=JSONResponse)
+async def get_dashboard_activity(request: Request):
+    """Get most active users and groups"""
+    try:
+        # Get most active bakchod
+        most_active_bakchod = (
+            Bakchod.select(Bakchod, fn.COUNT(Message.id).alias("msg_count"))
+            .join(Message, on=(Message.from_bakchod == Bakchod.tg_id))
+            .group_by(Bakchod)
+            .order_by(fn.COUNT(Message.id).desc())
+            .first()
+        )
+
+        # Get most active group
+        most_active_group = (
+            Group.select(Group, fn.COUNT(Message.id).alias("msg_count"))
+            .join(Message, on=(Message.to_id == Group.group_id))
+            .group_by(Group)
+            .order_by(fn.COUNT(Message.id).desc())
+            .first()
+        )
+
+        # Get latest message timestamp
+        latest_message = Message.select().order_by(Message.time_sent.desc()).first()
+
+        response = {
+            "most_active_bakchod": {
+                "pretty_name": most_active_bakchod.pretty_name if most_active_bakchod else None,
+                "username": most_active_bakchod.username if most_active_bakchod else None,
+            }
+            if most_active_bakchod
+            else None,
+            "most_active_group": {
+                "name": most_active_group.name if most_active_group else None,
+            }
+            if most_active_group
+            else None,
+            "latest_message_time": str(latest_message.time_sent) if latest_message else None,
+        }
+
+        return JSONResponse(content=response, status_code=200)
+
+    except Exception as e:
+        logger.error("Caught Exception - e={}", e)
+        return handle_http_error(str(e), 500)
+
+
+@router.get("/dashboard/random-quote", response_class=JSONResponse)
+async def get_dashboard_random_quote(request: Request):
+    """Get a random quote"""
+    try:
+        random_quote = Quote.select().order_by(fn.Random()).first()
+
+        if not random_quote:
+            return JSONResponse(content={"quote": None}, status_code=200)
+
+        response = {
+            "quote": {
+                "text": random_quote.text,
+                "created": str(random_quote.created),
+                "author_bakchod": {
+                    "pretty_name": random_quote.author_bakchod.pretty_name,
+                    "username": random_quote.author_bakchod.username,
+                },
+                "quoted_in_group": {
+                    "name": random_quote.quoted_in_group.name,
+                },
+            }
+        }
+
+        return JSONResponse(content=response, status_code=200)
+
+    except Exception as e:
+        logger.error("Caught Exception - e={}", e)
+        return handle_http_error(str(e), 500)
+
+
+@router.get("/dashboard/version", response_class=JSONResponse)
+async def get_dashboard_version(request: Request):
+    """Get version information"""
+    try:
+        from src.domain import version
+
+        v = version.get_version()
+
+        response = {
+            "semver": str(v["semver"]) if v.get("semver") else "unknown",
+            "git_commit_id": str(v["git_commit_id"]) if v.get("git_commit_id") else "unknown",
+            "git_commit_time": str(v["git_commit_time"]) if v.get("git_commit_time") else "unknown",
+            "pretty_uptime": str(v["pretty_uptime"]) if v.get("pretty_uptime") else "unknown",
+        }
+
+        return JSONResponse(content=response, status_code=200)
+
+    except Exception as e:
+        logger.error("Caught Exception - e={}", e)
+        return handle_http_error(str(e), 500)
+
+
 def handle_http_error(error_description, status_code):
     error_response = {
         "error": f"Caught fatal exception in {inspect.stack()[1][3]}",

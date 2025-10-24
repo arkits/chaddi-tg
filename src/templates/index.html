@@ -198,62 +198,56 @@
   <h2 class="section-title">📊 Overview</h2>
   <div class="metrics-grid">
     <div class="metric-card">
-      <div class="metric-value">{{bakchods_count | tonumber_pretty}}</div>
+      <div class="metric-value" id="bakchods-count">...</div>
       <div class="metric-label">👥 Users</div>
-      {% if recent_bakchods > 0 %}
-      <div class="metric-change">+{{recent_bakchods}} active (24h)</div>
-      {% endif %}
+      <div class="metric-change" id="recent-bakchods" style="display: none;"></div>
     </div>
 
     <div class="metric-card">
-      <div class="metric-value">{{groups_count | tonumber_pretty}}</div>
+      <div class="metric-value" id="groups-count">...</div>
       <div class="metric-label">💬 Groups</div>
     </div>
 
     <div class="metric-card">
-      <div class="metric-value">{{messages_count | tonumber_pretty}}</div>
+      <div class="metric-value" id="messages-count">...</div>
       <div class="metric-label">✉️ Messages</div>
-      {% if recent_messages > 0 %}
-      <div class="metric-change">+{{recent_messages}} (24h)</div>
-      {% endif %}
+      <div class="metric-change" id="recent-messages" style="display: none;"></div>
     </div>
 
     <div class="metric-card">
-      <div class="metric-value">{{quotes_count | tonumber_pretty}}</div>
+      <div class="metric-value" id="quotes-count">...</div>
       <div class="metric-label">💭 Quotes</div>
     </div>
 
     <div class="metric-card">
-      <div class="metric-value">{{roll_count | tonumber_pretty}}</div>
+      <div class="metric-value" id="roll-count">...</div>
       <div class="metric-label">🎲 Rolls</div>
     </div>
 
     <div class="metric-card">
-      <div class="metric-value">{{jobs_count | tonumber_pretty}}</div>
+      <div class="metric-value" id="jobs-count">...</div>
       <div class="metric-label">⏰ Jobs</div>
     </div>
   </div>
 
   <!-- Random Quote -->
-  {% if random_quote %}
-  <h2 class="section-title">💭 Quote of the Day</h2>
-  <div class="quote-card">
-    <div class="quote-text">
-      {{random_quote.text}}
-    </div>
-    <div class="quote-meta">
-      <div>
-        <span class="quote-author">— {{random_quote.author_bakchod.pretty_name or random_quote.author_bakchod.username or "Unknown"}}</span>
-      </div>
-      <div>
-        <span class="quote-group">📍 {{random_quote.quoted_in_group.name or "Unknown Group"}}</span>
-      </div>
-      <div>
-        <span class="quote-date">🕐 {{random_quote.created.strftime('%Y-%m-%d')}}</span>
+  <div id="quote-section" style="display: none;">
+    <h2 class="section-title">💭 Quote of the Day</h2>
+    <div class="quote-card">
+      <div class="quote-text" id="quote-text">Loading...</div>
+      <div class="quote-meta">
+        <div>
+          <span class="quote-author" id="quote-author">—</span>
+        </div>
+        <div>
+          <span class="quote-group" id="quote-group">📍</span>
+        </div>
+        <div>
+          <span class="quote-date" id="quote-date">🕐</span>
+        </div>
       </div>
     </div>
   </div>
-  {% endif %}
 
   <!-- Activity & System Info -->
   <div class="info-grid">
@@ -261,35 +255,29 @@
     <div>
       <h2 class="section-title">🔥 Activity</h2>
       <div class="activity-card">
-        {% if most_active_bakchod %}
-        <div class="activity-item">
+        <div class="activity-item" id="most-active-user-item">
           <span class="activity-label">Most Active User</span>
-          <span class="activity-value">{{most_active_bakchod.pretty_name or most_active_bakchod.username or "Unknown"}}</span>
+          <span class="activity-value" id="most-active-user">...</span>
         </div>
-        {% endif %}
 
-        {% if most_active_group %}
-        <div class="activity-item">
+        <div class="activity-item" id="most-active-group-item">
           <span class="activity-label">Most Active Group</span>
-          <span class="activity-value">{{most_active_group.name or "Unknown"}}</span>
+          <span class="activity-value" id="most-active-group">...</span>
         </div>
-        {% endif %}
 
-        {% if latest_message %}
-        <div class="activity-item">
+        <div class="activity-item" id="latest-message-item">
           <span class="activity-label">Latest Message</span>
-          <span class="activity-value">{{latest_message.time_sent.strftime('%Y-%m-%d %H:%M')}}</span>
+          <span class="activity-value" id="latest-message">...</span>
         </div>
-        {% endif %}
 
         <div class="activity-item">
           <span class="activity-label">Active Users (24h)</span>
-          <span class="activity-value">{{recent_bakchods}}</span>
+          <span class="activity-value" id="active-users-24h">...</span>
         </div>
 
         <div class="activity-item">
           <span class="activity-label">Messages (24h)</span>
-          <span class="activity-value">{{recent_messages}}</span>
+          <span class="activity-value" id="messages-24h">...</span>
         </div>
       </div>
     </div>
@@ -300,25 +288,27 @@
       <div class="activity-card">
         <div class="activity-item">
           <span class="activity-label">Version</span>
-          <span class="activity-value">{{version_info.semver}}</span>
+          <span class="activity-value" id="version">...</span>
         </div>
 
         <div class="activity-item">
           <span class="activity-label">Git Commit</span>
-          <span class="activity-value" style="font-family: monospace; font-size: 0.8125rem;">{{version_info.git_commit_id[:8]}}</span>
+          <span class="activity-value" id="git-commit" style="font-family: monospace; font-size: 0.8125rem;">...</span>
         </div>
 
         <div class="activity-item">
           <span class="activity-label">Commit Time</span>
-          <span class="activity-value" style="font-size: 0.8125rem;">{{version_info.git_commit_time}}</span>
+          <span class="activity-value" id="commit-time" style="font-size: 0.8125rem;">...</span>
         </div>
 
         <div class="activity-item">
           <span class="activity-label">Uptime</span>
-          <span class="activity-value">{{version_info.pretty_uptime}}</span>
+          <span class="activity-value" id="uptime">...</span>
         </div>
       </div>
     </div>
   </div>
 </div>
+
+<script src="/static/dashboard.js"></script>
 {% endblock %}

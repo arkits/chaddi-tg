@@ -41,64 +41,11 @@ templates.env.filters["tonumber_pretty"] = to_pretty_number
 
 @router.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    from datetime import datetime, timedelta
-    from peewee import fn
-
-    bakchods_count = Bakchod.select().count()
-    groups_count = Group.select().count()
-    messages_count = Message.select().count()
-    quotes_count = Quote.select().count()
-    roll_count = Roll.select().count()
-    jobs_count = ScheduledJob.select().count()
-
-    # Get recent activity stats (last 24 hours)
-    last_24h = datetime.now() - timedelta(hours=24)
-    recent_messages = Message.select().where(Message.time_sent >= last_24h).count()
-    recent_bakchods = Bakchod.select().where(Bakchod.lastseen >= last_24h).count()
-
-    # Get most active bakchod
-    most_active_bakchod = (
-        Bakchod.select(Bakchod, fn.COUNT(Message.id).alias("msg_count"))
-        .join(Message, on=(Message.from_bakchod == Bakchod.tg_id))
-        .group_by(Bakchod)
-        .order_by(fn.COUNT(Message.id).desc())
-        .first()
-    )
-
-    # Get most active group
-    most_active_group = (
-        Group.select(Group, fn.COUNT(Message.id).alias("msg_count"))
-        .join(Message, on=(Message.to_id == Group.group_id))
-        .group_by(Group)
-        .order_by(fn.COUNT(Message.id).desc())
-        .first()
-    )
-
-    # Get latest message timestamp
-    latest_message = Message.select().order_by(Message.time_sent.desc()).first()
-
-    # Get random quote
-    random_quote = Quote.select().order_by(fn.Random()).first()
-
-    v = version.get_version()
-
+    # Render page immediately without data - data will be loaded via API
     return templates.TemplateResponse(
         "index.html",
         {
             "request": request,
-            "bakchods_count": bakchods_count,
-            "groups_count": groups_count,
-            "messages_count": messages_count,
-            "quotes_count": quotes_count,
-            "roll_count": roll_count,
-            "jobs_count": jobs_count,
-            "recent_messages": recent_messages,
-            "recent_bakchods": recent_bakchods,
-            "most_active_bakchod": most_active_bakchod,
-            "most_active_group": most_active_group,
-            "latest_message": latest_message,
-            "random_quote": random_quote,
-            "version_info": v,
         },
     )
 
@@ -298,12 +245,13 @@ async def get_commands(request: Request):
     weekly_commands = CommandUsage.select().where(CommandUsage.executed_at >= last_7d).count()
 
     # Get top commands by usage
-    top_commands = (
+    top_commands_query = (
         CommandUsage.select(CommandUsage.command_name, fn.COUNT(CommandUsage.id).alias("count"))
         .group_by(CommandUsage.command_name)
         .order_by(fn.COUNT(CommandUsage.id).desc())
         .limit(10)
     )
+    top_commands = [{"command_name": row.command_name, "count": row.count} for row in top_commands_query]
 
     # Get recent command executions
     recent_executions = (
@@ -313,7 +261,7 @@ async def get_commands(request: Request):
     )
 
     # Get commands by group
-    commands_by_group = (
+    commands_by_group_query = (
         CommandUsage.select(
             Group.name,
             fn.COUNT(CommandUsage.id).alias("count")
@@ -323,9 +271,10 @@ async def get_commands(request: Request):
         .order_by(fn.COUNT(CommandUsage.id).desc())
         .limit(10)
     )
+    commands_by_group = [{"name": row.group.name, "count": row.count} for row in commands_by_group_query]
 
     # Get commands by user
-    commands_by_user = (
+    commands_by_user_query = (
         CommandUsage.select(
             Bakchod.pretty_name,
             Bakchod.username,
@@ -337,6 +286,14 @@ async def get_commands(request: Request):
         .order_by(fn.COUNT(CommandUsage.id).desc())
         .limit(10)
     )
+    commands_by_user = [
+        {
+            "pretty_name": row.from_bakchod.pretty_name,
+            "username": row.from_bakchod.username,
+            "count": row.count
+        }
+        for row in commands_by_user_query
+    ]
 
     # Get hourly distribution for last 24 hours
     hourly_data = []
