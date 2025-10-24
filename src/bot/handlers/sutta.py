@@ -35,9 +35,9 @@ async def update_sutta(context: ContextTypes.DEFAULT_TYPE):
     try:
         job = context.job
 
-        chat_id = job.context["chat_id"]
-        message_id = job.context["message_id"]
-        bakchod_id = job.context["bakchod_id"]
+        chat_id = job.data["chat_id"]
+        message_id = job.data["message_id"]
+        bakchod_id = job.data["bakchod_id"]
 
         b = Bakchod.get_by_id(bakchod_id)
         if b is None:
@@ -105,5 +105,5 @@ async def start_sutta(update: Update, context: ContextTypes.DEFAULT_TYPE):
         update_sutta,
         interval=3,
         first=0,
-        context=job_context,
+        data=job_context,
     )
