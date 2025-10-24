@@ -27,7 +27,7 @@ NM_IMG_URLS = [
     "https://i.imgur.com/rpyGAWw.png",
     "https://i.imgur.com/U9JUnNO.png",
 ]
-NM_IMG_LOCATIONS = ["bottom_right", "bottom_left"]
+NM_IMG_LOCATIONS = ["bottom_right", "bottom_left", "top_right", "top_left", "center"]
 
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -47,26 +47,37 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Handle photo message
         if update.message.reply_to_message.photo:
-            file = await acquire_file(update, context)
+            try:
+                file = await acquire_file(update, context)
 
-            src_img = Image.open(build_file_path(file))
-            src_img_width, src_img_height = src_img.size
-            logger.debug("src_img_width={} src_img_height={}", src_img_width, src_img_height)
+                src_img = Image.open(build_file_path(file))
+                src_img_width, src_img_height = src_img.size
+                logger.debug("src_img_width={} src_img_height={}", src_img_width, src_img_height)
 
-            # Place NM_IMG
-            nm_img_location = random.choice(NM_IMG_LOCATIONS)
-            place_image(src_img, nm_img, location=nm_img_location)
+                # Place NM_IMG with random location and scale
+                nm_img_location = random.choice(NM_IMG_LOCATIONS)
+                nm_img_scale = random.uniform(1.5, 3.0)
+                logger.info("nm_img_location={} nm_img_scale={:.2f}", nm_img_location, nm_img_scale)
+                place_image(src_img, nm_img, location=nm_img_location, scale=nm_img_scale)
 
-            src_img.save(build_file_path(file, "_tynm"))
+                src_img.save(build_file_path(file, "_tynm"))
 
-            with open(build_file_path(file, "_tynm"), "rb") as photo_to_upload:
-                logger.info("[tynm] uploading completed photo")
-                await update.message.reply_photo(
-                    photo=photo_to_upload,
+                with open(build_file_path(file, "_tynm"), "rb") as photo_to_upload:
+                    logger.info("[tynm] uploading completed photo")
+                    await update.message.reply_photo(
+                        photo=photo_to_upload,
+                    )
+
+                util.delete_file(build_file_path(file))
+                util.delete_file(build_file_path(file, "_tynm"))
+
+            except Exception as e:
+                logger.error(
+                    "Caught error in photo message handling. e={} traceback={}",
+                    e,
+                    traceback.format_exc(),
                 )
-
-            util.delete_file(build_file_path(file))
-            util.delete_file(build_file_path(file, "_tynm"))
+                await update.message.reply_text("Failed to process photo. Please try again.")
 
         # Handle text message
         elif update.message.reply_to_message.text:
@@ -239,10 +250,15 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 fill=(255, 255, 255),
             )
 
-            # nm_image composition
+            # nm_image composition with random location and scale
+            nm_img_location = random.choice(NM_IMG_LOCATIONS)
+            nm_img_scale = random.uniform(1.5, 3.0)
+            logger.info("nm_img_location={} nm_img_scale={:.2f}", nm_img_location, nm_img_scale)
             place_image(
                 img,
                 nm_img,
+                location=nm_img_location,
+                scale=nm_img_scale,
             )
 
             # Generate filename and file path
@@ -302,7 +318,7 @@ def place_image(src_img: Image, placement_img: Image, scale=2, location="bottom_
     placement_img = ImageOps.contain(
         placement_img,
         (int(src_img_width / scale), int(src_img_height / scale)),
-        Image.ANTIALIAS,
+        Image.LANCZOS,
     )
 
     placement_img_width, placement_img_height = placement_img.size
@@ -315,7 +331,7 @@ def place_image(src_img: Image, placement_img: Image, scale=2, location="bottom_
     if location == "bottom_right":
         src_img.paste(
             placement_img,
-            (src_img_width - placement_img_width, src_img_height - placement_img_width),
+            (src_img_width - placement_img_width, src_img_height - placement_img_height),
             placement_img,
         )
 
@@ -325,6 +341,32 @@ def place_image(src_img: Image, placement_img: Image, scale=2, location="bottom_
         src_img.paste(
             placement_img,
             (0, src_img_height - placement_img_height),
+            placement_img,
+        )
+
+    elif location == "top_right":
+        src_img.paste(
+            placement_img,
+            (src_img_width - placement_img_width, 0),
+            placement_img,
+        )
+
+    elif location == "top_left":
+        placement_img = ImageOps.mirror(placement_img)
+
+        src_img.paste(
+            placement_img,
+            (0, 0),
+            placement_img,
+        )
+
+    elif location == "center":
+        src_img.paste(
+            placement_img,
+            (
+                (src_img_width - placement_img_width) // 2,
+                (src_img_height - placement_img_height) // 2,
+            ),
             placement_img,
         )
 
