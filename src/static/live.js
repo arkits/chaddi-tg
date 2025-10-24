@@ -22,9 +22,7 @@ autoScrollToggle.addEventListener("change", (e) => {
 
 // Socket.IO connection
 const socket = io({
-  path: window.location.host.includes("localhost")
-    ? "/socket.io"
-    : "/ws/socket.io",
+  path: "/socket.io",
 });
 
 socket.on("connect", function () {
