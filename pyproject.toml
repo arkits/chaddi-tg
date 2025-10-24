@@ -2,7 +2,7 @@
 name = "chaddi-tg"
 version = "0.1.0"
 description = "Telegram bot"
-requires-python = ">=3.10"
+requires-python = ">=3.13"
 dependencies = [
     "youtube-dl==2021.12.17",
     "en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl",
@@ -53,7 +53,7 @@ dev = [
 
 [tool.ruff]
 # Set the target Python version
-target-version = "py310"
+target-version = "py313"
 
 # Exclude common directories
 exclude = [
