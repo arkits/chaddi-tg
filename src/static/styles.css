@@ -1,7 +1,286 @@
+/* Global Dark Theme Styles */
 body {
   font-family: "Inter", sans-serif;
+  background-color: #0d0f11 !important;
+  color: #e0e3e6 !important;
 }
 
+/* Override Halfmoon defaults for dark theme */
+.page-wrapper {
+  background-color: #0d0f11 !important;
+}
+
+.content-wrapper {
+  background-color: #0d0f11 !important;
+}
+
+.navbar {
+  background-color: #1a1d1f !important;
+  border-bottom: 1px solid #2d3135 !important;
+}
+
+.navbar-brand {
+  color: #e0e3e6 !important;
+}
+
+.nav-link {
+  color: #adb5bd !important;
+}
+
+.nav-link:hover {
+  color: #e0e3e6 !important;
+}
+
+/* Cards */
+.card {
+  background-color: #1a1d1f !important;
+  border: 1px solid #2d3135 !important;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+.card-title {
+  color: #e4e6eb !important;
+  border-bottom: 1px solid #2d3135;
+  padding-bottom: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+/* Tables */
+.table {
+  color: #e0e3e6 !important;
+  background-color: #1a1d1f !important;
+}
+
+.table thead th {
+  background-color: #232628 !important;
+  color: #e4e6eb !important;
+  border-bottom: 2px solid #3a3f44 !important;
+  font-weight: 600;
+}
+
+.table tbody tr {
+  border-bottom: 1px solid #2d3135 !important;
+}
+
+.table tbody tr:hover {
+  background-color: #232628 !important;
+}
+
+.table td, .table th {
+  border-color: #2d3135 !important;
+  padding: 0.75rem !important;
+}
+
+.table-hover tbody tr:hover {
+  background-color: #232628 !important;
+}
+
+/* Buttons */
+.btn {
+  border: 1px solid #3a3f44 !important;
+  transition: all 0.2s ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.btn-primary {
+  background-color: #0d6efd !important;
+  color: #fff !important;
+}
+
+.btn-primary:hover {
+  background-color: #0b5ed7 !important;
+}
+
+/* Forms */
+input, textarea, select {
+  background-color: #232628 !important;
+  color: #e0e3e6 !important;
+  border: 1px solid #3a3f44 !important;
+}
+
+input:focus, textarea:focus, select:focus {
+  background-color: #2d3135 !important;
+  border-color: #0d6efd !important;
+  outline: none;
+}
+
+/* Alerts */
+.alert {
+  border: 1px solid #3a3f44 !important;
+}
+
+.alert-success {
+  background-color: #1a3a2a !important;
+  color: #7dffb3 !important;
+  border-color: #28a745 !important;
+}
+
+.alert-danger {
+  background-color: #3a1a1a !important;
+  color: #ff7d7d !important;
+  border-color: #dc3545 !important;
+}
+
+/* Links */
+a {
+  color: #5ca7ff !important;
+}
+
+a:hover {
+  color: #8fc5ff !important;
+  text-decoration: none;
+}
+
+/* Stats/Metrics Cards */
+.stat-card {
+  background: linear-gradient(135deg, #1e2022 0%, #232628 100%);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid #2d3135;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  border-color: #3a3f44;
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #e4e6eb;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, #5ca7ff 0%, #0d6efd 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: #8b8d90;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.stat-icon {
+  font-size: 2.5rem;
+  opacity: 0.2;
+  position: absolute;
+  right: 1rem;
+  top: 1rem;
+}
+
+/* Dropdown */
+.dropdown-menu {
+  background-color: #1a1d1f !important;
+  border: 1px solid #2d3135 !important;
+}
+
+.dropdown-item {
+  color: #adb5bd !important;
+}
+
+.dropdown-item:hover {
+  background-color: #232628 !important;
+  color: #e0e3e6 !important;
+}
+
+/* Text utilities */
+.text-muted {
+  color: #8b8d90 !important;
+}
+
+.text-right {
+  color: #adb5bd !important;
+}
+
+.text-left {
+  color: #e0e3e6 !important;
+}
+
+/* Quote specific */
 .quote-text {
   font-family: "Inter", sans-serif;
+  color: #e0e3e6 !important;
+}
+
+/* Container improvements */
+.container-md, .container-lg, .container-fluid {
+  padding-top: 2rem;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+  color: #e4e6eb !important;
+}
+
+/* Row spacing */
+.row {
+  margin-bottom: 1rem;
+}
+
+/* Dashboard specific */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+/* Chart container */
+.chart-container {
+  background-color: #1a1d1f;
+  border: 1px solid #2d3135;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Badge */
+.badge {
+  padding: 0.35rem 0.65rem;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.badge-primary {
+  background-color: #0d6efd;
+  color: white;
+}
+
+.badge-success {
+  background-color: #28a745;
+  color: white;
+}
+
+.badge-info {
+  background-color: #17a2b8;
+  color: white;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0d0f11;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3a3f44;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4a4f54;
 }
