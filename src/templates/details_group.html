@@ -1,7 +1,8 @@
-{% extends "base.html" %} {% block title %}Group Details{% endblock %} {% block
-head %} {{ super() }} {% endblock %} {% block content %}
+{% extends "base.html" %}
+{% block title %}Group Details{% endblock %}
+{% block head %} {{ super() }} {% endblock %}
+{% block content %}
 <div class="container-lg">
-  <br />
   <nav>
     <ul class="breadcrumb">
       <li class="breadcrumb-item">details</li>
@@ -13,8 +14,6 @@ head %} {{ super() }} {% endblock %} {% block content %}
       </li>
     </ul>
   </nav>
-  <br />
-  <h1>{{group.name}}</h1>
 
   {% if response_message %}
   <div class="alert {{response_message.alert_type}}" role="alert">
@@ -23,87 +22,101 @@ head %} {{ super() }} {% endblock %} {% block content %}
   </div>
   {% endif %}
 
-  <table class="table">
-    <tbody>
-      <tr>
-        <th class="text-right">ID:</th>
-        <td class="text-left">{{group.group_id}}</td>
-      </tr>
-      <tr>
-        <th class="text-right">Created:</th>
-        <td class="text-left">{{group.created}}</td>
-      </tr>
-      <tr>
-        <th class="text-right">Updated:</th>
-        <td class="text-left">{{group.updated}}</td>
-      </tr>
-      <tr>
-        <th class="text-right">Members:</th>
-        <td class="text-left">{{groupmembers|length}}</td>
-      </tr>
-      <tr>
-        <th class="text-right">Messages:</th>
-        <td class="text-left">
-          {{message_count}}
-          <a
-            href="/details/messages?group_id={{group.group_id}}"
-            class="btn btn-primary"
-            role="button"
-            >View</a
-          >
-        </td>
-      </tr>
-    </tbody>
-  </table>
+  <div class="page-header">
+    <h1>{{group.name}}</h1>
+    <p class="text-muted">Group ID: {{group.group_id}}</p>
+  </div>
 
-  <h3>Message</h3>
+  <div class="card">
+    <div class="card-body">
+      <h3 class="card-title">Group Information</h3>
+      <table class="table">
+        <tbody>
+          <tr>
+            <th class="text-right">ID:</th>
+            <td class="text-left"><span class="badge badge-info">{{group.group_id}}</span></td>
+          </tr>
+          <tr>
+            <th class="text-right">Created:</th>
+            <td class="text-left">{{group.created}}</td>
+          </tr>
+          <tr>
+            <th class="text-right">Updated:</th>
+            <td class="text-left">{{group.updated}}</td>
+          </tr>
+          <tr>
+            <th class="text-right">Members:</th>
+            <td class="text-left"><span class="badge badge-primary">{{groupmembers|length}}</span></td>
+          </tr>
+          <tr>
+            <th class="text-right">Messages:</th>
+            <td class="text-left">
+              <span class="badge badge-success">{{message_count}}</span>
+              <a
+                href="/details/messages?group_id={{group.group_id}}"
+                class="btn btn-primary btn-sm"
+                role="button"
+                style="margin-left: 1rem;"
+                >View Messages</a
+              >
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 
-  <form method="POST" action="/api/bot/send_message">
-    <input type="hidden" name="group_id" value="{{group.group_id}}" />
-    <input class="form-control" type="text" name="message" value="" /><br />
-    <input
-      class="btn btn-primary"
-      type="submit"
-      value="Send Message to Group"
-    />
-    <br />
-  </form>
+  <div class="card">
+    <div class="card-body">
+      <h3 class="card-title">Send Message</h3>
+      <form method="POST" action="/api/bot/send_message">
+        <input type="hidden" name="group_id" value="{{group.group_id}}" />
+        <div class="form-group">
+          <label for="message-input">Message Text</label>
+          <input id="message-input" class="form-control" type="text" name="message" value="" placeholder="Enter your message here..." />
+        </div>
+        <button class="btn btn-primary" type="submit">Send Message to Group</button>
+      </form>
+    </div>
+  </div>
 
-  <br />
-  <br />
-  <br />
-
-  <h3>Group Members</h3>
-
-  <table class="table">
-    <thead>
-      <tr>
-        <th>id</th>
-        <th>username</th>
-        <th>pretty_name</th>
-        <th>rokda</th>
-        <th>lastseen</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for groupmember in groupmembers %}
-      <tr>
-        <th>{{groupmember.bakchod.tg_id}}</th>
-        <td>{{groupmember.bakchod.username}}</td>
-        <td>{{groupmember.bakchod.pretty_name}}</td>
-        <td>{{groupmember.bakchod.rokda}}</td>
-        <td>{{groupmember.bakchod.lastseen}}</td>
-        <td>
-          <a
-            href="/details/bakchod?tg_id={{groupmember.bakchod.tg_id}}"
-            class="btn btn-primary"
-            role="button"
-            >View Details</a
-          >
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="card">
+    <div class="card-body">
+      <h3 class="card-title">Group Members ({{groupmembers|length}})</h3>
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Username</th>
+              <th>Name</th>
+              <th>Rokda</th>
+              <th>Last Seen</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for groupmember in groupmembers %}
+            <tr>
+              <td><span class="badge badge-info">{{groupmember.bakchod.tg_id}}</span></td>
+              <td><strong>{{groupmember.bakchod.username}}</strong></td>
+              <td>{{groupmember.bakchod.pretty_name}}</td>
+              <td><span class="badge badge-success">{{groupmember.bakchod.rokda}}</span></td>
+              <td>{{groupmember.bakchod.lastseen}}</td>
+              <td>
+                <a
+                  href="/details/bakchod?tg_id={{groupmember.bakchod.tg_id}}"
+                  class="btn btn-primary btn-sm"
+                  role="button"
+                  >View Details</a
+                >
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}

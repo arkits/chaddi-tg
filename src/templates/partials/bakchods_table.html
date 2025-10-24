@@ -1,31 +1,33 @@
-<table class="table">
-  <thead>
-    <tr>
-      <th>id</th>
-      <th>username</th>
-      <th>pretty_name</th>
-      <th>rokda</th>
-      <th>lastseen</th>
-      <td>details</td>
-    </tr>
-  </thead>
-  <tbody>
-    {% for bakchod in bakchods %}
-    <tr>
-      <th>{{bakchod.tg_id}}</th>
-      <td>{{bakchod.username}}</td>
-      <td>{{bakchod.pretty_name}}</td>
-      <td>{{bakchod.rokda}}</td>
-      <td>{{bakchod.lastseen}}</td>
-      <td>
-        <a
-          href="/details/bakchod?tg_id={{bakchod.tg_id}}"
-          class="btn btn-primary"
-          role="button"
-          >View Details</a
-        >
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div class="table-responsive">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Username</th>
+        <th>Name</th>
+        <th>Rokda</th>
+        <th>Last Seen</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for bakchod in bakchods %}
+      <tr>
+        <td><span class="badge badge-info">{{bakchod.tg_id}}</span></td>
+        <td><strong>{{bakchod.username}}</strong></td>
+        <td>{{bakchod.pretty_name}}</td>
+        <td><span class="badge badge-success">{{bakchod.rokda}}</span></td>
+        <td>{{bakchod.lastseen}}</td>
+        <td>
+          <a
+            href="/details/bakchod?tg_id={{bakchod.tg_id}}"
+            class="btn btn-primary btn-sm"
+            role="button"
+            >View Details</a
+          >
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

@@ -77,6 +77,9 @@ async def index(request: Request):
     # Get latest message timestamp
     latest_message = Message.select().order_by(Message.time_sent.desc()).first()
 
+    # Get random quote
+    random_quote = Quote.select().order_by(fn.Random()).first()
+
     v = version.get_version()
 
     return templates.TemplateResponse(
@@ -94,6 +97,7 @@ async def index(request: Request):
             "most_active_bakchod": most_active_bakchod,
             "most_active_group": most_active_group,
             "latest_message": latest_message,
+            "random_quote": random_quote,
             "version_info": v,
         },
     )
@@ -357,5 +361,15 @@ async def get_commands(request: Request):
             "commands_by_group": commands_by_group,
             "commands_by_user": commands_by_user,
             "hourly_data": hourly_data,
+        },
+    )
+
+
+@router.get("/messenger", response_class=HTMLResponse)
+async def get_messenger(request: Request):
+    return templates.TemplateResponse(
+        "messenger.html",
+        {
+            "request": request,
         },
     )

@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport" />
+  <meta name="viewport" content="width=device-width" />
+
+  <title>Messenger - chaddi-tg</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Inter", sans-serif;
+      background-color: #0d0f11;
+      color: #e0e3e6;
+      overflow: hidden;
+      height: 100vh;
+    }
+
+    /* Main Layout */
+    .messenger-container {
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* Groups Pane */
+    .groups-pane {
+      width: 350px;
+      background-color: #1a1d1f;
+      border-right: 1px solid #2d3135;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .groups-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid #2d3135;
+      background-color: #1a1d1f;
+    }
+
+    .groups-header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #e4e6eb;
+      margin-bottom: 0.5rem;
+    }
+
+    .groups-header p {
+      font-size: 0.875rem;
+      color: #8b8d90;
+    }
+
+    .groups-list {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    .group-item {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid #2d3135;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .group-item:hover {
+      background-color: #232628;
+    }
+
+    .group-item.active {
+      background-color: #0d6efd;
+    }
+
+    .group-item.active .group-name,
+    .group-item.active .group-updated {
+      color: white !important;
+    }
+
+    .group-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .group-name {
+      font-weight: 600;
+      color: #e4e6eb;
+      margin-bottom: 0.25rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .group-updated {
+      font-size: 0.75rem;
+      color: #8b8d90;
+    }
+
+    .loading-indicator {
+      text-align: center;
+      padding: 1rem;
+      color: #8b8d90;
+      font-size: 0.875rem;
+    }
+
+    /* Messages Pane */
+    .messages-pane {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background-color: #0d0f11;
+      overflow: hidden;
+    }
+
+    .messages-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid #2d3135;
+      background-color: #1a1d1f;
+    }
+
+    .messages-header h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #e4e6eb;
+      margin-bottom: 0.25rem;
+    }
+
+    .messages-header .group-id {
+      font-size: 0.875rem;
+      color: #8b8d90;
+      font-family: monospace;
+    }
+
+    .messages-list {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column-reverse;
+    }
+
+    .message-item {
+      background-color: #1a1d1f;
+      border: 1px solid #2d3135;
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+      transition: all 0.2s ease;
+    }
+
+    .message-item:hover {
+      background-color: #232628;
+      border-color: #3a3f44;
+    }
+
+    .message-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .message-author {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .author-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #0d6efd, #5ca7ff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 0.75rem;
+      color: white;
+    }
+
+    .author-name {
+      font-weight: 600;
+      color: #5ca7ff;
+      font-size: 0.9375rem;
+    }
+
+    .message-time {
+      font-size: 0.75rem;
+      color: #8b8d90;
+    }
+
+    .message-text {
+      color: #e0e3e6;
+      line-height: 1.6;
+      word-wrap: break-word;
+      white-space: pre-wrap;
+    }
+
+    .message-id {
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid #2d3135;
+      font-size: 0.75rem;
+      color: #8b8d90;
+      font-family: monospace;
+    }
+
+    .empty-state {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      color: #8b8d90;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .empty-state-icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+      opacity: 0.3;
+    }
+
+    .empty-state h3 {
+      font-size: 1.25rem;
+      margin-bottom: 0.5rem;
+      color: #adb5bd;
+    }
+
+    .empty-state p {
+      font-size: 0.875rem;
+    }
+
+    /* Scrollbar */
+    .groups-list::-webkit-scrollbar,
+    .messages-list::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .groups-list::-webkit-scrollbar-track,
+    .messages-list::-webkit-scrollbar-track {
+      background: #0d0f11;
+    }
+
+    .groups-list::-webkit-scrollbar-thumb,
+    .messages-list::-webkit-scrollbar-thumb {
+      background: #3a3f44;
+      border-radius: 4px;
+    }
+
+    .groups-list::-webkit-scrollbar-thumb:hover,
+    .messages-list::-webkit-scrollbar-thumb:hover {
+      background: #4a4f54;
+    }
+
+    /* Back button */
+    .back-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background-color: #232628;
+      border: 1px solid #2d3135;
+      border-radius: 6px;
+      color: #e0e3e6;
+      text-decoration: none;
+      font-size: 0.875rem;
+      transition: all 0.2s ease;
+      margin-bottom: 1rem;
+    }
+
+    .back-button:hover {
+      background-color: #2d3135;
+      border-color: #3a3f44;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .groups-pane {
+        width: 100%;
+        display: none;
+      }
+
+      .groups-pane.mobile-show {
+        display: flex;
+      }
+
+      .messages-pane {
+        display: none;
+      }
+
+      .messages-pane.mobile-show {
+        display: flex;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="messenger-container">
+    <!-- Groups Pane -->
+    <div class="groups-pane" id="groupsPane">
+      <div class="groups-header">
+        <a href="/" class="back-button">
+          ← Back to Dashboard
+        </a>
+        <h1>Groups</h1>
+        <p id="groupsCount">Loading...</p>
+      </div>
+      <div class="groups-list" id="groupsList">
+        <div class="loading-indicator">Loading groups...</div>
+      </div>
+    </div>
+
+    <!-- Messages Pane -->
+    <div class="messages-pane" id="messagesPane">
+      <div class="empty-state" id="emptyState">
+        <div class="empty-state-icon">💬</div>
+        <h3>Select a Group</h3>
+        <p>Choose a group from the left to view messages</p>
+      </div>
+      <div id="messagesContainer" style="display: none; flex: 1; flex-direction: column; overflow: hidden;">
+        <div class="messages-header" id="messagesHeader">
+          <h2 id="selectedGroupName">Group Name</h2>
+          <div class="group-id" id="selectedGroupId">Group ID</div>
+        </div>
+        <div class="messages-list" id="messagesList">
+          <div class="loading-indicator">Loading messages...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/messenger.js"></script>
+</body>
+</html>
