@@ -1,64 +1,248 @@
-{% extends "base.html" %} {% block title %}Index{% endblock %} {% block head %}
-{{ super() }} {% endblock %} {% block content %}
-<div class="container-md">
-  <div class="card">
-    <h2 class="card-title">Welcome to chaddi-tg!</h2>
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block head %}
+{{ super() }}
+<style>
+  .hero-card {
+    background: linear-gradient(135deg, #1a1d1f 0%, #232628 100%);
+    border: 1px solid #2d3135;
+    border-radius: 16px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  }
+
+  .hero-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #5ca7ff 0%, #0d6efd 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+  }
+
+  .hero-subtitle {
+    color: #8b8d90;
+    font-size: 1.125rem;
+  }
+
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+  }
+
+  .metric-card {
+    background: linear-gradient(135deg, #1e2022 0%, #232628 100%);
+    border: 1px solid #2d3135;
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .metric-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+    border-color: #3a3f44;
+  }
+
+  .metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, #0d6efd, #5ca7ff);
+  }
+
+  .metric-value {
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: #e4e6eb;
+    margin-bottom: 0.25rem;
+  }
+
+  .metric-label {
+    color: #8b8d90;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+  }
+
+  .metric-change {
+    font-size: 0.75rem;
+    color: #28a745;
+    margin-top: 0.5rem;
+  }
+
+  .activity-card {
+    background: #1a1d1f;
+    border: 1px solid #2d3135;
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+
+  .activity-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 1rem;
+    background: #232628;
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+    border: 1px solid #2d3135;
+    transition: all 0.2s ease;
+  }
+
+  .activity-item:hover {
+    background: #2d3135;
+    transform: translateX(4px);
+  }
+
+  .activity-label {
+    color: #adb5bd;
+    font-size: 0.9375rem;
+  }
+
+  .activity-value {
+    color: #e4e6eb;
+    font-weight: 600;
+  }
+
+  .section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #e4e6eb;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #2d3135;
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+  }
+</style>
+{% endblock %}
+{% block content %}
+<div class="container-lg">
+  <!-- Hero Section -->
+  <div class="hero-card">
+    <h1 class="hero-title">chaddi-tg Dashboard</h1>
+    <p class="hero-subtitle">Monitor your Telegram bot activity and statistics in real-time</p>
   </div>
 
-  <div class="card">
-    <h2 class="card-title">System Stats</h2>
-    <div class="container-fluid">
-      <div class="row">
-        <div class="col-sm">
-          <h2>{{bakchods_count | tonumber_pretty}}</h2>
-          Bakchods
-        </div>
-        <div class="col-sm">
-          <h2>{{groups_count | tonumber_pretty}}</h2>
-          Groups
-        </div>
-        <div class="col-sm">
-          <h2>{{messages_count | tonumber_pretty}}</h2>
-          Messages
-        </div>
-        <div class="col-sm">
-          <h2>{{quotes_count | tonumber_pretty}}</h2>
-          Quotes
-        </div>
-        <div class="col-sm">
-          <h2>{{roll_count | tonumber_pretty}}</h2>
-          Rolls
-        </div>
-      </div>
+  <!-- Main Metrics -->
+  <h2 class="section-title">📊 Overview</h2>
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-value">{{bakchods_count | tonumber_pretty}}</div>
+      <div class="metric-label">👥 Users</div>
+      {% if recent_bakchods > 0 %}
+      <div class="metric-change">+{{recent_bakchods}} active (24h)</div>
+      {% endif %}
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-value">{{groups_count | tonumber_pretty}}</div>
+      <div class="metric-label">💬 Groups</div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-value">{{messages_count | tonumber_pretty}}</div>
+      <div class="metric-label">✉️ Messages</div>
+      {% if recent_messages > 0 %}
+      <div class="metric-change">+{{recent_messages}} (24h)</div>
+      {% endif %}
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-value">{{quotes_count | tonumber_pretty}}</div>
+      <div class="metric-label">💭 Quotes</div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-value">{{roll_count | tonumber_pretty}}</div>
+      <div class="metric-label">🎲 Rolls</div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-value">{{jobs_count | tonumber_pretty}}</div>
+      <div class="metric-label">⏰ Jobs</div>
     </div>
   </div>
 
-  <div class="card">
-    <h2 class="card-title">Version Info</h2>
+  <!-- Activity & System Info -->
+  <div class="info-grid">
+    <!-- Activity Section -->
+    <div>
+      <h2 class="section-title">🔥 Activity</h2>
+      <div class="activity-card">
+        {% if most_active_bakchod %}
+        <div class="activity-item">
+          <span class="activity-label">Most Active User</span>
+          <span class="activity-value">{{most_active_bakchod.pretty_name or most_active_bakchod.username or "Unknown"}}</span>
+        </div>
+        {% endif %}
 
-    <table class="table">
-      <tbody>
-        <tr>
-          <td class="text-right">chaddi-tg version</td>
-          <td class="text-left">{{version_info.semver}}</td>
-        </tr>
+        {% if most_active_group %}
+        <div class="activity-item">
+          <span class="activity-label">Most Active Group</span>
+          <span class="activity-value">{{most_active_group.name or "Unknown"}}</span>
+        </div>
+        {% endif %}
 
-        <tr>
-          <td class="text-right">Git Commit ID</td>
-          <td class="text-left">{{version_info.git_commit_id}}</td>
-        </tr>
+        {% if latest_message %}
+        <div class="activity-item">
+          <span class="activity-label">Latest Message</span>
+          <span class="activity-value">{{latest_message.time_sent.strftime('%Y-%m-%d %H:%M')}}</span>
+        </div>
+        {% endif %}
 
-        <tr>
-          <td class="text-right">Git Commit Time</td>
-          <td class="text-left">{{version_info.git_commit_time}}</td>
-        </tr>
+        <div class="activity-item">
+          <span class="activity-label">Active Users (24h)</span>
+          <span class="activity-value">{{recent_bakchods}}</span>
+        </div>
 
-        <tr>
-          <td class="text-right">Uptime</td>
-          <td class="text-left">{{version_info.pretty_uptime}}</td>
-        </tr>
-      </tbody>
-    </table>
+        <div class="activity-item">
+          <span class="activity-label">Messages (24h)</span>
+          <span class="activity-value">{{recent_messages}}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- System Info Section -->
+    <div>
+      <h2 class="section-title">⚙️ System Info</h2>
+      <div class="activity-card">
+        <div class="activity-item">
+          <span class="activity-label">Version</span>
+          <span class="activity-value">{{version_info.semver}}</span>
+        </div>
+
+        <div class="activity-item">
+          <span class="activity-label">Git Commit</span>
+          <span class="activity-value" style="font-family: monospace; font-size: 0.8125rem;">{{version_info.git_commit_id[:8]}}</span>
+        </div>
+
+        <div class="activity-item">
+          <span class="activity-label">Commit Time</span>
+          <span class="activity-value" style="font-size: 0.8125rem;">{{version_info.git_commit_time}}</span>
+        </div>
+
+        <div class="activity-item">
+          <span class="activity-label">Uptime</span>
+          <span class="activity-value">{{version_info.pretty_uptime}}</span>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %}

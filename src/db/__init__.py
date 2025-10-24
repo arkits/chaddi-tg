@@ -101,5 +101,14 @@ class ScheduledJob(BaseModel):
     job_context = BinaryJSONField(default=EMPTY_JSON)
 
 
+class CommandUsage(BaseModel):
+    id = AutoField()
+    command_name = CharField()
+    executed_at = DateTimeField()
+    from_bakchod = ForeignKeyField(Bakchod, backref="command_usage", null=True)
+    group = ForeignKeyField(Group, backref="command_usage", null=True)
+    metadata = BinaryJSONField(default=EMPTY_JSON)
+
+
 db.connect()
-db.create_tables([Bakchod, Message, Group, GroupMember, Quote, Roll, ScheduledJob])
+db.create_tables([Bakchod, Message, Group, GroupMember, Quote, Roll, ScheduledJob, CommandUsage])

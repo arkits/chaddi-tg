@@ -1,0 +1,431 @@
+{% extends "base.html" %}
+{% block title %}Command Usage{% endblock %}
+{% block head %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  .dashboard-header {
+    background: linear-gradient(135deg, #1a1d1f 0%, #232628 100%);
+    border: 1px solid #2d3135;
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  }
+
+  .dashboard-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #e4e6eb;
+    margin-bottom: 0.5rem;
+  }
+
+  .dashboard-subtitle {
+    color: #8b8d90;
+    font-size: 1rem;
+  }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-box {
+    background: linear-gradient(135deg, #1e2022 0%, #232628 100%);
+    border: 1px solid #2d3135;
+    border-radius: 12px;
+    padding: 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-box::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, #0d6efd, #5ca7ff);
+  }
+
+  .stat-box-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #e4e6eb;
+    margin-bottom: 0.25rem;
+  }
+
+  .stat-box-label {
+    color: #8b8d90;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .chart-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .chart-card {
+    background: #1a1d1f;
+    border: 1px solid #2d3135;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  .chart-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #e4e6eb;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #2d3135;
+  }
+
+  .list-card {
+    background: #1a1d1f;
+    border: 1px solid #2d3135;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.875rem 1rem;
+    background: #232628;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    border: 1px solid #2d3135;
+    transition: all 0.2s ease;
+  }
+
+  .list-item:hover {
+    background: #2d3135;
+    transform: translateX(4px);
+  }
+
+  .list-item-name {
+    color: #e0e3e6;
+    font-weight: 500;
+  }
+
+  .list-item-value {
+    background: #0d6efd;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .timeline-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background: #232628;
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+    border-left: 3px solid #0d6efd;
+    transition: all 0.2s ease;
+  }
+
+  .timeline-item:hover {
+    background: #2d3135;
+    border-left-color: #5ca7ff;
+  }
+
+  .timeline-command {
+    color: #5ca7ff;
+    font-weight: 600;
+    font-family: monospace;
+  }
+
+  .timeline-user {
+    color: #adb5bd;
+    font-size: 0.875rem;
+  }
+
+  .timeline-time {
+    color: #8b8d90;
+    font-size: 0.8125rem;
+  }
+
+  .section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #e4e6eb;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #2d3135;
+  }
+
+  .bar-chart-item {
+    margin-bottom: 1rem;
+  }
+
+  .bar-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    color: #adb5bd;
+    font-size: 0.875rem;
+  }
+
+  .bar-container {
+    background: #0d0f11;
+    border-radius: 8px;
+    height: 8px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    background: linear-gradient(90deg, #0d6efd, #5ca7ff);
+    height: 100%;
+    border-radius: 8px;
+    transition: width 0.5s ease;
+  }
+</style>
+{% endblock %}
+{% block content %}
+<div class="container-lg">
+  <!-- Header -->
+  <div class="dashboard-header">
+    <h1 class="dashboard-title">⚡ Command Usage Dashboard</h1>
+    <p class="dashboard-subtitle">Track and analyze bot command usage across all groups</p>
+  </div>
+
+  <!-- Stats Overview -->
+  <div class="stats-row">
+    <div class="stat-box">
+      <div class="stat-box-number">{{total_commands | tonumber_pretty}}</div>
+      <div class="stat-box-label">Total Commands</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-box-number">{{recent_commands | tonumber_pretty}}</div>
+      <div class="stat-box-label">Last 24 Hours</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-box-number">{{weekly_commands | tonumber_pretty}}</div>
+      <div class="stat-box-label">Last 7 Days</div>
+    </div>
+  </div>
+
+  <!-- Charts Section -->
+  <h2 class="section-title">📊 Analytics</h2>
+  <div class="chart-grid">
+    <!-- Hourly Activity Chart -->
+    <div class="chart-card" style="grid-column: 1 / -1;">
+      <h3 class="chart-title">24-Hour Activity</h3>
+      <canvas id="hourlyChart"></canvas>
+    </div>
+
+    <!-- Top Commands Chart -->
+    <div class="chart-card">
+      <h3 class="chart-title">Top Commands</h3>
+      <canvas id="topCommandsChart"></canvas>
+    </div>
+
+    <!-- Commands by Group -->
+    <div class="chart-card">
+      <h3 class="chart-title">Commands by Group</h3>
+      <canvas id="groupsChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Lists Section -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem;">
+    <!-- Top Users -->
+    <div class="list-card">
+      <h3 class="chart-title">👑 Top Users</h3>
+      {% if commands_by_user %}
+        {% for user in commands_by_user %}
+        <div class="list-item">
+          <span class="list-item-name">{{user.pretty_name or user.username or "Unknown"}}</span>
+          <span class="list-item-value">{{user.count}}</span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p style="color: #8b8d90; text-align: center; padding: 2rem;">No data available</p>
+      {% endif %}
+    </div>
+
+    <!-- Command Breakdown -->
+    <div class="list-card">
+      <h3 class="chart-title">📝 Command Breakdown</h3>
+      {% if top_commands %}
+        {% set max_count = top_commands[0].count %}
+        {% for cmd in top_commands %}
+        <div class="bar-chart-item">
+          <div class="bar-label">
+            <span>/{{cmd.command_name}}</span>
+            <span>{{cmd.count}} uses</span>
+          </div>
+          <div class="bar-container">
+            <div class="bar-fill" style="width: {{(cmd.count / max_count * 100)}}%"></div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p style="color: #8b8d90; text-align: center; padding: 2rem;">No data available</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Recent Activity -->
+  <h2 class="section-title" style="margin-top: 2rem;">🕐 Recent Activity</h2>
+  <div class="list-card">
+    {% if recent_executions %}
+      {% for execution in recent_executions %}
+      <div class="timeline-item">
+        <div>
+          <span class="timeline-command">/{{execution.command_name}}</span>
+          {% if execution.from_bakchod %}
+          <span class="timeline-user"> by {{execution.from_bakchod.pretty_name or execution.from_bakchod.username or "Unknown"}}</span>
+          {% endif %}
+          {% if execution.group %}
+          <span class="timeline-user"> in {{execution.group.name or "Unknown Group"}}</span>
+          {% endif %}
+        </div>
+        <span class="timeline-time">{{execution.executed_at.strftime('%Y-%m-%d %H:%M:%S')}}</span>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p style="color: #8b8d90; text-align: center; padding: 2rem;">No recent command executions</p>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+  // Chart.js default configuration for dark theme
+  Chart.defaults.color = '#adb5bd';
+  Chart.defaults.borderColor = '#2d3135';
+
+  // Hourly Activity Chart
+  const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
+  const hourlyChart = new Chart(hourlyCtx, {
+    type: 'line',
+    data: {
+      labels: {{ hourly_data | map(attribute='hour') | list | tojson }},
+      datasets: [{
+        label: 'Commands per Hour',
+        data: {{ hourly_data | map(attribute='count') | list | tojson }},
+        borderColor: '#0d6efd',
+        backgroundColor: 'rgba(13, 110, 253, 0.1)',
+        fill: true,
+        tension: 0.4,
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      aspectRatio: 3,
+      plugins: {
+        legend: {
+          display: false
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            precision: 0
+          },
+          grid: {
+            color: '#2d3135'
+          }
+        },
+        x: {
+          grid: {
+            display: false
+          }
+        }
+      }
+    }
+  });
+
+  // Top Commands Chart
+  const topCmdCtx = document.getElementById('topCommandsChart').getContext('2d');
+  const topCommandsChart = new Chart(topCmdCtx, {
+    type: 'doughnut',
+    data: {
+      labels: {{ top_commands | map(attribute='command_name') | list | tojson }},
+      datasets: [{
+        data: {{ top_commands | map(attribute='count') | list | tojson }},
+        backgroundColor: [
+          '#0d6efd', '#6610f2', '#6f42c1', '#d63384', '#dc3545',
+          '#fd7e14', '#ffc107', '#28a745', '#20c997', '#17a2b8'
+        ],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            padding: 15,
+            font: {
+              size: 11
+            }
+          }
+        }
+      }
+    }
+  });
+
+  // Groups Chart
+  const groupsCtx = document.getElementById('groupsChart').getContext('2d');
+  const groupsChart = new Chart(groupsCtx, {
+    type: 'bar',
+    data: {
+      labels: {{ commands_by_group | map(attribute='name') | list | tojson }},
+      datasets: [{
+        label: 'Commands',
+        data: {{ commands_by_group | map(attribute='count') | list | tojson }},
+        backgroundColor: 'rgba(13, 110, 253, 0.8)',
+        borderColor: '#0d6efd',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      indexAxis: 'y',
+      plugins: {
+        legend: {
+          display: false
+        }
+      },
+      scales: {
+        x: {
+          beginAtZero: true,
+          grid: {
+            color: '#2d3135'
+          },
+          ticks: {
+            precision: 0
+          }
+        },
+        y: {
+          grid: {
+            display: false
+          }
+        }
+      }
+    }
+  });
+</script>
+{% endblock %}

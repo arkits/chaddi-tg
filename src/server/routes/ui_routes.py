@@ -9,6 +9,7 @@ from loguru import logger
 from src import bot
 from src.db import (
     Bakchod,
+    CommandUsage,
     Group,
     GroupMember,
     Message,
@@ -40,11 +41,41 @@ templates.env.filters["tonumber_pretty"] = to_pretty_number
 
 @router.get("/", response_class=HTMLResponse)
 async def index(request: Request):
+    from datetime import datetime, timedelta
+    from peewee import fn
+
     bakchods_count = Bakchod.select().count()
     groups_count = Group.select().count()
     messages_count = Message.select().count()
     quotes_count = Quote.select().count()
     roll_count = Roll.select().count()
+    jobs_count = ScheduledJob.select().count()
+
+    # Get recent activity stats (last 24 hours)
+    last_24h = datetime.now() - timedelta(hours=24)
+    recent_messages = Message.select().where(Message.time_sent >= last_24h).count()
+    recent_bakchods = Bakchod.select().where(Bakchod.lastseen >= last_24h).count()
+
+    # Get most active bakchod
+    most_active_bakchod = (
+        Bakchod.select(Bakchod, fn.COUNT(Message.id).alias("msg_count"))
+        .join(Message, on=(Message.from_bakchod == Bakchod.tg_id))
+        .group_by(Bakchod)
+        .order_by(fn.COUNT(Message.id).desc())
+        .first()
+    )
+
+    # Get most active group
+    most_active_group = (
+        Group.select(Group, fn.COUNT(Message.id).alias("msg_count"))
+        .join(Message, on=(Message.to_id == Group.group_id))
+        .group_by(Group)
+        .order_by(fn.COUNT(Message.id).desc())
+        .first()
+    )
+
+    # Get latest message timestamp
+    latest_message = Message.select().order_by(Message.time_sent.desc()).first()
 
     v = version.get_version()
 
@@ -57,6 +88,12 @@ async def index(request: Request):
             "messages_count": messages_count,
             "quotes_count": quotes_count,
             "roll_count": roll_count,
+            "jobs_count": jobs_count,
+            "recent_messages": recent_messages,
+            "recent_bakchods": recent_bakchods,
+            "most_active_bakchod": most_active_bakchod,
+            "most_active_group": most_active_group,
+            "latest_message": latest_message,
             "version_info": v,
         },
     )
@@ -237,4 +274,88 @@ async def get_live(request: Request):
     return templates.TemplateResponse(
         "live.html",
         {"request": request},
+    )
+
+
+@router.get("/commands", response_class=HTMLResponse)
+async def get_commands(request: Request):
+    from datetime import datetime, timedelta
+    from peewee import fn
+
+    # Get total command count
+    total_commands = CommandUsage.select().count()
+
+    # Get commands in last 24 hours
+    last_24h = datetime.now() - timedelta(hours=24)
+    recent_commands = CommandUsage.select().where(CommandUsage.executed_at >= last_24h).count()
+
+    # Get commands in last 7 days
+    last_7d = datetime.now() - timedelta(days=7)
+    weekly_commands = CommandUsage.select().where(CommandUsage.executed_at >= last_7d).count()
+
+    # Get top commands by usage
+    top_commands = (
+        CommandUsage.select(CommandUsage.command_name, fn.COUNT(CommandUsage.id).alias("count"))
+        .group_by(CommandUsage.command_name)
+        .order_by(fn.COUNT(CommandUsage.id).desc())
+        .limit(10)
+    )
+
+    # Get recent command executions
+    recent_executions = (
+        CommandUsage.select()
+        .order_by(CommandUsage.executed_at.desc())
+        .limit(50)
+    )
+
+    # Get commands by group
+    commands_by_group = (
+        CommandUsage.select(
+            Group.name,
+            fn.COUNT(CommandUsage.id).alias("count")
+        )
+        .join(Group, on=(CommandUsage.group == Group.group_id))
+        .group_by(Group.name)
+        .order_by(fn.COUNT(CommandUsage.id).desc())
+        .limit(10)
+    )
+
+    # Get commands by user
+    commands_by_user = (
+        CommandUsage.select(
+            Bakchod.pretty_name,
+            Bakchod.username,
+            fn.COUNT(CommandUsage.id).alias("count")
+        )
+        .join(Bakchod, on=(CommandUsage.from_bakchod == Bakchod.tg_id))
+        .where(Bakchod.pretty_name.is_null(False))
+        .group_by(Bakchod.pretty_name, Bakchod.username)
+        .order_by(fn.COUNT(CommandUsage.id).desc())
+        .limit(10)
+    )
+
+    # Get hourly distribution for last 24 hours
+    hourly_data = []
+    for i in range(24):
+        hour_start = datetime.now() - timedelta(hours=i+1)
+        hour_end = datetime.now() - timedelta(hours=i)
+        count = CommandUsage.select().where(
+            (CommandUsage.executed_at >= hour_start) &
+            (CommandUsage.executed_at < hour_end)
+        ).count()
+        hourly_data.insert(0, {"hour": hour_start.strftime("%H:00"), "count": count})
+
+    return templates.TemplateResponse(
+        "commands.html",
+        {
+            "request": request,
+            "total_commands": total_commands,
+            "recent_commands": recent_commands,
+            "weekly_commands": weekly_commands,
+            "top_commands": top_commands,
+            "recent_executions": recent_executions,
+            "commands_by_group": commands_by_group,
+            "commands_by_user": commands_by_user,
+            "hourly_data": hourly_data,
+        },
     )
