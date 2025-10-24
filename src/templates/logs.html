@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Server Logs{% endblock %}
+{% block title %}Live Activity{% endblock %}
 {% block head %}
 {{ super() }}
 <link rel="stylesheet" href="/static/logs.css" />
@@ -14,26 +14,32 @@
     <!-- Header -->
     <div class="logs-header">
         <div class="logs-header-content">
-            <h1 class="logs-title">Server Logs</h1>
+            <h1 class="logs-title">Live Activity</h1>
             <div class="logs-status">
                 <span class="status-indicator" id="connection-status"></span>
                 <span class="status-text" id="connection-text">Connecting...</span>
             </div>
         </div>
         <div class="logs-controls">
-            <button class="btn btn-sm" id="clear-btn">Clear Display</button>
+            <!-- Filter Toggles -->
+            <div class="filter-toggles">
+                <button class="btn btn-sm filter-btn active" data-filter="all">All</button>
+                <button class="btn btn-sm filter-btn" data-filter="logs">Logs</button>
+                <button class="btn btn-sm filter-btn" data-filter="messages">Messages</button>
+            </div>
+            <button class="btn btn-sm" id="clear-btn">Clear</button>
             <button class="btn btn-sm" id="pause-btn">Pause</button>
         </div>
     </div>
 
-    <!-- Logs Container -->
+    <!-- Activity Container -->
     <div class="logs-body" id="logs-container">
         <div class="logs-list" id="logs-list">
-            <!-- Logs will be inserted here -->
+            <!-- Logs and messages will be inserted here -->
             <div class="welcome-message">
-                <div class="welcome-icon">📋</div>
-                <p>Connecting to log stream...</p>
-                <small>Live server logs from logs/chaddi.log</small>
+                <div class="welcome-icon">📊</div>
+                <p>Connecting to activity stream...</p>
+                <small>Live server logs and messages from Telegram</small>
             </div>
         </div>
     </div>
@@ -42,9 +48,9 @@
     <div class="logs-footer">
         <label class="auto-scroll-toggle">
             <input type="checkbox" id="auto-scroll-toggle" checked>
-            <span>Auto-scroll to new logs</span>
+            <span>Auto-scroll to new activity</span>
         </label>
-        <span class="log-count" id="log-count">0 lines displayed</span>
+        <span class="log-count" id="log-count">0 items displayed</span>
     </div>
 </div>
 

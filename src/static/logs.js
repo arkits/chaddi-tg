@@ -1,12 +1,14 @@
-// Logs page JavaScript - handles Socket.IO log streaming
+// Logs page JavaScript - handles Socket.IO log streaming and live messages
 
-console.log("Logs Viewer initialized!");
+console.log("Live Activity Viewer initialized!");
 
 // State
 let socket = null;
 let isPaused = false;
-let logCount = 0;
+let itemCount = 0;
+let messageCount = 0;
 let autoScroll = true;
+let currentFilter = 'all'; // 'all', 'logs', 'messages'
 
 // DOM elements
 const logsList = document.getElementById('logs-list');
@@ -16,6 +18,7 @@ const clearBtn = document.getElementById('clear-btn');
 const pauseBtn = document.getElementById('pause-btn');
 const autoScrollToggle = document.getElementById('auto-scroll-toggle');
 const logCountEl = document.getElementById('log-count');
+const filterBtns = document.querySelectorAll('.filter-btn');
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
@@ -26,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function setupEventListeners() {
     // Clear button
     clearBtn.addEventListener('click', () => {
-        clearLogs();
+        clearDisplay();
     });
 
     // Pause/Resume button
@@ -38,6 +41,49 @@ function setupEventListeners() {
     autoScrollToggle.addEventListener('change', (e) => {
         autoScroll = e.target.checked;
     });
+
+    // Filter buttons
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const filter = e.target.dataset.filter;
+            setFilter(filter);
+        });
+    });
+}
+
+function setFilter(filter) {
+    currentFilter = filter;
+
+    // Update active button
+    filterBtns.forEach(btn => {
+        if (btn.dataset.filter === filter) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+
+    // Show/hide items based on filter
+    const logLines = logsList.querySelectorAll('.log-line');
+    const messageCards = logsList.querySelectorAll('.message-card');
+
+    logLines.forEach(line => {
+        if (filter === 'all' || filter === 'logs') {
+            line.style.display = '';
+        } else {
+            line.style.display = 'none';
+        }
+    });
+
+    messageCards.forEach(card => {
+        if (filter === 'all' || filter === 'messages') {
+            card.style.display = '';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+
+    updateItemCount();
 }
 
 function initSocketConnection() {
@@ -74,6 +120,16 @@ function initSocketConnection() {
         }
     });
 
+    // Receive live messages
+    socket.on("message", (msg) => {
+        console.log("Received message:", msg);
+        clearWelcomeMessage();
+
+        if (!isPaused) {
+            addMessage(msg.message);
+        }
+    });
+
     // Handle errors
     socket.on("log_error", (data) => {
         console.error("Log stream error:", data.message);
@@ -93,6 +149,8 @@ function addLogLine(content) {
     // Create log line element
     const logLine = document.createElement('div');
     logLine.className = 'log-line';
+    logLine.dataset.type = 'log';
+    logLine.dataset.timestamp = Date.now();
 
     // Parse log level and apply appropriate styling
     const logClass = detectLogLevel(content);
@@ -116,21 +174,95 @@ function addLogLine(content) {
         logLine.textContent = content;
     }
 
+    // Apply filter
+    if (currentFilter === 'messages') {
+        logLine.style.display = 'none';
+    }
+
     // Add to list
     logsList.appendChild(logLine);
-    logCount++;
-    updateLogCount();
+    itemCount++;
+    updateItemCount();
 
-    // Limit to last 500 lines to prevent memory issues
-    const maxLines = 500;
-    if (logsList.children.length > maxLines) {
-        logsList.removeChild(logsList.firstChild);
-        logCount--;
-    }
+    // Limit to last 500 items to prevent memory issues
+    limitItems();
 
     // Auto-scroll if enabled
     if (autoScroll) {
         scrollToBottom();
+    }
+}
+
+function addMessage(message) {
+    const messageCard = document.createElement('div');
+    messageCard.className = 'message-card';
+    messageCard.dataset.type = 'message';
+    messageCard.dataset.timestamp = Date.now();
+
+    // Extract data
+    const fromName = message?.from_bakchod?.pretty_name || 'Unknown';
+    const chatTitle = message?.update?.message?.chat?.title || 'Direct Message';
+    const messageText = message.text || '';
+    const timestamp = message.time_sent;
+    const messageId = message.message_id;
+
+    const userColor = getColorForUser(fromName);
+    const initials = getInitials(fromName);
+
+    messageCard.innerHTML = `
+        <div class="message-avatar" style="background-color: ${userColor}">
+            ${initials}
+        </div>
+        <div class="message-content">
+            <div class="message-header">
+                <div class="message-user-info">
+                    <span class="message-user-name" style="color: ${userColor}">${escapeHtml(fromName)}</span>
+                    <span class="message-chat-badge">${escapeHtml(chatTitle)}</span>
+                </div>
+                <span class="message-timestamp" title="${timestamp}">${formatTimestamp(timestamp)}</span>
+            </div>
+            <div class="message-text">${escapeHtml(messageText)}</div>
+            <div class="message-footer">
+                <span class="message-id">#${messageId}</span>
+            </div>
+        </div>
+    `;
+
+    // Apply filter
+    if (currentFilter === 'logs') {
+        messageCard.style.display = 'none';
+    }
+
+    // Add to list
+    logsList.appendChild(messageCard);
+    itemCount++;
+    messageCount++;
+    updateItemCount();
+
+    // Add animation
+    setTimeout(() => {
+        messageCard.classList.add('message-card-visible');
+    }, 10);
+
+    // Limit items
+    limitItems();
+
+    // Auto-scroll if enabled
+    if (autoScroll) {
+        scrollToBottom();
+    }
+}
+
+function limitItems() {
+    const maxItems = 500;
+    const allItems = logsList.querySelectorAll('.log-line, .message-card');
+
+    if (allItems.length > maxItems) {
+        const itemsToRemove = allItems.length - maxItems;
+        for (let i = 0; i < itemsToRemove; i++) {
+            allItems[i].remove();
+            itemCount--;
+        }
     }
 }
 
@@ -150,15 +282,72 @@ function detectLogLevel(content) {
     return null;
 }
 
+// Helper functions from live.js
+function getInitials(name) {
+    if (!name) return '?';
+    const parts = name.trim().split(' ');
+    if (parts.length === 1) return parts[0][0].toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function getColorForUser(name) {
+    if (!name) return '#6c757d';
+
+    const colors = [
+        '#007bff', '#28a745', '#17a2b8', '#ffc107', '#dc3545',
+        '#6610f2', '#e83e8c', '#fd7e14', '#20c997', '#6f42c1',
+    ];
+
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+
+    return colors[Math.abs(hash) % colors.length];
+}
+
+function formatTimestamp(timestamp) {
+    if (!timestamp) return '';
+
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 7) return `${diffDays}d ago`;
+
+    return date.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    });
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 function updateConnectionStatus(status, text) {
     connectionStatus.className = 'status-indicator status-' + status;
     connectionText.textContent = text;
 }
 
-function clearLogs() {
+function clearDisplay() {
     logsList.innerHTML = '';
-    logCount = 0;
-    updateLogCount();
+    itemCount = 0;
+    messageCount = 0;
+    updateItemCount();
 }
 
 function togglePause() {
@@ -186,13 +375,17 @@ function scrollToBottom() {
     logsContainer.scrollTop = logsContainer.scrollHeight;
 }
 
-function updateLogCount() {
-    logCountEl.textContent = `${logCount} line${logCount !== 1 ? 's' : ''} displayed`;
+function updateItemCount() {
+    const visibleItems = Array.from(logsList.querySelectorAll('.log-line, .message-card'))
+        .filter(item => item.style.display !== 'none').length;
+
+    logCountEl.textContent = `${visibleItems} item${visibleItems !== 1 ? 's' : ''} displayed`;
 }
 
 function showError(message) {
     const errorDiv = document.createElement('div');
     errorDiv.className = 'log-line log-error';
+    errorDiv.dataset.type = 'log';
     errorDiv.textContent = `ERROR: ${message}`;
     logsList.appendChild(errorDiv);
 

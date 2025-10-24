@@ -220,14 +220,6 @@ async def get_jobs(request: Request):
     )
 
 
-@router.get("/live", response_class=HTMLResponse)
-async def get_live(request: Request):
-    return templates.TemplateResponse(
-        "live.html",
-        {"request": request},
-    )
-
-
 @router.get("/commands", response_class=HTMLResponse)
 async def get_commands(request: Request):
     from datetime import datetime, timedelta
