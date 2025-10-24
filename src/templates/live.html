@@ -1,25 +1,49 @@
-{% extends "base.html" %} {% block title %}Live{% endblock %} {% block head %}
-{{ super() }} {% endblock %} {% block content %}
+{% extends "base.html" %}
+{% block title %}Live Messages{% endblock %}
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" href="/static/live.css" />
+{% endblock %}
+{% block content %}
 <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"
     integrity="sha384-fKnu0iswBIqkjxrhQCTZ7qlLHOFEgNkRmK2vaO/LbTZSXdJfAu6ewRBdwHPhBo/H"
     crossorigin="anonymous"></script>
 <script defer src="/static/live.js"></script>
-<div class="container-lg">
-    <center>
-        <h1>Live</h1>
-    </center>
+
+<div class="live-messenger-container">
+    <!-- Header -->
+    <div class="messenger-header">
+        <div class="messenger-header-content">
+            <h1 class="messenger-title">Live Messages</h1>
+            <div class="messenger-status">
+                <span class="status-indicator" id="connection-status"></span>
+                <span class="status-text" id="connection-text">Connecting...</span>
+            </div>
+        </div>
+        <div class="messenger-stats">
+            <span class="stat-badge" id="message-count">0 messages</span>
+        </div>
+    </div>
+
+    <!-- Messages Container -->
+    <div class="messenger-body" id="messages-container">
+        <div class="messages-list" id="messages-list">
+            <!-- Messages will be inserted here -->
+            <div class="welcome-message">
+                <div class="welcome-icon">💬</div>
+                <p>Waiting for live messages...</p>
+                <small>Messages from your Telegram groups will appear here in real-time</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auto-scroll toggle -->
+    <div class="messenger-footer">
+        <label class="auto-scroll-toggle">
+            <input type="checkbox" id="auto-scroll-toggle" checked>
+            <span>Auto-scroll to new messages</span>
+        </label>
+    </div>
 </div>
-<table class="table table-hover">
-    <thead>
-        <tr>
-            <th style="width:200px">time_sent</th>
-            <th style="width:100px">message_id</th>
-            <th style="width:400px">from</th>
-            <th style="width:400px">to</th>
-            <th>text</th>
-        </tr>
-    </thead>
-    <tbody id="messages-table-body">
-    </tbody>
-</table>
+
 {% endblock %}
