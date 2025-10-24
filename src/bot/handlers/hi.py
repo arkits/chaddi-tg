@@ -17,8 +17,4 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE, log_to_dc=T
 
 def random_reply():
     replies = ["hi", "bc", "mmll", "...", "🙏 NAMASKAR MANDALI 🙏"]
-
-    random.seed(datetime.datetime.now())
-    random_int = random.randint(0, len(replies) - 1)
-
-    return replies[random_int]
+    return random.choice(replies)

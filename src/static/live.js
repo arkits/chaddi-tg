@@ -1,7 +1,7 @@
 console.log("Live!");
 
 const socket = io({
-  path: "/ws/socket.io",
+  path: "/socket.io",
 });
 
 socket.on("connect", function () {
