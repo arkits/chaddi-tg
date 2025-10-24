@@ -67,7 +67,8 @@ def sync_persistence_data(update: Update):
 
     group_dao.log_group_from_update(update)
 
-    asyncio.run(
+    # Create a task to emit the message asynchronously without blocking
+    asyncio.create_task(
         socket_manager.emit(
             "message",
             {"message": json.loads(json.dumps(model_to_dict(m), default=str))},
