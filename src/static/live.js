@@ -22,8 +22,9 @@ autoScrollToggle.addEventListener("change", (e) => {
 
 // Socket.IO connection
 const socket = io({
-  path: "/ws/socket.io", // for agnee
-  // path: "/socket.io", // for local dev
+  path: window.location.host.includes("localhost")
+    ? "/socket.io"
+    : "/ws/socket.io",
 });
 
 socket.on("connect", function () {
@@ -68,7 +69,9 @@ function updateConnectionStatus(connected) {
 
 // Update message count
 function updateMessageCount() {
-  messageCountEl.textContent = `${messageCount} message${messageCount !== 1 ? 's' : ''}`;
+  messageCountEl.textContent = `${messageCount} message${
+    messageCount !== 1 ? "s" : ""
+  }`;
 }
 
 // Scroll to bottom
@@ -89,9 +92,16 @@ function getColorForUser(name) {
   if (!name) return "#6c757d";
 
   const colors = [
-    "#007bff", "#28a745", "#17a2b8", "#ffc107",
-    "#dc3545", "#6610f2", "#e83e8c", "#fd7e14",
-    "#20c997", "#6f42c1"
+    "#007bff",
+    "#28a745",
+    "#17a2b8",
+    "#ffc107",
+    "#dc3545",
+    "#6610f2",
+    "#e83e8c",
+    "#fd7e14",
+    "#20c997",
+    "#6f42c1",
   ];
 
   let hash = 0;
@@ -121,11 +131,11 @@ function formatTimestamp(timestamp) {
   if (diffDays < 7) return `${diffDays}d ago`;
 
   // Format as date and time
-  return date.toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
+  return date.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
@@ -151,10 +161,14 @@ function addMessage(message) {
     <div class="message-content">
       <div class="message-header">
         <div class="message-user-info">
-          <span class="message-user-name" style="color: ${userColor}">${escapeHtml(fromName)}</span>
+          <span class="message-user-name" style="color: ${userColor}">${escapeHtml(
+    fromName
+  )}</span>
           <span class="message-chat-badge">${escapeHtml(chatTitle)}</span>
         </div>
-        <span class="message-timestamp" title="${timestamp}">${formatTimestamp(timestamp)}</span>
+        <span class="message-timestamp" title="${timestamp}">${formatTimestamp(
+    timestamp
+  )}</span>
       </div>
       <div class="message-text">${escapeHtml(messageText)}</div>
       <div class="message-footer">
