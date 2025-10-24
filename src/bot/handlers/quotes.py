@@ -153,7 +153,7 @@ def get_random_quote_from_group(group_id: str) -> Quote:
         for quote in all_quotes_in_group:
             all_quotes.append(quote)
 
-        random.seed(datetime.datetime.now())
+        random.seed(datetime.datetime.now().timestamp())
 
         random.shuffle(all_quotes)
 

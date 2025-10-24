@@ -27,7 +27,7 @@ def random_reply():
         "headache ho ra",
     ]
 
-    random.seed(datetime.datetime.now())
+    random.seed(datetime.datetime.now().timestamp())
     random_int = random.randint(0, len(replies) - 1)
 
     return replies[random_int]

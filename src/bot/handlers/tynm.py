@@ -31,7 +31,7 @@ NM_IMG_LOCATIONS = ["bottom_right", "bottom_left"]
 
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    random.seed(datetime.datetime.now())
+    random.seed(datetime.datetime.now().timestamp())
 
     try:
         dc.log_command_usage("tynm", update)
