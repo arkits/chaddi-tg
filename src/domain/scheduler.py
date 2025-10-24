@@ -22,7 +22,7 @@ def reschedule_saved_jobs(job_queue):
         job_queue.run_once(
             reminder_handler,
             due_seconds,
-            context=json.dumps(sj.job_context),
+            data=json.dumps(sj.job_context),
             name=job_name,
         )
 

@@ -88,7 +88,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.job_queue.run_once(
             reminder_handler,
             due_seconds,
-            context=json.dumps(job_context),
+            data=json.dumps(job_context),
             name=job_name,
         )
 
@@ -141,7 +141,7 @@ async def reminder_handler(context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         # extract job_context
         job = context.job
-        job_context = json.loads(job.context)
+        job_context = json.loads(job.data)
 
         logger.debug("[reminder_handler] job={} job_context={}", job.__dict__, job_context)
 

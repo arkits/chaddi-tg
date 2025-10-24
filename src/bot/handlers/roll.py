@@ -124,12 +124,12 @@ async def handle_command_reset(update: Update, context: ContextTypes.DEFAULT_TYP
     if util.is_admin_tg_user(update.message.from_user):
         # Remove schedule reset job
         for job in context.job_queue.jobs():
-            if job.name == "reset_roll_effects" and job.context == update.message.chat_id:
+            if job.name == "reset_roll_effects" and job.data == update.message.chat_id:
                 logger.info("[roll] Removing pre-scheduled reset_roll_effects job...")
                 job.schedule_removal()
 
         # Schedule callback for resetting roll effects
-        context.job_queue.run_once(reset_roll_effects, 1, context=update.message.chat_id)
+        context.job_queue.run_once(reset_roll_effects, 1, data=update.message.chat_id)
         return
 
     else:
@@ -279,7 +279,7 @@ async def handle_dice_rolls(dice_value, update, context):
             await update.message.reply_text(text=response, parse_mode=ParseMode.HTML)
 
             # Schedule callback for resetting roll effects in 1 hour
-            context.job_queue.run_once(reset_roll_effects, 3600, context=update.message.chat_id)
+            context.job_queue.run_once(reset_roll_effects, 3600, data=update.message.chat_id)
 
     except Exception as e:
         logger.error(
@@ -480,7 +480,7 @@ def _pretty_roll_rule(roll_rule: str) -> str:
 
 async def reset_roll_effects(context: ContextTypes.DEFAULT_TYPE):
     # Get group_id
-    group_id = context.job.context
+    group_id = context.job.data
 
     # Get relevant roll based on group_id
     roll = roll_dao.get_roll_by_group_id(group_id)
