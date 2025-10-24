@@ -8,7 +8,7 @@ from playhouse.shortcuts import model_to_dict
 from telegram import Update
 
 from src.db import bakchod_dao, group_dao, message_dao
-from src.server import socket_manager
+from src.server import sio
 
 from . import metrics, util
 
@@ -69,7 +69,7 @@ def sync_persistence_data(update: Update):
 
     # Create a task to emit the message asynchronously without blocking
     asyncio.create_task(
-        socket_manager.emit(
+        sio.emit(
             "message",
             {"message": json.loads(json.dumps(model_to_dict(m), default=str))},
         )
