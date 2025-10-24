@@ -6,6 +6,9 @@ set -e
 
 cd ..
 
+# Add uv to PATH (common installation locations)
+export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 
 # Dependencies are now managed by uv via pyproject.toml
