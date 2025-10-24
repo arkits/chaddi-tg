@@ -44,6 +44,12 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             logger.info("[mom3] message was None!")
             return
 
+        # Send immediate response
+        if update.message.reply_to_message:
+            sent_message = await update.message.reply_to_message.reply_text("generating response...")
+        else:
+            sent_message = await update.message.reply_text("generating response...")
+
         instructions = open(path.join(util.RESOURCES_DIR, "openai", "mom3-prompt.txt")).read()
 
         input = f"User({protagonist}): {message[:1000]}"
@@ -61,12 +67,9 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         response = output_text
 
-        if update.message.reply_to_message:
-            await update.message.reply_to_message.reply_text(response)
-            return
-        else:
-            await update.message.reply_text(response)
-            return
+        # Edit the sent message with the actual response
+        await sent_message.edit_text(response)
+        return
 
     except Exception as e:
         logger.error(
