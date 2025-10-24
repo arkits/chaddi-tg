@@ -77,7 +77,6 @@ def random_reply():
         "NO ONE CARES ABOUT YOUR WORDLE TARSH",
     ]
 
-    random.seed(datetime.datetime.now().timestamp())
     random_int = random.randint(0, len(replies) - 1)
 
     return replies[random_int]

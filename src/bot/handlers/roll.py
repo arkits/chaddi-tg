@@ -415,7 +415,6 @@ def _get_group_id_from_update(update) -> str:
 
 
 def _get_random_roll_type() -> str:
-    random.seed(datetime.datetime.now().timestamp())
     random_int = random.randint(0, len(ROLL_TYPES) - 1)
 
     return ROLL_TYPES[random_int]

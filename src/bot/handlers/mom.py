@@ -28,8 +28,6 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         dc.log_command_usage("mom", update)
 
-        random.seed(datetime.datetime.now().timestamp())
-
         # Fast fail if a user didn't reply to another user
         if update.message.reply_to_message is None:
             logger.debug(
@@ -173,8 +171,6 @@ def spacy_joke(message, protagonist):
 # !! SEXISM !!
 # make a bad joke about it
 def joke_mom(sentence, protagonist, force=False):
-    random.seed(datetime.datetime.now().timestamp())
-
     target = "your mom"
 
     if not force:
@@ -265,7 +261,6 @@ def random_reply(protagonist):
         "bhaak bsdk",
     ]
 
-    random.seed(datetime.datetime.now().timestamp())
     random_int = random.randint(0, len(replies) - 1)
 
     return replies[random_int]
