@@ -1,0 +1,397 @@
+/* Logs Viewer Styles - Dark Mode by Default */
+
+/* Override parent container styles to make logs full width */
+body:has(.logs-container) .page-wrapper {
+  padding: 0 !important;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+body:has(.logs-container) .content-wrapper {
+  padding: 0 !important;
+  margin: 0 !important;
+  max-width: none !important;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+body:has(.logs-container) #content {
+  padding: 0 !important;
+  margin: 0 !important;
+  max-width: none !important;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+body:has(.logs-container) .navbar {
+  margin-bottom: 0 !important;
+  flex-shrink: 0;
+}
+
+/* Override h1 global styles for logs page */
+.logs-container h1 {
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.logs-container {
+  width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #1a1d1f;
+  overflow: hidden;
+  margin: 0 !important;
+}
+
+/* Header */
+.logs-header {
+  background: #232628;
+  border-bottom: 1px solid #3a3f44;
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.logs-header-content {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.logs-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #e4e6eb;
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
+}
+
+.logs-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.status-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.status-connected {
+  background-color: #28a745;
+}
+
+.status-connecting {
+  background-color: #ffc107;
+}
+
+.status-error {
+  background-color: #dc3545;
+  animation: none;
+}
+
+.status-paused {
+  background-color: #6c757d;
+  animation: none;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.status-text {
+  color: #adb5bd;
+  font-weight: 500;
+}
+
+.logs-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.logs-controls .btn {
+  font-size: 0.875rem;
+  padding: 0.4rem 0.8rem;
+}
+
+/* Logs Body */
+.logs-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: #0f1113;
+  padding: 0;
+}
+
+.logs-list {
+  font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  padding: 0.5rem;
+}
+
+/* Welcome Message */
+.welcome-message {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #8b8d90;
+}
+
+.welcome-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.welcome-message p {
+  font-size: 1.125rem;
+  margin-bottom: 0.5rem;
+  color: #e4e6eb;
+}
+
+.welcome-message small {
+  font-size: 0.875rem;
+  color: #8b8d90;
+}
+
+/* Log Lines */
+.log-line {
+  padding: 0.25rem 0.5rem;
+  border-left: 3px solid transparent;
+  transition: background-color 0.15s ease;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  color: #d0d3d6;
+  border-bottom: 1px solid #1a1d1f;
+}
+
+.log-line:hover {
+  background-color: #1a1d1f;
+}
+
+.log-timestamp {
+  color: #8b8d90;
+  margin-right: 1rem;
+  font-weight: 500;
+}
+
+.log-message {
+  color: #d0d3d6;
+}
+
+/* Log Level Styling */
+.log-error {
+  background-color: rgba(220, 53, 69, 0.1);
+  border-left-color: #dc3545;
+  color: #ff6b6b;
+}
+
+.log-error .log-message {
+  color: #ff6b6b;
+}
+
+.log-warning {
+  background-color: rgba(255, 193, 7, 0.1);
+  border-left-color: #ffc107;
+  color: #ffd966;
+}
+
+.log-warning .log-message {
+  color: #ffd966;
+}
+
+.log-info {
+  background-color: rgba(13, 110, 253, 0.05);
+  border-left-color: #0d6efd;
+  color: #6ea8fe;
+}
+
+.log-info .log-message {
+  color: #6ea8fe;
+}
+
+.log-debug {
+  background-color: rgba(108, 117, 125, 0.05);
+  border-left-color: #6c757d;
+  color: #adb5bd;
+}
+
+.log-debug .log-message {
+  color: #adb5bd;
+}
+
+.log-success {
+  background-color: rgba(40, 167, 69, 0.1);
+  border-left-color: #28a745;
+  color: #75e19a;
+}
+
+.log-success .log-message {
+  color: #75e19a;
+}
+
+/* Footer */
+.logs-footer {
+  background: #232628;
+  border-top: 1px solid #3a3f44;
+  padding: 0.75rem 1.5rem;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.auto-scroll-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.875rem;
+  color: #d0d3d6;
+  margin: 0;
+}
+
+.auto-scroll-toggle input[type="checkbox"] {
+  cursor: pointer;
+}
+
+.log-count {
+  font-size: 0.875rem;
+  color: #8b8d90;
+  font-weight: 500;
+}
+
+/* Scrollbar Styling */
+.logs-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.logs-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.logs-body::-webkit-scrollbar-thumb {
+  background: #3a3f44;
+  border-radius: 4px;
+}
+
+.logs-body::-webkit-scrollbar-thumb:hover {
+  background: #4a4f54;
+}
+
+/* Horizontal scrolling for long lines */
+.logs-list {
+  overflow-x: auto;
+}
+
+.logs-list::-webkit-scrollbar {
+  height: 6px;
+}
+
+.logs-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.logs-list::-webkit-scrollbar-thumb {
+  background: #3a3f44;
+  border-radius: 3px;
+}
+
+.logs-list::-webkit-scrollbar-thumb:hover {
+  background: #4a4f54;
+}
+
+/* Button States */
+.btn-primary {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #0b5ed7;
+  border-color: #0a58ca;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .logs-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+
+  .logs-header-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .logs-title {
+    font-size: 1.25rem;
+  }
+
+  .logs-controls {
+    width: 100%;
+  }
+
+  .logs-controls .btn {
+    flex: 1;
+  }
+
+  .logs-footer {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+
+  .log-line {
+    font-size: 0.8125rem;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.log-line {
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* Selection styling */
+.log-line::selection {
+  background-color: #0d6efd;
+  color: white;
+}
+
+.log-line *::selection {
+  background-color: #0d6efd;
+  color: white;
+}

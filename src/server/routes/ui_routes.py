@@ -330,3 +330,13 @@ async def get_messenger(request: Request):
             "request": request,
         },
     )
+
+
+@router.get("/logs", response_class=HTMLResponse)
+async def get_logs(request: Request):
+    return templates.TemplateResponse(
+        "logs.html",
+        {
+            "request": request,
+        },
+    )

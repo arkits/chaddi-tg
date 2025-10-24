@@ -11,6 +11,9 @@ export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
 
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 
+# Create logs directory if it doesn't exist
+mkdir -p logs
+
 # Dependencies are now managed by uv via pyproject.toml
 # Install/sync dependencies with: uv sync
 

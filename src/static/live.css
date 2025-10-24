@@ -1,15 +1,53 @@
 /* Live Messenger Styles - Dark Mode by Default */
 
+/* Override parent container styles to make live messages full width */
+body:has(.live-messenger-container) .page-wrapper {
+  padding: 0 !important;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+body:has(.live-messenger-container) .content-wrapper {
+  padding: 0 !important;
+  margin: 0 !important;
+  max-width: none !important;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+body:has(.live-messenger-container) #content {
+  padding: 0 !important;
+  margin: 0 !important;
+  max-width: none !important;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+body:has(.live-messenger-container) .navbar {
+  margin-bottom: 0 !important;
+  flex-shrink: 0;
+}
+
+/* Override h1 global styles for live page */
+.live-messenger-container h1 {
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+}
+
 .live-messenger-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  height: calc(100vh - 80px);
+  width: 100%;
+  flex: 1;
   display: flex;
   flex-direction: column;
   background: #1a1d1f;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   overflow: hidden;
+  margin: 0 !important;
 }
 
 /* Header */
@@ -34,6 +72,8 @@
   font-size: 1.5rem;
   font-weight: 600;
   color: #e4e6eb;
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
 }
 
 .messenger-status {
@@ -271,11 +311,6 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .live-messenger-container {
-    border-radius: 0;
-    height: calc(100vh - 60px);
-  }
-
   .messenger-header {
     flex-direction: column;
     align-items: flex-start;

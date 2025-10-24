@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Server Logs{% endblock %}
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" href="/static/logs.css" />
+{% endblock %}
+{% block content %}
+<script src="https://cdn.socket.io/4.4.1/socket.io.min.js"
+    integrity="sha384-fKnu0iswBIqkjxrhQCTZ7qlLHOFEgNkRmK2vaO/LbTZSXdJfAu6ewRBdwHPhBo/H"
+    crossorigin="anonymous"></script>
+<script defer src="/static/logs.js"></script>
+
+<div class="logs-container">
+    <!-- Header -->
+    <div class="logs-header">
+        <div class="logs-header-content">
+            <h1 class="logs-title">Server Logs</h1>
+            <div class="logs-status">
+                <span class="status-indicator" id="connection-status"></span>
+                <span class="status-text" id="connection-text">Connecting...</span>
+            </div>
+        </div>
+        <div class="logs-controls">
+            <button class="btn btn-sm" id="clear-btn">Clear Display</button>
+            <button class="btn btn-sm" id="pause-btn">Pause</button>
+        </div>
+    </div>
+
+    <!-- Logs Container -->
+    <div class="logs-body" id="logs-container">
+        <div class="logs-list" id="logs-list">
+            <!-- Logs will be inserted here -->
+            <div class="welcome-message">
+                <div class="welcome-icon">📋</div>
+                <p>Connecting to log stream...</p>
+                <small>Live server logs from logs/chaddi.log</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="logs-footer">
+        <label class="auto-scroll-toggle">
+            <input type="checkbox" id="auto-scroll-toggle" checked>
+            <span>Auto-scroll to new logs</span>
+        </label>
+        <span class="log-count" id="log-count">0 lines displayed</span>
+    </div>
+</div>
+
+{% endblock %}
