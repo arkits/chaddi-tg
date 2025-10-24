@@ -1,9 +1,15 @@
-{% extends "base.html" %} {% block title %}Bakchods{% endblock %} {% block head
-%} {{ super() }} {% endblock %} {% block content %}
+{% extends "base.html" %}
+{% block title %}Bakchods{% endblock %}
+{% block head %} {{ super() }} {% endblock %}
+{% block content %}
 <div class="container-lg">
-  <h1>{{bakchods_count | tonumber_pretty}} Bakchods</h1>
+  <div class="page-header">
+    <h1>Bakchods</h1>
+    <p class="text-muted">Total: {{bakchods_count | tonumber_pretty}} users</p>
+  </div>
 
-  {% with bakchods=bakchods %} {% include "partials/bakchods_table.html" %} {%
-  endwith %}
+  {% with bakchods=bakchods %}
+    {% include "partials/bakchods_table.html" %}
+  {% endwith %}
 </div>
 {% endblock %}

@@ -4,7 +4,7 @@
 {{ super() }}
 <style>
   .hero-card {
-    background: linear-gradient(135deg, #1a1d1f 0%, #232628 100%);
+    background: #1a1d1f;
     border: 1px solid #2d3135;
     border-radius: 16px;
     padding: 2.5rem;
@@ -35,7 +35,7 @@
   }
 
   .metric-card {
-    background: linear-gradient(135deg, #1e2022 0%, #232628 100%);
+    background: #1a1d1f;
     border: 1px solid #2d3135;
     border-radius: 12px;
     padding: 1.5rem;
@@ -129,10 +129,65 @@
     gap: 1.5rem;
     margin-top: 2rem;
   }
+
+  .quote-card {
+    background: #1a1d1f;
+    border: 1px solid #2d3135;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  .quote-text {
+    font-size: 1.25rem;
+    line-height: 1.8;
+    color: #e4e6eb;
+    font-style: italic;
+    margin-bottom: 1.5rem;
+    position: relative;
+    padding-left: 1.5rem;
+  }
+
+  .quote-text::before {
+    content: '"';
+    position: absolute;
+    left: 0;
+    top: -0.25rem;
+    font-size: 3rem;
+    color: #0d6efd;
+    opacity: 0.3;
+    font-family: Georgia, serif;
+  }
+
+  .quote-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #2d3135;
+  }
+
+  .quote-author {
+    color: #5ca7ff;
+    font-weight: 600;
+  }
+
+  .quote-group {
+    color: #8b8d90;
+    font-size: 0.875rem;
+  }
+
+  .quote-date {
+    color: #8b8d90;
+    font-size: 0.875rem;
+  }
 </style>
 {% endblock %}
 {% block content %}
-<div class="container-lg">
+<div class="container-lg" style="padding-top: 2rem;">
   <!-- Hero Section -->
   <div class="hero-card">
     <h1 class="hero-title">chaddi-tg Dashboard</h1>
@@ -178,6 +233,27 @@
       <div class="metric-label">⏰ Jobs</div>
     </div>
   </div>
+
+  <!-- Random Quote -->
+  {% if random_quote %}
+  <h2 class="section-title">💭 Quote of the Day</h2>
+  <div class="quote-card">
+    <div class="quote-text">
+      {{random_quote.text}}
+    </div>
+    <div class="quote-meta">
+      <div>
+        <span class="quote-author">— {{random_quote.author_bakchod.pretty_name or random_quote.author_bakchod.username or "Unknown"}}</span>
+      </div>
+      <div>
+        <span class="quote-group">📍 {{random_quote.quoted_in_group.name or "Unknown Group"}}</span>
+      </div>
+      <div>
+        <span class="quote-date">🕐 {{random_quote.created.strftime('%Y-%m-%d')}}</span>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 
   <!-- Activity & System Info -->
   <div class="info-grid">

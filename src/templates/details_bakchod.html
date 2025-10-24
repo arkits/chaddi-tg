@@ -1,8 +1,9 @@
-{% extends "base.html" %} {% block title %}Bakchod Details{% endblock %} {%
-block head %} {{ super() }} {% endblock %} {% block content %}
+{% extends "base.html" %}
+{% block title %}Bakchod Details{% endblock %}
+{% block head %} {{ super() }} {% endblock %}
+{% block content %}
 <script defer src="/static/details_bakchod.js"></script>
 <div class="container-lg">
-  <br />
   <nav>
     <ul class="breadcrumb">
       <li class="breadcrumb-item">details</li>
@@ -14,7 +15,6 @@ block head %} {{ super() }} {% endblock %} {% block content %}
       </li>
     </ul>
   </nav>
-  <br />
 
   {% if response_message %}
   <div class="alert {{response_message.alert_type}}" role="alert">
@@ -23,67 +23,74 @@ block head %} {{ super() }} {% endblock %} {% block content %}
   </div>
   {% endif %}
 
-  <h1>{{bakchod.pretty_name}}</h1>
+  <div class="page-header">
+    <h1>{{bakchod.pretty_name}}</h1>
+    <p class="text-muted">@{{bakchod.username}}</p>
+  </div>
 
-  <table class="table">
-    <tbody>
-      <tr>
-        <th class="text-right">TG ID:</th>
-        <td class="text-left">{{bakchod.tg_id}}</td>
-      </tr>
-      <tr>
-        <th class="text-right">Username:</th>
-        <td class="text-left">{{bakchod.username}}</td>
-      </tr>
-      <tr>
-        <th class="text-right">Created:</th>
-        <td class="text-left">{{bakchod.created}}</td>
-      </tr>
-      <tr>
-        <th class="text-right">Updated:</th>
-        <td class="text-left">{{bakchod.updated}}</td>
-      </tr>
-      <tr>
-        <th class="text-right">Rokda:</th>
-        <td class="text-left">
-          <input id="tg-id" type="hidden" name="tg-id" value="{{bakchod.tg_id}}" />
-          <div class="form-group">
-            <input id="rokda-input" name="rokda" type="text" class="form-control" placeholder="{{bakchod.rokda}}"
-              required="required" value="{{bakchod.rokda}}" />
-          </div>
-          <input id="update-rokda-button" class="btn btn-primary" type="submit" value="Update Rokda" />
-        </td>
-      </tr>
-      <tr>
-        <th class="text-right">Metadata:</th>
-        <td>
-          <div class="form-group">
-            <textarea class="form-control" id="metadata-textarea" name="metadata" type="text" required="required">
-{{bakchod.metadata | tojson_pretty}}</textarea>
-          </div>
-          <input id="update-metadata-button" class="btn btn-primary" type="submit" value="Update Metadata" />
-        </td>
-      </tr>
-    </tbody>
-  </table>
+  <div class="card">
+    <div class="card-body">
+      <h3 class="card-title">User Information</h3>
+      <table class="table">
+        <tbody>
+          <tr>
+            <th class="text-right">TG ID:</th>
+            <td class="text-left"><span class="badge badge-info">{{bakchod.tg_id}}</span></td>
+          </tr>
+          <tr>
+            <th class="text-right">Username:</th>
+            <td class="text-left">@{{bakchod.username}}</td>
+          </tr>
+          <tr>
+            <th class="text-right">Created:</th>
+            <td class="text-left">{{bakchod.created}}</td>
+          </tr>
+          <tr>
+            <th class="text-right">Updated:</th>
+            <td class="text-left">{{bakchod.updated}}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 
-  <hr />
+  <div class="card">
+    <div class="card-body">
+      <h3 class="card-title">Rokda Management</h3>
+      <input id="tg-id" type="hidden" name="tg-id" value="{{bakchod.tg_id}}" />
+      <div class="form-group">
+        <label for="rokda-input">Rokda Amount</label>
+        <input id="rokda-input" name="rokda" type="text" class="form-control" placeholder="{{bakchod.rokda}}"
+          required="required" value="{{bakchod.rokda}}" />
+      </div>
+      <button id="update-rokda-button" class="btn btn-primary" type="submit">Update Rokda</button>
+    </div>
+  </div>
 
-  <h3>Groups ({{groups | length}})</h3>
+  <div class="card">
+    <div class="card-body">
+      <h3 class="card-title">Metadata</h3>
+      <div class="form-group">
+        <label for="metadata-textarea">JSON Metadata</label>
+        <textarea class="form-control" id="metadata-textarea" name="metadata" type="text" required="required">{{bakchod.metadata | tojson_pretty}}</textarea>
+      </div>
+      <button id="update-metadata-button" class="btn btn-primary" type="submit">Update Metadata</button>
+    </div>
+  </div>
 
-  <ul>
-    {% for group in groups %}
-    <li>
-      <a href="/details/group?group_id={{group.group_id}}">
-        {{group.name}}
-      </a>
-    </li>
-    {% endfor %}
-  </ul>
-
-  <br />
-  <br />
-  <br />
-  <br />
+  <div class="card">
+    <div class="card-body">
+      <h3 class="card-title">Groups ({{groups | length}})</h3>
+      <div class="groups-list">
+        {% for group in groups %}
+        <div class="group-item">
+          <a href="/details/group?group_id={{group.group_id}}" class="group-link">
+            {{group.name}}
+          </a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}

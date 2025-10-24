@@ -7,7 +7,7 @@ from loguru import logger
 from playhouse.shortcuts import model_to_dict
 from telegram import Update
 
-from src.db import bakchod_dao, group_dao, message_dao
+from src.db import Bakchod, CommandUsage, Group, bakchod_dao, group_dao, message_dao
 from src.server import sio
 
 from . import metrics, util
@@ -27,6 +27,23 @@ def log_command_usage(command_name: str, update: Update):
         )
 
         sync_persistence_data(update)
+
+        # Log command usage to database
+        try:
+            bakchod = Bakchod.get(Bakchod.tg_id == update.message.from_user.id)
+            group = Group.get(Group.group_id == update.message.chat.id)
+
+            CommandUsage.create(
+                command_name=command_name,
+                executed_at=datetime.now(),
+                from_bakchod=bakchod,
+                group=group,
+            )
+        except Exception as db_error:
+            logger.warning(
+                "[dc] Failed to log command usage to database: {}",
+                db_error,
+            )
 
         metrics.inc_command_usage_count(command_name, update)
 
