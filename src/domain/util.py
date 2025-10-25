@@ -120,7 +120,7 @@ def pretty_time_delta(seconds):
 
 
 def get_random_bakchod_from_group(group_id: str, bakchod_id_to_avoid: str) -> Bakchod:
-    groupmembers = list(GroupMember.select().where(GroupMember.group_id == group_id).execute())
+    groupmembers = GroupMember.select().where(GroupMember.group_id == group_id).execute()
 
     random_groupmember = choose_random_element_from_list(groupmembers)
 
