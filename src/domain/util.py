@@ -94,8 +94,14 @@ def acquire_external_resource(resource_url, resource_name):
 def choose_random_element_from_list(input_list):
     if len(input_list) == 0:
         return None
-    random_int = random.randint(0, len(input_list) - 1)
-    return input_list[random_int]
+    try:
+        random.seed()
+        random_int = random.randint(0, len(input_list) - 1)
+        return input_list[random_int]
+    except Exception as e:
+        logger.warning("Unable to seed random generator: {}", e)
+        return input_list[0]
+
 
 
 def pretty_time_delta(seconds):
