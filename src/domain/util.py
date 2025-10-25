@@ -83,7 +83,9 @@ def acquire_external_resource(resource_url, resource_name):
         )
 
     else:
-        logger.info("[acquire_external_resource] downloading resource_url={}", resource_url)
+        logger.info(
+            "[acquire_external_resource] downloading resource_url={}", resource_url
+        )
 
         r = requests.get(resource_url, allow_redirects=True)
         open(resource_path, "wb").write(r.content)
@@ -92,8 +94,6 @@ def acquire_external_resource(resource_url, resource_name):
 
 
 def choose_random_element_from_list(input_list):
-    if len(input_list) == 0:
-        return None
     try:
         random.seed()
         random_int = random.randint(0, len(input_list) - 1)
@@ -101,7 +101,6 @@ def choose_random_element_from_list(input_list):
     except Exception as e:
         logger.warning("Unable to seed random generator: {}", e)
         return input_list[0]
-
 
 
 def pretty_time_delta(seconds):
@@ -120,7 +119,9 @@ def pretty_time_delta(seconds):
 
 
 def get_random_bakchod_from_group(group_id: str, bakchod_id_to_avoid: str) -> Bakchod:
-    groupmembers = GroupMember.select().where(GroupMember.group_id == group_id).execute()
+    groupmembers = (
+        GroupMember.select().where(GroupMember.group_id == group_id).execute()
+    )
 
     random_groupmember = choose_random_element_from_list(groupmembers)
 
