@@ -122,11 +122,15 @@ async def handle_command_start(update: Update):
 
 async def handle_command_reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if util.is_admin_tg_user(update.message.from_user):
-        # Remove schedule reset job
+        # Remove scheduled reset job for this chat (use chat.id)
         for job in context.job_queue.jobs():
-            if job.name == "reset_roll_effects" and job.data == update.message.chat_id:
-                logger.info("[roll] Removing pre-scheduled reset_roll_effects job...")
-                job.schedule_removal()
+            try:
+                if job.name == "reset_roll_effects" and job.data == update.message.chat.id:
+                    logger.info("[roll] Removing pre-scheduled reset_roll_effects job...")
+                    job.schedule_removal()
+            except Exception:
+                # Skip malformed jobs
+                continue
 
         # Schedule callback for resetting roll effects
         context.job_queue.run_once(reset_roll_effects, 1, data=update.message.chat_id)
@@ -166,8 +170,11 @@ async def handle_dice_rolls(dice_value, update, context):
         # Check and update roll history
         roller = bakchod_dao.get_bakchod_from_update(update)
 
-        if "last_time_rolled" in roller.metadata:
-            last_time_rolled = ciso8601.parse_datetime(roller.metadata["last_time_rolled"])
+        if "last_time_rolled" in (roller.metadata or {}):
+            try:
+                last_time_rolled = ciso8601.parse_datetime(roller.metadata["last_time_rolled"])
+            except Exception:
+                last_time_rolled = None
 
             five_min_ago = datetime.datetime.now() - datetime.timedelta(minutes=5)
 
@@ -180,6 +187,9 @@ async def handle_dice_rolls(dice_value, update, context):
                     return
             else:
                 logger.debug("[roll] DEBUG is True... ignoring time check")
+
+        if roller.metadata is None:
+            roller.metadata = {}
 
         roller.metadata["last_time_rolled"] = datetime.datetime.now().isoformat()
         roller.save()
@@ -211,34 +221,22 @@ async def handle_dice_rolls(dice_value, update, context):
             victim_metadata = victim.metadata
 
             if current_roll.rule == "mute_user":
-                if "censored" in victim_metadata:
-                    censored_modifier = victim_metadata["censored"]
-                else:
-                    censored_modifier = {}
-
-                if "group_ids" not in censored_modifier:
-                    censored_modifier["group_ids"] = []
-
-                censored_modifier["group_ids"].append(group_id)
-
+                censored_modifier = victim_metadata.get("censored") or {}
+                group_ids = censored_modifier.get("group_ids") or []
+                if group_id not in group_ids:
+                    group_ids.append(group_id)
+                censored_modifier["group_ids"] = group_ids
                 victim_metadata["censored"] = censored_modifier
-
                 victim.metadata = victim_metadata
                 victim.save()
 
             elif current_roll.rule == "auto_mom":
-                if "auto_mom" in victim_metadata:
-                    auto_mom_modifier = victim_metadata["auto_mom"]
-                else:
-                    auto_mom_modifier = {}
-
-                if "group_ids" not in auto_mom_modifier:
-                    auto_mom_modifier["group_ids"] = []
-
-                auto_mom_modifier["group_ids"].append(group_id)
-
+                auto_mom_modifier = victim_metadata.get("auto_mom") or {}
+                group_ids = auto_mom_modifier.get("group_ids") or []
+                if group_id not in group_ids:
+                    group_ids.append(group_id)
+                auto_mom_modifier["group_ids"] = group_ids
                 victim_metadata["auto_mom"] = auto_mom_modifier
-
                 victim.metadata = victim_metadata
                 victim.save()
 
@@ -376,7 +374,7 @@ def _extract_command_from_update(update):
 
         try:
             command = query[1]
-        except:
+        except Exception:
             command = "status"
 
     except Exception:
@@ -537,11 +535,15 @@ def _get_random_bakchod_from_group(group_id: str) -> Bakchod:
     bakchods.sort(key=lambda r: r.lastseen, reverse=True)
 
     # only care about the x% of the lastseen
-    relevant_section = math.ceil(0.50 * len(bakchods))
+    if not bakchods:
+        return None
+
+    relevant_section = max(1, math.ceil(0.50 * len(bakchods)))
     logger.debug("[roll] relevant_section={}", relevant_section)
 
     # pick a random bakchod from the relevant section
-    index = random.randint(0, relevant_section)
+    # random.randint upper bound is inclusive; subtract 1 to avoid IndexError
+    index = random.randint(0, relevant_section - 1)
 
     random_bakchod = bakchods[index]
 

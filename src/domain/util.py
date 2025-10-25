@@ -92,6 +92,9 @@ def acquire_external_resource(resource_url, resource_name):
 
 
 def choose_random_element_from_list(input_list):
+    if not input_list:
+        return None
+    random.seed(datetime.now().timestamp())
     random_int = random.randint(0, len(input_list) - 1)
     return input_list[random_int]
 
@@ -112,9 +115,13 @@ def pretty_time_delta(seconds):
 
 
 def get_random_bakchod_from_group(group_id: str, bakchod_id_to_avoid: str) -> Bakchod:
-    groupmembers = GroupMember.select().where(GroupMember.group_id == group_id).execute()
+    groupmembers = list(GroupMember.select().where(GroupMember.group_id == group_id).execute())
 
     random_groupmember = choose_random_element_from_list(groupmembers)
+
+    if random_groupmember is None:
+        logger.warning("No group members found for group_id={}", group_id)
+        return None
 
     random_bakchod = Bakchod.get_by_id(random_groupmember.bakchod_id)
     logger.info("random_bakchod={}", random_bakchod.username)

@@ -34,13 +34,17 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         try:
             command = query[1].lower()
-        except:
+        except Exception:
+            # No second token -> default to random
             command = "random"
 
         logger.debug("[quotes] command={}", command)
 
         if command == "add":
-            if update.message.reply_to_message.text:
+            # Ensure the command is used as a reply with text
+            if getattr(update.message, "reply_to_message", None) and getattr(
+                update.message.reply_to_message, "text", None
+            ):
                 q = quote_dao.add_quote_from_update(update)
                 response = MESSAGE_ADDED_QUOTE.format(q.quote_id)
                 await update.message.reply_text(text=response, parse_mode=ParseMode.HTML)
@@ -49,7 +53,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if util.is_admin_tg_user(update.message.from_user):
                 try:
                     id_to_remove = query[2]
-                except:
+                except Exception:
                     await update.message.reply_text(
                         text="Please include the Quote ID you want to remove!",
                         parse_mode=ParseMode.HTML,
@@ -73,7 +77,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             try:
                 quote_id = query[2]
-            except:
+            except Exception:
                 await update.message.reply_text(
                     text="Please include the Quote ID you want to get!",
                     parse_mode=ParseMode.HTML,

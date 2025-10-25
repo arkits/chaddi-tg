@@ -39,9 +39,13 @@ def gamble(bakchod: Bakchod, update: Update):
 
     random_bakchod = util.get_random_bakchod_from_group(str(update.message.chat.id), bakchod.tg_id)
 
-    roll = random.random()
+    # If no other group members, just do a solo gamble without interactions
+    if random_bakchod is None:
+        random_bakchod_pretty_name = "someone"
+    else:
+        random_bakchod_pretty_name = random_bakchod.pretty_name or random_bakchod.username
 
-    random_bakchod_pretty_name = random_bakchod.pretty_name or random_bakchod.username
+    roll = random.random()
 
     if roll > 0.98:
         response = "HOLY CRAP! You won! +500 ₹okda"
@@ -55,7 +59,8 @@ def gamble(bakchod: Bakchod, update: Update):
     elif roll > 0.85:
         response = f"You won 200 ₹okda and gifted 15 to {random_bakchod_pretty_name}"
         bakchod.rokda = bakchod.rokda + 200
-        random_bakchod.rokda += 15
+        if random_bakchod is not None:
+            random_bakchod.rokda += 15
     elif roll > 0.75:
         response = "You won +100 ₹okda... this is pretty good tbh!"
         bakchod.rokda = bakchod.rokda + 100
@@ -68,7 +73,8 @@ def gamble(bakchod: Bakchod, update: Update):
     elif roll > 0.45:
         response = f"{random_bakchod_pretty_name} brought you chai and you tipped him 100 ₹okda"
         bakchod.rokda = bakchod.rokda - 100
-        random_bakchod.rokda += 100
+        if random_bakchod is not None:
+            random_bakchod.rokda += 100
     elif roll > 0.35:
         response = "No win / no loss... but you still paid entry fee of 250 ₹okda!"
         bakchod.rokda = bakchod.rokda - 250
@@ -80,13 +86,15 @@ def gamble(bakchod: Bakchod, update: Update):
     elif roll > 0.15:
         response = f"You actually won... but while leaving the casino you got mugged by {random_bakchod_pretty_name} and lost 500 ₹okda!"
         bakchod.rokda = bakchod.rokda - 500
-        random_bakchod.rokda += 500
+        if random_bakchod is not None:
+            random_bakchod.rokda += 500
     elif roll > 0.01:
         response = "CBI Raided ChaddiInc... That 1000 you just won was derokdatized!"
         bakchod.rokda = bakchod.rokda - 1000
     elif roll > 0.001:
         response = f"You lost your entire fortune (and Paul's Kwid) to {random_bakchod_pretty_name}. Gambling can suck!"
-        random_bakchod.rokda += bakchod.rokda
+        if random_bakchod is not None:
+            random_bakchod.rokda += bakchod.rokda
         bakchod.rokda = 1
 
     # Close their accounts at 0 if they're in negatives
@@ -94,7 +102,8 @@ def gamble(bakchod: Bakchod, update: Update):
         bakchod.rokda = 0
         response = response + " You're bankrupt with 0 ₹okda, enroll into ChaddiInc Narega!"
 
-    random_bakchod.save()
+    if random_bakchod is not None:
+        random_bakchod.save()
 
     # Update metadata
     bakchod.metadata["last_time_gambled"] = datetime.datetime.now().isoformat()

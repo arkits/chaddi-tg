@@ -149,8 +149,16 @@ async def handle_ocr(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def acquire_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Extract file ID from update
-    file_id = str(update.message.reply_to_message.photo[-1].file_id)  # TODO: handle video and gifs?
+    # Ensure reply_to_message and photo exist
+    if getattr(update.message, "reply_to_message", None) is None:
+        raise ValueError("Please reply to a message containing a photo")
+
+    photos = getattr(update.message.reply_to_message, "photo", None)
+    if not photos:
+        raise ValueError("No photo found in the replied message")
+
+    # Extract file ID from the last (highest resolution) photo
+    file_id = str(photos[-1].file_id)
 
     logger.info("[mlai] Starting file download file_id={}", file_id)
     file_handle = await context.bot.get_file(file_id)

@@ -46,7 +46,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         nm_img = Image.open(path.join(EXTERNAL_DIR, NM_IMG_NAME))
 
         # Handle photo message
-        if update.message.reply_to_message.photo:
+        if getattr(update.message.reply_to_message, "photo", None):
             try:
                 file = await acquire_file(update, context)
 
@@ -120,11 +120,18 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 # User profile picture composition
                 user_id = update.message.reply_to_message.from_user.id
                 user_profile_photo_path = path.join(EXTERNAL_DIR, str(user_id) + ".webp")
-
                 user_profile_photos = (
                     await update.message.reply_to_message.from_user.get_profile_photos(limit=1)
                 )
+
+                if not user_profile_photos or not getattr(user_profile_photos, "photos", None):
+                    raise ValueError("No profile photo available for the user")
+
                 user_profile_photo = user_profile_photos.photos[0]
+                if not user_profile_photo:
+                    raise ValueError("No profile photo available for the user")
+
+                # pick highest resolution
                 user_profile_photo_file_id = user_profile_photo[-1].file_id
                 user_profile_photo_file = await context.bot.get_file(user_profile_photo_file_id)
                 await user_profile_photo_file.download_to_drive(user_profile_photo_path)
