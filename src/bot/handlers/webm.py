@@ -39,7 +39,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             logger.info("[webm] Starting webm download - " + str(document.file_id) + ".webm")
             webm_file = await context.bot.get_file(document.file_id)
             await webm_file.download_to_drive(
-                custom_path=WEBM_RESOURCES_DIR + str(document.file_id) + ".webm",
+                WEBM_RESOURCES_DIR + str(document.file_id) + ".webm",
             )
             logger.info("[webm] Finished downloading webm - " + str(document.file_id) + ".webm")
 
