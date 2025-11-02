@@ -1,7 +1,7 @@
 #!/bin/bash
 # kill-chaddi.sh
 
-PID=$(ps -eaf | grep "python chaddi.py" | grep -v grep | awk '{print $2}')
+PID=$(ps -eaf | grep "chaddi.py" | grep -v grep | awk '{print $2}')
 
 if [[ "" != "$PID" ]]; then
     echo ">>> killing PID - $PID"
@@ -9,7 +9,7 @@ if [[ "" != "$PID" ]]; then
 fi
 
 echo ">>> checking processes"
-ps aux | grep "python chaddi.py"
+ps aux | grep "chaddi.py"
 echo ""
 
 # kill server running on port 5100
