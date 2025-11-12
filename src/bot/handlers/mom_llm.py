@@ -20,6 +20,8 @@ COMMAND_COST = 200
 
 client = OpenAI(api_key=app_config.get("OPENAI", "API_KEY"))
 
+MODEL_NAME = "gpt-5"
+
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
@@ -47,10 +49,10 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Send immediate response
         if update.message.reply_to_message:
             sent_message = await update.message.reply_to_message.reply_text(
-                "٩(◕‿◕｡)۶ generating response..."
+                "٩(◕‿◕｡)۶ generating zoke..."
             )
         else:
-            sent_message = await update.message.reply_text("generating response...")
+            sent_message = await update.message.reply_text("generating zoke...")
 
         instructions = open(
             path.join(util.RESOURCES_DIR, "openai", "mom3-prompt.txt")
@@ -74,7 +76,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
         response = client.responses.create(
-            model="gpt-5-mini", instructions=multi_joke_instructions, input=input
+            model=MODEL_NAME, instructions=multi_joke_instructions, input=input
         )
 
         # Parse the jokes from the response
@@ -114,7 +116,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Now have LLM pick the funniest one
         logger.info("[mom3] asking LLM to pick the funniest joke...")
-        await sent_message.edit_text("(o´▽`o) generating clap back...")
+        await sent_message.edit_text("(o´▽`o) curating clap back...")
 
         selection_prompt = "You are a comedy expert. From the following mom jokes, pick the funniest one. Only return the joke itself, nothing else.\n\n"
         for i, joke in enumerate(jokes, 1):
@@ -123,7 +125,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.debug("[mom3] selection prompt: {}", selection_prompt)
 
         selection_response = client.responses.create(
-            model="gpt-5-mini",
+            model=MODEL_NAME,
             instructions="You are a comedy expert evaluating jokes. Pick the funniest joke and return ONLY that joke, word for word, with no additional commentary.",
             input=selection_prompt,
         )
