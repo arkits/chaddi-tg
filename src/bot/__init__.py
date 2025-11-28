@@ -66,7 +66,7 @@ def run_telegram_bot():
     application.add_handler(CommandHandler("gamble", handlers.gamble.handle))
     application.add_handler(CommandHandler("sutta", handlers.sutta.handle))
 
-    application.add_handler(CommandHandler("mom", handlers.mom_llm.handle))
+    application.add_handler(CommandHandler("mom", handlers.mom_spacy.handle))
     application.add_handler(CommandHandler("mom2", handlers.mom_rake.handle))
 
     application.add_handler(CommandHandler("set", handlers.setter.handle))
