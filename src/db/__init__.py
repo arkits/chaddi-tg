@@ -61,6 +61,7 @@ class Group(BaseModel):
     name = CharField(null=True)
     created = DateTimeField()
     updated = DateTimeField()
+    metadata = BinaryJSONField(default=EMPTY_JSON)
 
 
 class GroupMember(BaseModel):
@@ -111,4 +112,6 @@ class CommandUsage(BaseModel):
 
 
 db.connect()
-db.create_tables([Bakchod, Message, Group, GroupMember, Quote, Roll, ScheduledJob, CommandUsage])
+db.create_tables(
+    [Bakchod, Message, Group, GroupMember, Quote, Roll, ScheduledJob, CommandUsage]
+)

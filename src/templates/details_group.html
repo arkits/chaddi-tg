@@ -82,6 +82,66 @@
 
   <div class="card">
     <div class="card-body">
+      <h3 class="card-title">Command Settings</h3>
+      <div class="form-check">
+        <input class="form-check-input command-toggle" type="checkbox" value="ask" id="check-ask" 
+        {% if group.metadata.get('enabled_commands') and 'ask' in group.metadata.get('enabled_commands') %}checked{% endif %}>
+        <label class="form-check-label" for="check-ask">
+          Enable /ask command
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.querySelectorAll('.command-toggle').forEach(item => {
+      item.addEventListener('change', event => {
+        const command = event.target.value;
+        const isChecked = event.target.checked;
+        const groupId = "{{group.group_id}}";
+        
+        // Get current enabled commands from metadata (or empty list)
+        let metadata = {{ group.metadata|tojson_pretty|safe }};
+        if (!metadata.enabled_commands) {
+            metadata.enabled_commands = [];
+        }
+
+        if (isChecked) {
+            if (!metadata.enabled_commands.includes(command)) {
+                metadata.enabled_commands.push(command);
+            }
+        } else {
+            metadata.enabled_commands = metadata.enabled_commands.filter(c => c !== command);
+        }
+
+        // Call API to update metadata
+        fetch('/api/group/metadata', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                group_id: groupId,
+                metadata: JSON.stringify(metadata)
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Success:', data);
+            // Optional: Show success toast
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+            alert('Failed to update settings');
+            // Revert checkbox state on error
+            event.target.checked = !isChecked;
+        });
+      })
+    })
+  </script>
+
+  <div class="card">
+    <div class="card-body">
       <h3 class="card-title">Group Members ({{groupmembers|length}})</h3>
       <div class="table-responsive">
         <table class="table">

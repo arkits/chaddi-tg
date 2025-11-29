@@ -128,6 +128,45 @@ async def post_api_set_bakchod_metadata(
         return handle_http_error(str(e), 500)
 
 
+class SetGroupMetadataParams(BaseModel):
+    group_id: str
+    metadata: str
+
+
+@router.post("/group/metadata", response_class=JSONResponse)
+async def post_api_set_group_metadata(
+    request: Request, set_group_metadata_params: SetGroupMetadataParams
+):
+    logger.info(
+        "post_api_set_group_metadata set_group_metadata_params={}",
+        set_group_metadata_params,
+    )
+
+    response_message = {
+        "message": "Metadata Updated Successfully",
+    }
+
+    try:
+        g = Group.get_by_id(set_group_metadata_params.group_id)
+        if g is None:
+            raise Exception("Unable to find Group")
+
+        # Check if metadata is a JSON
+        try:
+            metadata_json = json.loads(set_group_metadata_params.metadata)
+        except Exception as e:
+            raise Exception("Error during json.loads(metadata) :: " + str(e))
+
+        g.metadata = metadata_json
+        g.save()
+
+        return JSONResponse(content=response_message, status_code=200)
+
+    except Exception as e:
+        logger.error("Caught Exception - e={}", e)
+        return handle_http_error(str(e), 500)
+
+
 @router.get("/quotes", response_class=JSONResponse)
 async def get_api_quotes(request: Request, page_number: int = 1):
     items_per_page = 50
@@ -154,7 +193,9 @@ async def get_api_quotes(request: Request, page_number: int = 1):
                 "quote_id": quote.quote_id,
                 "created": str(quote.created),
                 "text": quote.text,
-                "author_bakchod": util.extract_pretty_name_from_bakchod(quote.author_bakchod),
+                "author_bakchod": util.extract_pretty_name_from_bakchod(
+                    quote.author_bakchod
+                ),
                 "quoted_in_group": quote.quoted_in_group.name,
                 "quote_capture_bakchod": util.extract_pretty_name_from_bakchod(
                     quote.quote_capture_bakchod
@@ -190,7 +231,9 @@ async def get_api_quote_details(request: Request, quote_id: str = "random"):
             "text": q.text,
             "author_bakchod": util.extract_pretty_name_from_bakchod(q.author_bakchod),
             "quoted_in_group": q.quoted_in_group.name,
-            "quote_capture_bakchod": util.extract_pretty_name_from_bakchod(q.quote_capture_bakchod),
+            "quote_capture_bakchod": util.extract_pretty_name_from_bakchod(
+                q.quote_capture_bakchod
+            ),
         }
 
         return JSONResponse(content=response_message, status_code=200)
@@ -289,7 +332,9 @@ async def get_api_group_messages(
 
         total_pages = total_messages // items_per_page + 1
 
-        messages = group_dao.get_all_messages_by_group_id(group_id, page_number, items_per_page)
+        messages = group_dao.get_all_messages_by_group_id(
+            group_id, page_number, items_per_page
+        )
 
         response = {
             "current_page": page_number,
@@ -442,18 +487,28 @@ async def get_dashboard_activity(request: Request):
         latest_message = Message.select().order_by(Message.time_sent.desc()).first()
 
         response = {
-            "most_active_bakchod": {
-                "pretty_name": most_active_bakchod.pretty_name if most_active_bakchod else None,
-                "username": most_active_bakchod.username if most_active_bakchod else None,
-            }
-            if most_active_bakchod
-            else None,
-            "most_active_group": {
-                "name": most_active_group.name if most_active_group else None,
-            }
-            if most_active_group
-            else None,
-            "latest_message_time": str(latest_message.time_sent) if latest_message else None,
+            "most_active_bakchod": (
+                {
+                    "pretty_name": (
+                        most_active_bakchod.pretty_name if most_active_bakchod else None
+                    ),
+                    "username": (
+                        most_active_bakchod.username if most_active_bakchod else None
+                    ),
+                }
+                if most_active_bakchod
+                else None
+            ),
+            "most_active_group": (
+                {
+                    "name": most_active_group.name if most_active_group else None,
+                }
+                if most_active_group
+                else None
+            ),
+            "latest_message_time": (
+                str(latest_message.time_sent) if latest_message else None
+            ),
         }
 
         return JSONResponse(content=response, status_code=200)
@@ -503,9 +558,15 @@ async def get_dashboard_version(request: Request):
 
         response = {
             "semver": str(v["semver"]) if v.get("semver") else "unknown",
-            "git_commit_id": str(v["git_commit_id"]) if v.get("git_commit_id") else "unknown",
-            "git_commit_time": str(v["git_commit_time"]) if v.get("git_commit_time") else "unknown",
-            "pretty_uptime": str(v["pretty_uptime"]) if v.get("pretty_uptime") else "unknown",
+            "git_commit_id": (
+                str(v["git_commit_id"]) if v.get("git_commit_id") else "unknown"
+            ),
+            "git_commit_time": (
+                str(v["git_commit_time"]) if v.get("git_commit_time") else "unknown"
+            ),
+            "pretty_uptime": (
+                str(v["pretty_uptime"]) if v.get("pretty_uptime") else "unknown"
+            ),
         }
 
         return JSONResponse(content=response, status_code=200)

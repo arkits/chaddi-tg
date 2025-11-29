@@ -6,6 +6,7 @@ from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 from loguru import logger
 from src.domain import config, dc, util
+from src.db import Group
 
 app_config = config.get_config()
 client = OpenAI(api_key=app_config.get("OPENAI", "API_KEY"))
@@ -24,6 +25,21 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"Sorry! You don't have enough ₹okda! Each `/ask` costs {COMMAND_COST} ₹okda.",
                 parse_mode=ParseMode.MARKDOWN,
             )
+            return
+
+        try:
+            group = Group.get_by_id(update.effective_chat.id)
+            if not group or "ask" not in group.metadata.get("enabled_commands", []):
+                logger.info(
+                    f"[ask] Command disabled for group {update.effective_chat.id}"
+                )
+                await update.message.reply_text(
+                    "This command is not enabled for this group.",
+                    parse_mode=ParseMode.MARKDOWN,
+                )
+                return
+        except Exception as e:
+            logger.error(f"[ask] Error checking group permissions: {e}")
             return
 
         # Extract message
