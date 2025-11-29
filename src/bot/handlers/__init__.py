@@ -15,6 +15,7 @@ from . import (
     mom_llm,
     mom_rake,
     mom_spacy,
+    musiclinks,
     quotes,
     remind,
     rokda,

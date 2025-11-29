@@ -11,7 +11,7 @@ from src.bot.handlers import mom_spacy, roll
 from src.db import EMPTY_JSON, Bakchod, GroupMember, bakchod_dao, group_dao
 from src.domain import dc, rokda, util
 
-from . import antiwordle, bestie, hi
+from . import antiwordle, bestie, hi, musiclinks
 
 
 async def all(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -38,6 +38,8 @@ async def all(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     await antiwordle.handle(update, context)
 
+    await musiclinks.handle(update, context)
+
 
 async def handle_bakchod_metadata_effects(
     update: Update, context: ContextTypes.DEFAULT_TYPE, bakchod: Bakchod
@@ -61,7 +63,9 @@ async def handle_bakchod_metadata_effects(
 
                 for route_message_props in rm:
                     # if the message is posted to the same group, then ignore it
-                    if str(route_message_props["to_group"]) == str(update.message.chat_id):
+                    if str(route_message_props["to_group"]) == str(
+                        update.message.chat_id
+                    ):
                         logger.trace(
                             "[metadata] route-messages - posted in the same group - {} // {}",
                             route_message_props["to_group"],
@@ -114,7 +118,9 @@ async def handle_bakchod_metadata_effects(
                             update.message.text,
                         )
 
-                        response = mom_spacy.joke_mom(update.message.text, "Chaddi", True)
+                        response = mom_spacy.joke_mom(
+                            update.message.text, "Chaddi", True
+                        )
 
                         await update.message.reply_text(response)
                         return
@@ -164,7 +170,8 @@ async def status_update(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
             try:
                 GroupMember.get(
-                    (GroupMember.group_id == g.group_id) & (GroupMember.bakchod_id == b.tg_id)
+                    (GroupMember.group_id == g.group_id)
+                    & (GroupMember.bakchod_id == b.tg_id)
                 )
             except DoesNotExist:
                 logger.info(
