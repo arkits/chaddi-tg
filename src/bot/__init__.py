@@ -85,6 +85,7 @@ def run_telegram_bot():
     application.add_handler(CommandHandler("tynm", handlers.tynm.handle))
     application.add_handler(CommandHandler("ytdl", handlers.ytdl.handle))
     application.add_handler(CommandHandler("dalle", handlers.dalle.handle))
+    application.add_handler(CommandHandler("ask", handlers.ask.handle))
 
     application.add_handler(CommandHandler("remind", handlers.remind.handle))
     application.add_handler(CommandHandler("reminder", handlers.remind.handle))
