@@ -85,7 +85,10 @@ def run_telegram_bot():
     application.add_handler(CommandHandler("tynm", handlers.tynm.handle))
     application.add_handler(CommandHandler("ytdl", handlers.ytdl.handle))
     application.add_handler(CommandHandler("dalle", handlers.dalle.handle))
+
     application.add_handler(CommandHandler("ask", handlers.ask.handle))
+    application.add_handler(CommandHandler("patakaro", handlers.ask.handle))
+    application.add_handler(CommandHandler("chatgpt", handlers.ask.handle))
 
     application.add_handler(CommandHandler("remind", handlers.remind.handle))
     application.add_handler(CommandHandler("reminder", handlers.remind.handle))
@@ -96,7 +99,9 @@ def run_telegram_bot():
     application.add_handler(
         MessageHandler(filters.StatusUpdate.ALL, handlers.defaults.status_update)
     )
-    application.add_handler(MessageHandler(filters.Document.VIDEO, handlers.webm.handle))
+    application.add_handler(
+        MessageHandler(filters.Document.VIDEO, handlers.webm.handle)
+    )
     application.add_handler(MessageHandler(filters.ALL, handlers.defaults.all))
 
     # Log all errors
@@ -105,7 +110,12 @@ def run_telegram_bot():
     # Start the Bot
     logger.info("[tg] Starting Telegram Bot with Polling")
     application.run_polling(
-        allowed_updates=["message", "edited_message", "channel_post", "edited_channel_post"]
+        allowed_updates=[
+            "message",
+            "edited_message",
+            "channel_post",
+            "edited_channel_post",
+        ]
     )
 
 
