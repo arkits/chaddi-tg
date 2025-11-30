@@ -7,7 +7,7 @@ from telegram.ext import (
 )
 
 from src.domain import config, tg_logger, version
-from src.domain.scheduler import reschedule_saved_jobs
+from src.domain.scheduler import reschedule_saved_jobs, schedule_daily_posts
 
 from . import handlers
 
@@ -45,6 +45,7 @@ async def post_init(application: Application) -> None:
     )
 
     reschedule_saved_jobs(application.job_queue)
+    schedule_daily_posts(application.job_queue)
 
 
 def run_telegram_bot():

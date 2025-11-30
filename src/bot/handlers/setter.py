@@ -5,7 +5,7 @@ from telegram import Update, User
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
-from src.db import Bakchod
+from src.db import Bakchod, group_dao
 from src.domain import dc, util
 
 
@@ -54,6 +54,75 @@ def parse_request(
             return set_response
         else:
             return "❌ Not allowed to set rokda."
+
+    elif set_type.lower() in ["goodmorning", "gm"]:
+        # Check admin (assuming util.is_admin_tg_user checks for bot admin,
+        # but maybe we want group admin? The user didn't specify.
+        # For now, let's stick to bot admin or just allow it for testing if needed.
+        # But usually settings are restricted. I'll use is_admin_tg_user for consistency with rokda)
+        # Actually, for group settings, it should probably be group admins.
+        # But I don't have a helper for that handy. I'll stick to is_admin_tg_user (bot admin) for now as it's safer.
+
+        if not util.is_admin_tg_user(og_bakchod):
+            return "❌ Only admins can set this."
+
+        try:
+            value = request[2].lower()
+        except IndexError:
+            return "Please specify on or off - `/set gm on`"
+
+        if value not in ["on", "off"]:
+            return "Please specify on or off - `/set gm on`"
+
+        group = group_dao.get_group_from_update(tg_update)
+        if not group:
+            return "❌ Group not found."
+
+        if value == "on":
+            group.metadata["good_morning_enabled"] = True
+            response = "✅ Good morning messages enabled!"
+        else:
+            group.metadata["good_morning_enabled"] = False
+            response = "✅ Good morning messages disabled!"
+
+        # Reassign to ensure peewee picks up the change
+        group.metadata = group.metadata
+        group.save()
+        return response
+
+    elif set_type.lower() == "ask":
+        if not util.is_admin_tg_user(og_bakchod):
+            return "❌ Only admins can set this."
+
+        try:
+            value = request[2].lower()
+        except IndexError:
+            return "Please specify on or off - `/set ask on`"
+
+        if value not in ["on", "off"]:
+            return "Please specify on or off - `/set ask on`"
+
+        group = group_dao.get_group_from_update(tg_update)
+        if not group:
+            return "❌ Group not found."
+
+        # Initialize enabled_commands if it doesn't exist
+        if "enabled_commands" not in group.metadata:
+            group.metadata["enabled_commands"] = []
+
+        if value == "on":
+            if "ask" not in group.metadata["enabled_commands"]:
+                group.metadata["enabled_commands"].append("ask")
+            response = "✅ /ask command enabled!"
+        else:
+            if "ask" in group.metadata["enabled_commands"]:
+                group.metadata["enabled_commands"].remove("ask")
+            response = "✅ /ask command disabled!"
+
+        # Reassign to ensure peewee picks up the change
+        group.metadata = group.metadata
+        group.save()
+        return response
 
     else:
         return "❌ Can't set that."

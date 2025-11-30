@@ -1,13 +1,18 @@
 import json
 import time
+import random
+import datetime
+import pytz
 
 from loguru import logger
+from telegram.ext import JobQueue, ContextTypes
+import peewee
 
 from src.bot.handlers.remind import build_job_name, reminder_handler
-from src.db import ScheduledJob
+from src.db import ScheduledJob, Group, Quote
 
 
-def reschedule_saved_jobs(job_queue):
+def reschedule_saved_jobs(job_queue: JobQueue):
     sjs = ScheduledJob.select()
     current_time = int(time.time())
     rescheduled_count = 0
@@ -56,3 +61,64 @@ def reschedule_saved_jobs(job_queue):
     )
 
     return
+
+
+async def daily_post_callback(context: ContextTypes.DEFAULT_TYPE):
+    logger.info("Running daily post job")
+
+    groups = Group.select()
+    enabled_groups = [
+        g for g in groups if g.metadata and g.metadata.get("good_morning_enabled")
+    ]
+
+    if not enabled_groups:
+        logger.info("No groups have good morning enabled")
+        return
+
+    greetings = [
+        "Good morning!",
+        "Rise and shine!",
+        "Top of the morning to you!",
+        "Wakey wakey, eggs and bakey!",
+        "Good morning, sunshine!",
+        "Subah ho gayi mamu!",
+    ]
+
+    for group in enabled_groups:
+        greeting = random.choice(greetings)
+
+        # Get a random quote from this group
+        quote = (
+            Quote.select()
+            .where(Quote.quoted_in_group == group)
+            .order_by(peewee.fn.Random())
+            .limit(1)
+            .first()
+        )
+
+        message_text = f"🌅 {greeting}\n\n"
+        if quote:
+            author_name = (
+                quote.author_bakchod.pretty_name
+                or quote.author_bakchod.username
+                or "Unknown"
+            )
+            message_text += f"💡 *Daily Quote:*\n_{quote.text}_\n- {author_name}"
+
+        try:
+            await context.bot.send_message(
+                chat_id=group.group_id, text=message_text, parse_mode="Markdown"
+            )
+            logger.info(f"Sent daily post to group {group.name} ({group.group_id})")
+        except Exception as e:
+            logger.error(f"Failed to send daily post to group {group.name}: {e}")
+
+
+def schedule_daily_posts(job_queue: JobQueue):
+    # IST is UTC+5:30
+    ist = pytz.timezone("Asia/Kolkata")
+    # Schedule for 8:00 AM IST
+    daily_time = datetime.time(hour=8, minute=0, tzinfo=ist)
+
+    job_queue.run_daily(daily_post_callback, time=daily_time, name="daily_good_morning")
+    logger.info("Scheduled daily good morning job for 8:00 AM IST")
