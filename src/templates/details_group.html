@@ -52,13 +52,8 @@
             <th class="text-right">Messages:</th>
             <td class="text-left">
               <span class="badge badge-success">{{message_count}}</span>
-              <a
-                href="/messenger?group_id={{group.group_id}}"
-                class="btn btn-primary btn-sm"
-                role="button"
-                style="margin-left: 1rem;"
-                >View Messages</a
-              >
+              <a href="/messenger?group_id={{group.group_id}}" class="btn btn-primary btn-sm" role="button"
+                style="margin-left: 1rem;">View Messages</a>
             </td>
           </tr>
         </tbody>
@@ -73,7 +68,8 @@
         <input type="hidden" name="group_id" value="{{group.group_id}}" />
         <div class="form-group">
           <label for="message-input">Message Text</label>
-          <input id="message-input" class="form-control" type="text" name="message" value="" placeholder="Enter your message here..." />
+          <input id="message-input" class="form-control" type="text" name="message" value=""
+            placeholder="Enter your message here..." />
         </div>
         <button class="btn btn-primary" type="submit">Send Message to Group</button>
       </form>
@@ -83,59 +79,78 @@
   <div class="card">
     <div class="card-body">
       <h3 class="card-title">Command Settings</h3>
-      <div class="form-check">
-        <input class="form-check-input command-toggle" type="checkbox" value="ask" id="check-ask" 
-        {% if group.metadata.get('enabled_commands') and 'ask' in group.metadata.get('enabled_commands') %}checked{% endif %}>
-        <label class="form-check-label" for="check-ask">
-          Enable /ask command
-        </label>
+      <div class="custom-switch mb-10">
+        <input type="checkbox" class="command-toggle" id="check-ask" value="ask" {% if
+          group.metadata.get('enabled_commands') and 'ask' in group.metadata.get('enabled_commands') %}checked{% endif
+          %}>
+        <label for="check-ask">Enable /ask command</label>
+      </div>
+      <div class="custom-switch mb-10">
+        <input type="checkbox" class="setting-toggle" id="check-gm" value="good_morning_enabled" {% if
+          group.metadata.get('good_morning_enabled') %}checked{% endif %}>
+        <label for="check-gm">Enable Good Morning Greeting</label>
       </div>
     </div>
   </div>
 
   <script>
+    const updateMetadata = (metadata) => {
+      const groupId = "{{group.group_id}}";
+
+      fetch('/api/group/metadata', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          group_id: groupId,
+          metadata: JSON.stringify(metadata)
+        })
+      })
+        .then(response => response.json())
+        .then(data => {
+          console.log('Success:', data);
+        })
+        .catch((error) => {
+          console.error('Error:', error);
+          alert('Failed to update settings');
+          location.reload(); // Reload to reset state on error
+        });
+    };
+
     document.querySelectorAll('.command-toggle').forEach(item => {
       item.addEventListener('change', event => {
         const command = event.target.value;
         const isChecked = event.target.checked;
-        const groupId = "{{group.group_id}}";
-        
-        // Get current enabled commands from metadata (or empty list)
-        let metadata = {{ group.metadata|tojson_pretty|safe }};
-        if (!metadata.enabled_commands) {
-            metadata.enabled_commands = [];
-        }
 
-        if (isChecked) {
-            if (!metadata.enabled_commands.includes(command)) {
-                metadata.enabled_commands.push(command);
-            }
-        } else {
-            metadata.enabled_commands = metadata.enabled_commands.filter(c => c !== command);
-        }
+        let metadata = {{ group.metadata| tojson_pretty | safe
+      }};
+    if (!metadata.enabled_commands) {
+      metadata.enabled_commands = [];
+    }
 
-        // Call API to update metadata
-        fetch('/api/group/metadata', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                group_id: groupId,
-                metadata: JSON.stringify(metadata)
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Success:', data);
-            // Optional: Show success toast
-        })
-        .catch((error) => {
-            console.error('Error:', error);
-            alert('Failed to update settings');
-            // Revert checkbox state on error
-            event.target.checked = !isChecked;
-        });
+    if (isChecked) {
+      if (!metadata.enabled_commands.includes(command)) {
+        metadata.enabled_commands.push(command);
+      }
+    } else {
+      metadata.enabled_commands = metadata.enabled_commands.filter(c => c !== command);
+    }
+
+    updateMetadata(metadata);
+      })
+    })
+
+    document.querySelectorAll('.setting-toggle').forEach(item => {
+      item.addEventListener('change', event => {
+        const setting = event.target.value;
+        const isChecked = event.target.checked;
+
+        let metadata = {{ group.metadata| tojson_pretty | safe
+      }};
+    metadata[setting] = isChecked;
+
+    updateMetadata(metadata);
       })
     })
   </script>
@@ -164,12 +179,8 @@
               <td><span class="badge badge-success">{{groupmember.bakchod.rokda}}</span></td>
               <td>{{groupmember.bakchod.lastseen}}</td>
               <td>
-                <a
-                  href="/details/bakchod?tg_id={{groupmember.bakchod.tg_id}}"
-                  class="btn btn-primary btn-sm"
-                  role="button"
-                  >View Details</a
-                >
+                <a href="/details/bakchod?tg_id={{groupmember.bakchod.tg_id}}" class="btn btn-primary btn-sm"
+                  role="button">View Details</a>
               </td>
             </tr>
             {% endfor %}
