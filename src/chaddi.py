@@ -1,4 +1,4 @@
-import threading
+import asyncio
 
 from loguru import logger
 
@@ -8,17 +8,21 @@ from src.bot import run_telegram_bot
 from src.server import run_server
 
 
-def main():
+async def main():
     logger.info(r"Starting chaddi-tg _/\_")
 
     # Uncomment to intercept debug logs from other libs
     # domain_logger.intercept_logs_with_loguru()
 
-    server_thread = threading.Thread(target=run_server)
-    server_thread.start()
-
-    run_telegram_bot()
+    # Run both the bot and server concurrently using asyncio
+    try:
+        await asyncio.gather(
+            run_telegram_bot(),
+            run_server(),
+        )
+    except KeyboardInterrupt:
+        logger.info("Shutting down chaddi-tg...")
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

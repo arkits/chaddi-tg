@@ -1,3 +1,5 @@
+import asyncio
+
 from loguru import logger
 from telegram.ext import (
     Application,
@@ -48,7 +50,7 @@ async def post_init(application: Application) -> None:
     schedule_daily_posts(application.job_queue)
 
 
-def run_telegram_bot():
+async def run_telegram_bot():
     # Create the Application and pass it your bot's token.
     application = (
         Application.builder()
@@ -108,16 +110,30 @@ def run_telegram_bot():
     # Log all errors
     application.add_error_handler(handlers.errors.log_error)
 
-    # Start the Bot
+    # Start the Bot using async API (since we're already in an async context)
     logger.info("[tg] Starting Telegram Bot with Polling")
-    application.run_polling(
-        allowed_updates=[
-            "message",
-            "edited_message",
-            "channel_post",
-            "edited_channel_post",
-        ]
-    )
+    await application.initialize()
+    await application.start()
+    
+    try:
+        # Start polling - this starts the polling process
+        await application.updater.start_polling(
+            allowed_updates=[
+                "message",
+                "edited_message",
+                "channel_post",
+                "edited_channel_post",
+            ]
+        )
+        # Keep the event loop running until cancelled
+        stop_event = asyncio.Event()
+        await stop_event.wait()
+    except asyncio.CancelledError:
+        logger.info("[tg] Stopping Telegram Bot")
+        await application.updater.stop()
+        await application.stop()
+        await application.shutdown()
+        raise
 
 
 def get_bot_instance():

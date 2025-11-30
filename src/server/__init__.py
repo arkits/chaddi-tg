@@ -1,3 +1,4 @@
+import asyncio
 import socketio
 import uvicorn
 from fastapi import FastAPI
@@ -72,14 +73,16 @@ app = socketio.ASGIApp(
 )
 
 
-def run_server():
-    logger.info(
-        "[server] Starting Server on http://localhost:{}",
-        app_config.get("SERVER", "PORT"),
-    )
-    uvicorn.run(
+async def run_server():
+    config_uvicorn = uvicorn.Config(
         app,
         host="0.0.0.0",
         log_level="warning",
         port=int(app_config.get("SERVER", "PORT")),
     )
+    server = uvicorn.Server(config_uvicorn)
+    logger.info(
+        "[server] Starting Server on http://localhost:{}",
+        app_config.get("SERVER", "PORT"),
+    )
+    await server.serve()
