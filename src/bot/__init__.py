@@ -115,6 +115,10 @@ async def run_telegram_bot():
     await application.initialize()
     await application.start()
     
+    # Call post_init manually since we're using the async API directly
+    # (post_init is normally called by run_polling/run_webhook)
+    await post_init(application)
+    
     try:
         # Start polling - this starts the polling process
         await application.updater.start_polling(
