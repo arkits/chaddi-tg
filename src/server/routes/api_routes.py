@@ -2,6 +2,7 @@ import inspect
 import json
 import math
 
+from cachetools import TTLCache
 from fastapi import APIRouter, Request
 from loguru import logger
 from peewee import DoesNotExist, fn
@@ -14,6 +15,12 @@ from src.db import Bakchod, Group, Message, Quote, group_dao
 from src.domain import util
 
 router = APIRouter()
+
+# In-memory cache for dashboard endpoints
+# Cache metrics for 60 seconds
+metrics_cache = TTLCache(maxsize=1, ttl=60)
+# Cache version for 30 seconds (shorter since uptime changes)
+version_cache = TTLCache(maxsize=1, ttl=30)
 
 
 @router.get("/health", response_class=JSONResponse)
@@ -422,38 +429,46 @@ def quick_model_to_dict(model):
     return json.loads(json.dumps(model_to_dict(model), sort_keys=True, default=str))
 
 
+def _compute_dashboard_metrics():
+    """Compute dashboard metrics (used for caching)"""
+    from datetime import datetime, timedelta
+
+    bakchods_count = Bakchod.select().count()
+    groups_count = Group.select().count()
+    messages_count = Message.select().count()
+    quotes_count = Quote.select().count()
+
+    from src.db import Roll, ScheduledJob
+
+    roll_count = Roll.select().count()
+    jobs_count = ScheduledJob.select().count()
+
+    # Get recent activity stats (last 24 hours)
+    last_24h = datetime.now() - timedelta(hours=24)
+    recent_messages = Message.select().where(Message.time_sent >= last_24h).count()
+    recent_bakchods = Bakchod.select().where(Bakchod.lastseen >= last_24h).count()
+
+    return {
+        "bakchods_count": bakchods_count,
+        "groups_count": groups_count,
+        "messages_count": messages_count,
+        "quotes_count": quotes_count,
+        "roll_count": roll_count,
+        "jobs_count": jobs_count,
+        "recent_messages": recent_messages,
+        "recent_bakchods": recent_bakchods,
+    }
+
+
 @router.get("/dashboard/metrics", response_class=JSONResponse)
 async def get_dashboard_metrics(request: Request):
     """Get basic dashboard metrics"""
     try:
-        from datetime import datetime, timedelta
-
-        bakchods_count = Bakchod.select().count()
-        groups_count = Group.select().count()
-        messages_count = Message.select().count()
-        quotes_count = Quote.select().count()
-
-        from src.db import Roll, ScheduledJob
-
-        roll_count = Roll.select().count()
-        jobs_count = ScheduledJob.select().count()
-
-        # Get recent activity stats (last 24 hours)
-        last_24h = datetime.now() - timedelta(hours=24)
-        recent_messages = Message.select().where(Message.time_sent >= last_24h).count()
-        recent_bakchods = Bakchod.select().where(Bakchod.lastseen >= last_24h).count()
-
-        response = {
-            "bakchods_count": bakchods_count,
-            "groups_count": groups_count,
-            "messages_count": messages_count,
-            "quotes_count": quotes_count,
-            "roll_count": roll_count,
-            "jobs_count": jobs_count,
-            "recent_messages": recent_messages,
-            "recent_bakchods": recent_bakchods,
-        }
-
+        cache_key = "metrics"
+        if cache_key not in metrics_cache:
+            metrics_cache[cache_key] = _compute_dashboard_metrics()
+        
+        response = metrics_cache[cache_key]
         return JSONResponse(content=response, status_code=200)
 
     except Exception as e:
@@ -548,27 +563,35 @@ async def get_dashboard_random_quote(request: Request):
         return handle_http_error(str(e), 500)
 
 
+def _compute_dashboard_version():
+    """Compute dashboard version info (used for caching)"""
+    from src.domain import version
+
+    v = version.get_version()
+
+    return {
+        "semver": str(v["semver"]) if v.get("semver") else "unknown",
+        "git_commit_id": (
+            str(v["git_commit_id"]) if v.get("git_commit_id") else "unknown"
+        ),
+        "git_commit_time": (
+            str(v["git_commit_time"]) if v.get("git_commit_time") else "unknown"
+        ),
+        "pretty_uptime": (
+            str(v["pretty_uptime"]) if v.get("pretty_uptime") else "unknown"
+        ),
+    }
+
+
 @router.get("/dashboard/version", response_class=JSONResponse)
 async def get_dashboard_version(request: Request):
     """Get version information"""
     try:
-        from src.domain import version
-
-        v = version.get_version()
-
-        response = {
-            "semver": str(v["semver"]) if v.get("semver") else "unknown",
-            "git_commit_id": (
-                str(v["git_commit_id"]) if v.get("git_commit_id") else "unknown"
-            ),
-            "git_commit_time": (
-                str(v["git_commit_time"]) if v.get("git_commit_time") else "unknown"
-            ),
-            "pretty_uptime": (
-                str(v["pretty_uptime"]) if v.get("pretty_uptime") else "unknown"
-            ),
-        }
-
+        cache_key = "version"
+        if cache_key not in version_cache:
+            version_cache[cache_key] = _compute_dashboard_version()
+        
+        response = version_cache[cache_key]
         return JSONResponse(content=response, status_code=200)
 
     except Exception as e:

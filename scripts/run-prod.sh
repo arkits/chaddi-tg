@@ -15,7 +15,8 @@ export PYTHONPATH=$PYTHONPATH:$(pwd)
 mkdir -p logs
 
 # Dependencies are now managed by uv via pyproject.toml
-# Install/sync dependencies with: uv sync
+# Install/sync dependencies 
+uv sync
 
 cd src
 
