@@ -39,7 +39,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             logger.info("[aao] target_message was None!")
             return
 
-        magic_word = extract_magic_word(target_message)
+        magic_word = util.extract_magic_word(target_message)
         if magic_word is None:
             logger.info("[aao] magic_word was None!")
             return
@@ -64,49 +64,6 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             e,
             traceback.format_exc(),
         )
-
-
-def extract_magic_word(target_message):
-    doc = util.get_nlp()(target_message)
-
-    # the types on pos that we care about - refer to https://universaldependencies.org/docs/u/pos/
-    accepted_pos_types = ["VERB", "NOUN", "PROPN", "ADJ", "ADV"]
-
-    # Create a dict for storing the tokens sorted by pos types
-    tokens_sorted = {}
-    for pos_type in accepted_pos_types:
-        tokens_sorted[pos_type] = []
-
-    for token in doc:
-        for pos_type in accepted_pos_types:
-            # logger.debug("token={} - pos={}", token, token.pos_)
-
-            if token.pos_ == pos_type:
-                if pos_type == "VERB":
-                    tokens_sorted[pos_type].append(token.lemma_)
-                else:
-                    tokens_sorted[pos_type].append(token)
-
-    # remove the key from the dict if it's empty
-    # need to use list(), or else python will complain
-    for sorted_key in list(tokens_sorted.keys()):
-        if len(tokens_sorted[sorted_key]) == 0:
-            tokens_sorted.pop(sorted_key, None)
-
-    logger.debug("[aao] tokens_sorted={}", tokens_sorted)
-
-    if len(tokens_sorted.keys()) == 0:
-        logger.info("[aao] tokens_sorted.keys() was zero!")
-        return None
-
-    # choose which pos_type to use...
-    magic_pos_type = list(tokens_sorted.keys())[0]
-    logger.debug("[aao] magic_pos_type={}", magic_pos_type)
-
-    # choose magic word...
-    magic_word = util.choose_random_element_from_list(tokens_sorted[magic_pos_type])
-
-    return magic_word
 
 
 def get_support_word():

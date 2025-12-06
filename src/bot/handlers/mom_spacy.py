@@ -149,7 +149,7 @@ def rake_joke(message, protagonist):
     phrase = rake.get_ranked_phrases()[0]
 
     # Extract a random verb from the phrase
-    random_verb = extract_random_verb(phrase)
+    random_verb = util.extract_magic_word(phrase)
 
     # Derive a preposition that goes along
     if random_verb in preposition_to_verb_map:
@@ -266,17 +266,3 @@ def random_reply(protagonist):
     return replies[random_int]
 
 
-# Extracts a random verb from the sentence
-def extract_random_verb(sentence):
-    doc = util.get_nlp()(sentence)
-
-    verbs = []
-
-    for token in doc:
-        if token.pos_ == "VERB":
-            verbs.append(str(token.lemma_))
-
-    if len(verbs) > 0:
-        return random.choice(verbs)
-    else:
-        return "played"

@@ -179,3 +179,46 @@ def normalize_datetime(dt: datetime):
         dt = UTC_TIMEZONE.localize(dt)
 
     return IST_TIMEZONE.normalize(dt)
+
+
+def extract_magic_word(target_message):
+    doc = get_nlp()(target_message)
+
+    # the types on pos that we care about - refer to https://universaldependencies.org/docs/u/pos/
+    accepted_pos_types = ["VERB", "NOUN", "PROPN", "ADJ", "ADV"]
+
+    # Create a dict for storing the tokens sorted by pos types
+    tokens_sorted = {}
+    for pos_type in accepted_pos_types:
+        tokens_sorted[pos_type] = []
+
+    for token in doc:
+        for pos_type in accepted_pos_types:
+            # logger.debug("token={} - pos={}", token, token.pos_)
+
+            if token.pos_ == pos_type:
+                if pos_type == "VERB":
+                    tokens_sorted[pos_type].append(token.lemma_)
+                else:
+                    tokens_sorted[pos_type].append(token)
+
+    # remove the key from the dict if it's empty
+    # need to use list(), or else python will complain
+    for sorted_key in list(tokens_sorted.keys()):
+        if len(tokens_sorted[sorted_key]) == 0:
+            tokens_sorted.pop(sorted_key, None)
+
+    logger.debug("[extract_magic_word] tokens_sorted={}", tokens_sorted)
+
+    if len(tokens_sorted.keys()) == 0:
+        logger.info("[extract_magic_word] tokens_sorted.keys() was zero!")
+        return None
+
+    # choose which pos_type to use...
+    magic_pos_type = list(tokens_sorted.keys())[0]
+    logger.debug("[extract_magic_word] magic_pos_type={}", magic_pos_type)
+
+    # choose magic word...
+    magic_word = choose_random_element_from_list(tokens_sorted[magic_pos_type])
+
+    return magic_word
