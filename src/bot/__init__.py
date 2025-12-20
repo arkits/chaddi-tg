@@ -83,8 +83,6 @@ async def run_telegram_bot():
 
     application.add_handler(CommandHandler("roll", handlers.roll.handle))
     application.add_handler(CommandHandler("translate", handlers.translate.handle))
-    application.add_handler(CommandHandler("mlai", handlers.mlai.handle))
-    application.add_handler(CommandHandler("ocr", handlers.mlai.handle_ocr))
     application.add_handler(CommandHandler("tynm", handlers.tynm.handle))
     application.add_handler(CommandHandler("ytdl", handlers.ytdl.handle))
     application.add_handler(CommandHandler("dalle", handlers.dalle.handle))
@@ -92,6 +90,9 @@ async def run_telegram_bot():
     application.add_handler(CommandHandler("ask", handlers.ask.handle))
     application.add_handler(CommandHandler("patakaro", handlers.ask.handle))
     application.add_handler(CommandHandler("chatgpt", handlers.ask.handle))
+
+    application.add_handler(CommandHandler("ai", handlers.ai.handle))
+    application.add_handler(CommandHandler("gemini", handlers.ai.handle))
 
     application.add_handler(CommandHandler("remind", handlers.remind.handle))
     application.add_handler(CommandHandler("reminder", handlers.remind.handle))
@@ -102,9 +103,7 @@ async def run_telegram_bot():
     application.add_handler(
         MessageHandler(filters.StatusUpdate.ALL, handlers.defaults.status_update)
     )
-    application.add_handler(
-        MessageHandler(filters.Document.VIDEO, handlers.webm.handle)
-    )
+    application.add_handler(MessageHandler(filters.Document.VIDEO, handlers.webm.handle))
     application.add_handler(MessageHandler(filters.ALL, handlers.defaults.all))
 
     # Log all errors
@@ -114,11 +113,11 @@ async def run_telegram_bot():
     logger.info("[tg] Starting Telegram Bot with Polling")
     await application.initialize()
     await application.start()
-    
+
     # Call post_init manually since we're using the async API directly
     # (post_init is normally called by run_polling/run_webhook)
     await post_init(application)
-    
+
     try:
         # Start polling - this starts the polling process
         await application.updater.start_polling(

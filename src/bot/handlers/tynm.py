@@ -16,17 +16,8 @@ from src.domain import dc, util
 MLAI_RESOURCES_DIR = path.join(util.RESOURCES_DIR, "mlai")
 EXTERNAL_DIR = path.join(util.RESOURCES_DIR, "external")
 FONTS_DIR = path.join(util.RESOURCES_DIR, "fonts")
+TYNM_IMAGES_DIR = path.join(util.RESOURCES_DIR, "tynm")
 PNG_EXTENSION = ".png"
-NM_IMG_URLS = [
-    "https://i.imgur.com/QAUObo1.png",
-    "https://i.imgur.com/7iPnewL.png",
-    "https://i.imgur.com/Ki85sni.png",
-    "https://i.imgur.com/cP00Tbt.png",
-    "https://i.imgur.com/AqauTol.png",
-    "https://i.imgur.com/Cqw8yWb.png",
-    "https://i.imgur.com/rpyGAWw.png",
-    "https://i.imgur.com/U9JUnNO.png",
-]
 NM_IMG_LOCATIONS = ["bottom_right", "bottom_left", "top_right", "top_left", "center"]
 
 
@@ -38,12 +29,40 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("Please reply to a message with `/tynm`")
             return
 
-        # Choose NM_IMG
-        NM_IMG_URL = random.choice(NM_IMG_URLS)
-        NM_IMG_NAME = NM_IMG_URL.split("/")[-1]
-        logger.debug("NM_IMG_URL={} NM_IMG_NAME={}", NM_IMG_URL, NM_IMG_NAME)
-        util.acquire_external_resource(NM_IMG_URL, NM_IMG_NAME)
-        nm_img = Image.open(path.join(EXTERNAL_DIR, NM_IMG_NAME))
+        # Load NM_IMG from local resources folder
+        nm_img = None
+        try:
+            # Get all image files from tynm directory
+            if not os.path.exists(TYNM_IMAGES_DIR):
+                logger.error("TYNM images directory does not exist: {}", TYNM_IMAGES_DIR)
+                await update.message.reply_text("TYNM images not found. Please contact admin.")
+                return
+
+            image_files = [
+                f
+                for f in os.listdir(TYNM_IMAGES_DIR)
+                if f.lower().endswith((".png", ".jpg", ".jpeg", ".gif", ".webp"))
+            ]
+
+            if not image_files:
+                logger.error("No image files found in TYNM directory: {}", TYNM_IMAGES_DIR)
+                await update.message.reply_text("No TYNM images available. Please contact admin.")
+                return
+
+            # Randomly select an image file
+            selected_image = util.choose_random_element_from_list(image_files)
+            image_path = path.join(TYNM_IMAGES_DIR, selected_image)
+
+            logger.debug("Loading NM_IMG from local file: {}", image_path)
+
+            # Load and validate the image
+            nm_img = Image.open(image_path)
+            logger.info("Successfully loaded NM_IMG from {}", selected_image)
+
+        except Exception as e:
+            logger.error("Failed to load NM_IMG from local resources: {} traceback={}", e, traceback.format_exc())
+            await update.message.reply_text("Failed to load image. Please try again later.")
+            return
 
         # Handle photo message
         if getattr(update.message.reply_to_message, "photo", None):
@@ -54,11 +73,15 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 src_img_width, src_img_height = src_img.size
                 logger.debug("src_img_width={} src_img_height={}", src_img_width, src_img_height)
 
+                # Add fancy border and text
+                src_img = add_fancy_border(src_img)
+                src_img = add_thank_you_text(src_img)
+
                 # Place NM_IMG with random location and scale
                 nm_img_location = random.choice(NM_IMG_LOCATIONS)
                 nm_img_scale = random.uniform(1.5, 3.0)
                 logger.info("nm_img_location={} nm_img_scale={:.2f}", nm_img_location, nm_img_scale)
-                place_image(src_img, nm_img, location=nm_img_location, scale=nm_img_scale)
+                src_img = place_image(src_img, nm_img, location=nm_img_location, scale=nm_img_scale)
 
                 src_img.save(build_file_path(file, "_tynm"))
 
@@ -261,7 +284,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             nm_img_location = random.choice(NM_IMG_LOCATIONS)
             nm_img_scale = random.uniform(1.5, 3.0)
             logger.info("nm_img_location={} nm_img_scale={:.2f}", nm_img_location, nm_img_scale)
-            place_image(
+            img = place_image(
                 img,
                 nm_img,
                 location=nm_img_location,
@@ -311,7 +334,130 @@ def generate_wrapped_caption(text):
     return caption
 
 
-def place_image(src_img: Image, placement_img: Image, scale=2, location="bottom_right"):
+def add_fancy_border(img: Image) -> Image:
+    """Add a fancy decorative border to the image."""
+    border_width = 20
+    outer_border_width = 5
+    img_width, img_height = img.size
+
+    # Create a new image with border space
+    bordered_img = Image.new("RGB", (img_width + 2 * border_width, img_height + 2 * border_width), color=(255, 255, 255))
+
+    # Convert to RGB if needed
+    if img.mode != "RGB":
+        img = img.convert("RGB")
+
+    # Paste original image in the center
+    bordered_img.paste(img, (border_width, border_width))
+
+    # Draw decorative borders
+    draw = ImageDraw.Draw(bordered_img)
+
+    # Outer border (thick, dark) - draw multiple rectangles for thickness
+    for i in range(outer_border_width):
+        draw.rectangle(
+            [(outer_border_width - i, outer_border_width - i), (img_width + 2 * border_width - outer_border_width + i, img_height + 2 * border_width - outer_border_width + i)],
+            outline=(0, 0, 0),
+        )
+
+    # Middle border (medium, orange/saffron)
+    for i in range(4):
+        draw.rectangle(
+            [(outer_border_width + 3 - i, outer_border_width + 3 - i), (img_width + 2 * border_width - outer_border_width - 3 + i, img_height + 2 * border_width - outer_border_width - 3 + i)],
+            outline=(255, 153, 51),
+        )
+
+    # Inner border (thin, white)
+    for i in range(2):
+        draw.rectangle(
+            [(outer_border_width + 7 - i, outer_border_width + 7 - i), (img_width + 2 * border_width - outer_border_width - 7 + i, img_height + 2 * border_width - outer_border_width - 7 + i)],
+            outline=(255, 255, 255),
+        )
+
+    # Decorative corner elements
+    corner_size = 15
+    corner_thickness = 3
+
+    # Top-left corner
+    draw.line([(outer_border_width, outer_border_width), (outer_border_width + corner_size, outer_border_width)], fill=(255, 153, 51), width=corner_thickness)
+    draw.line([(outer_border_width, outer_border_width), (outer_border_width, outer_border_width + corner_size)], fill=(255, 153, 51), width=corner_thickness)
+
+    # Top-right corner
+    draw.line([(img_width + 2 * border_width - outer_border_width, outer_border_width), (img_width + 2 * border_width - outer_border_width - corner_size, outer_border_width)], fill=(255, 153, 51), width=corner_thickness)
+    draw.line([(img_width + 2 * border_width - outer_border_width, outer_border_width), (img_width + 2 * border_width - outer_border_width, outer_border_width + corner_size)], fill=(255, 153, 51), width=corner_thickness)
+
+    # Bottom-left corner
+    draw.line([(outer_border_width, img_height + 2 * border_width - outer_border_width), (outer_border_width + corner_size, img_height + 2 * border_width - outer_border_width)], fill=(255, 153, 51), width=corner_thickness)
+    draw.line([(outer_border_width, img_height + 2 * border_width - outer_border_width), (outer_border_width, img_height + 2 * border_width - outer_border_width - corner_size)], fill=(255, 153, 51), width=corner_thickness)
+
+    # Bottom-right corner
+    draw.line([(img_width + 2 * border_width - outer_border_width, img_height + 2 * border_width - outer_border_width), (img_width + 2 * border_width - outer_border_width - corner_size, img_height + 2 * border_width - outer_border_width)], fill=(255, 153, 51), width=corner_thickness)
+    draw.line([(img_width + 2 * border_width - outer_border_width, img_height + 2 * border_width - outer_border_width), (img_width + 2 * border_width - outer_border_width, img_height + 2 * border_width - outer_border_width - corner_size)], fill=(255, 153, 51), width=corner_thickness)
+
+    return bordered_img
+
+
+def add_thank_you_text(img: Image) -> Image:
+    """Add 'thank you modi ji!' text to the image."""
+    draw = ImageDraw.Draw(img)
+    img_width, img_height = img.size
+
+    # Text to display
+    text = "thank you modi ji!"
+
+    # Try to use a font from the fonts directory, fallback to default
+    font_size = max(40, int(img_width / 20))
+    try:
+        if os.path.exists(FONTS_DIR) and os.listdir(FONTS_DIR):
+            random_font = util.choose_random_element_from_list(os.listdir(FONTS_DIR))
+            font_path = path.join(FONTS_DIR, random_font)
+            font = ImageFont.truetype(font_path, font_size)
+        else:
+            font = ImageFont.load_default()
+    except Exception as e:
+        logger.warning("Failed to load custom font, using default. e={}", e)
+        font = ImageFont.load_default()
+
+    # Get text dimensions
+    try:
+        bbox = draw.textbbox((0, 0), text, font=font)
+        text_width = bbox[2] - bbox[0]
+        text_height = bbox[3] - bbox[1]
+    except AttributeError:
+        # Fallback for older PIL versions
+        text_width, text_height = draw.textsize(text, font=font)
+
+    # Position text at bottom center with padding
+    text_x = (img_width - text_width) // 2
+    text_y = img_height - text_height - 30
+
+    # Draw text with outline (shadow effect)
+    outline_width = 3
+    for adj in range(-outline_width, outline_width + 1):
+        for adj2 in range(-outline_width, outline_width + 1):
+            if adj != 0 or adj2 != 0:
+                draw.text(
+                    (text_x + adj, text_y + adj2),
+                    text,
+                    font=font,
+                    fill=(0, 0, 0),
+                )
+
+    # Draw main text in saffron/orange color
+    draw.text((text_x, text_y), text, font=font, fill=(255, 153, 51))
+
+    return img
+
+
+def place_image(src_img: Image, placement_img: Image, scale=2, location="bottom_right") -> Image:
+    # Convert placement_img to RGBA to preserve transparency
+    if placement_img.mode != "RGBA":
+        placement_img = placement_img.convert("RGBA")
+
+    # Ensure src_img is RGBA to support transparency
+    if src_img.mode != "RGBA":
+        src_img = src_img.convert("RGBA")
+
     src_img_width, src_img_height = src_img.size
     placement_img_width, placement_img_height = placement_img.size
 
@@ -377,7 +523,7 @@ def place_image(src_img: Image, placement_img: Image, scale=2, location="bottom_
             placement_img,
         )
 
-    return
+    return src_img
 
 
 async def acquire_file(update: Update, context: ContextTypes.DEFAULT_TYPE):

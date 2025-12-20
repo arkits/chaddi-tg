@@ -1,6 +1,7 @@
 from . import (
     aao,
     about,
+    ai,
     antiwordle,
     ask,
     chutiya,
@@ -11,7 +12,6 @@ from . import (
     gamble,
     help,
     hi,
-    mlai,
     mom_llm,
     mom_rake,
     mom_spacy,

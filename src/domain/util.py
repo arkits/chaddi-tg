@@ -87,8 +87,20 @@ def acquire_external_resource(resource_url, resource_name):
             "[acquire_external_resource] downloading resource_url={}", resource_url
         )
 
-        r = requests.get(resource_url, allow_redirects=True)
-        open(resource_path, "wb").write(r.content)
+        r = requests.get(resource_url, allow_redirects=True, timeout=30)
+        r.raise_for_status()  # Raise an exception for bad status codes
+
+        # Ensure the directory exists
+        os.makedirs(os.path.dirname(resource_path), exist_ok=True)
+
+        with open(resource_path, "wb") as f:
+            f.write(r.content)
+
+        logger.info(
+            "[acquire_external_resource] successfully downloaded resource_path={} size={} bytes",
+            resource_path,
+            len(r.content),
+        )
 
     return resource_path
 
@@ -200,7 +212,7 @@ def extract_magic_word(target_message):
                 if pos_type == "VERB":
                     tokens_sorted[pos_type].append(token.lemma_)
                 else:
-                    tokens_sorted[pos_type].append(token)
+                    tokens_sorted[pos_type].append(token.text)
 
     # remove the key from the dict if it's empty
     # need to use list(), or else python will complain
