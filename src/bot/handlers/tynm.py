@@ -1,4 +1,5 @@
 import datetime
+import math
 import os
 import random
 import textwrap
@@ -82,6 +83,9 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 nm_img_scale = random.uniform(1.5, 3.0)
                 logger.info("nm_img_location={} nm_img_scale={:.2f}", nm_img_location, nm_img_scale)
                 src_img = place_image(src_img, nm_img, location=nm_img_location, scale=nm_img_scale)
+
+                # Add decorative fireworks and flowers
+                src_img = add_decorative_elements(src_img)
 
                 src_img.save(build_file_path(file, "_tynm"))
 
@@ -291,6 +295,9 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 scale=nm_img_scale,
             )
 
+            # Add decorative fireworks and flowers
+            img = add_decorative_elements(img)
+
             # Generate filename and file path
             filename = f"{update.message.chat.id}-{update.message.message_id}"
             img_path = path.join(EXTERNAL_DIR, filename + PNG_EXTENSION)
@@ -446,6 +453,179 @@ def add_thank_you_text(img: Image) -> Image:
     # Draw main text in saffron/orange color
     draw.text((text_x, text_y), text, font=font, fill=(255, 153, 51))
 
+    return img
+
+
+def draw_firework(size: int = 60) -> Image:
+    """Draw a colorful firework clipart."""
+    # Create transparent image
+    firework = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(firework)
+    
+    center_x, center_y = size // 2, size // 2
+    
+    # Firework colors (bright and festive)
+    colors = [
+        (255, 215, 0),  # Gold
+        (255, 20, 147),  # Deep pink
+        (0, 191, 255),  # Deep sky blue
+        (255, 140, 0),  # Dark orange
+        (50, 205, 50),  # Lime green
+    ]
+    
+    # Draw radiating lines (sparks)
+    num_sparks = 12
+    spark_length = size // 2 - 5
+    
+    for i in range(num_sparks):
+        angle = (2 * math.pi * i) / num_sparks
+        color = random.choice(colors)
+        
+        # Calculate end point using trigonometry
+        end_x = center_x + int(spark_length * math.cos(angle))
+        end_y = center_y + int(spark_length * math.sin(angle))
+        
+        # Draw main spark line
+        draw.line([(center_x, center_y), (end_x, end_y)], fill=color, width=3)
+        
+        # Add small circles at the end (sparkle effect)
+        draw.ellipse([end_x - 3, end_y - 3, end_x + 3, end_y + 3], fill=color)
+    
+    # Draw center circle
+    draw.ellipse([center_x - 5, center_y - 5, center_x + 5, center_y + 5], fill=(255, 255, 0))
+    
+    return firework
+
+
+def draw_flower(size: int = 50) -> Image:
+    """Draw a decorative flower clipart."""
+    # Create transparent image
+    flower = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(flower)
+    
+    center_x, center_y = size // 2, size // 2
+    
+    # Flower colors (bright and cheerful)
+    petal_colors = [
+        (255, 192, 203),  # Pink
+        (255, 20, 147),  # Deep pink
+        (255, 165, 0),  # Orange
+        (255, 215, 0),  # Gold
+        (255, 105, 180),  # Hot pink
+    ]
+    
+    petal_color = random.choice(petal_colors)
+    center_color = (255, 215, 0)  # Gold center
+    
+    # Draw petals (5 petals for a simple flower)
+    num_petals = 5
+    petal_radius = size // 3
+    
+    for i in range(num_petals):
+        angle = (2 * math.pi * i) / num_petals
+        # Calculate petal position using trigonometry
+        petal_x = center_x + int(petal_radius * math.cos(angle))
+        petal_y = center_y + int(petal_radius * math.sin(angle))
+        
+        # Draw petal as ellipse
+        petal_size = size // 4
+        draw.ellipse(
+            [
+                petal_x - petal_size // 2,
+                petal_y - petal_size // 2,
+                petal_x + petal_size // 2,
+                petal_y + petal_size // 2,
+            ],
+            fill=petal_color,
+            outline=(255, 255, 255),
+            width=1,
+        )
+    
+    # Draw center circle
+    center_radius = size // 6
+    draw.ellipse(
+        [
+            center_x - center_radius,
+            center_y - center_radius,
+            center_x + center_radius,
+            center_y + center_radius,
+        ],
+        fill=center_color,
+        outline=(255, 140, 0),
+        width=2,
+    )
+    
+    return flower
+
+
+def add_decorative_elements(img: Image) -> Image:
+    """Add fireworks and flowers as decorative elements to the image."""
+    # Ensure image is RGBA
+    if img.mode != "RGBA":
+        img = img.convert("RGBA")
+    
+    img_width, img_height = img.size
+    
+    # Number of decorative elements (fireworks and flowers)
+    num_fireworks = random.randint(2, 4)
+    num_flowers = random.randint(3, 6)
+    
+    # Add fireworks (typically at top corners and edges)
+    for _ in range(num_fireworks):
+        firework_size = random.randint(40, 80)
+        firework = draw_firework(firework_size)
+        
+        # Random position (prefer top area and corners)
+        if random.random() > 0.5:
+            # Top area
+            x = random.randint(20, img_width - firework_size - 20)
+            y = random.randint(20, img_height // 3)
+        else:
+            # Random edge
+            side = random.choice(["top", "left", "right"])
+            if side == "top":
+                x = random.randint(20, img_width - firework_size - 20)
+                y = random.randint(10, 50)
+            elif side == "left":
+                x = random.randint(10, 50)
+                y = random.randint(20, img_height - firework_size - 20)
+            else:  # right
+                x = img_width - firework_size - random.randint(10, 50)
+                y = random.randint(20, img_height - firework_size - 20)
+        
+        # Paste firework with transparency
+        img.paste(firework, (x, y), firework)
+    
+    # Add flowers (scattered around, prefer corners and edges)
+    for _ in range(num_flowers):
+        flower_size = random.randint(30, 60)
+        flower = draw_flower(flower_size)
+        
+        # Random position (prefer corners and edges)
+        if random.random() > 0.3:
+            # Corners
+            corner = random.choice(["top_left", "top_right", "bottom_left", "bottom_right"])
+            if corner == "top_left":
+                x = random.randint(10, 80)
+                y = random.randint(10, 80)
+            elif corner == "top_right":
+                x = img_width - flower_size - random.randint(10, 80)
+                y = random.randint(10, 80)
+            elif corner == "bottom_left":
+                x = random.randint(10, 80)
+                y = img_height - flower_size - random.randint(10, 80)
+            else:  # bottom_right
+                x = img_width - flower_size - random.randint(10, 80)
+                y = img_height - flower_size - random.randint(10, 80)
+        else:
+            # Random position
+            x = random.randint(20, img_width - flower_size - 20)
+            y = random.randint(20, img_height - flower_size - 20)
+        
+        # Paste flower with transparency
+        img.paste(flower, (x, y), flower)
+    
+    logger.info("Added {} fireworks and {} flowers to image", num_fireworks, num_flowers)
     return img
 
 
