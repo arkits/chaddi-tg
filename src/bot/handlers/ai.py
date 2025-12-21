@@ -31,7 +31,7 @@ if AI_PROVIDER == "gemini" or app_config.has_option("GEMINI", "API_KEY"):
         logger.warning(f"[ai] Failed to initialize Gemini client: {e}")
 
 # Model names
-OPENAI_MODEL = app_config.get("AI", "OPENAI_MODEL", fallback="gpt-4o-mini")
+OPENAI_MODEL = app_config.get("AI", "OPENAI_MODEL", fallback="gpt-5-mini-2025-08-07")
 GEMINI_MODEL = app_config.get("AI", "GEMINI_MODEL", fallback="gemini-2.5-flash")
 
 COMMAND_COST = 200
