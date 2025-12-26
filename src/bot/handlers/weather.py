@@ -12,8 +12,15 @@ from src.domain import config, dc
 
 app_config = config.get_config()
 
+# Control whether to use LLM for funny descriptions
+USE_LLM_FOR_DESCRIPTIONS = app_config.getboolean(
+    "WEATHER", "USE_LLM_FOR_DESCRIPTIONS", fallback=False
+)
+
 # Initialize OpenAI client for funny descriptions
-openai_client = OpenAI(api_key=app_config.get("OPENAI", "API_KEY"))
+openai_client = None
+if USE_LLM_FOR_DESCRIPTIONS:
+    openai_client = OpenAI(api_key=app_config.get("OPENAI", "API_KEY"))
 OPENAI_MODEL = app_config.get("AI", "OPENAI_MODEL", fallback="gpt-5-nano-2025-08-07")
 
 # OpenWeatherMap API key (will be added to config)
@@ -153,8 +160,19 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def _generate_funny_description(weather_description: str) -> str:
-    """Generate a funny rude description of the weather using LLM"""
+    """Generate a funny rude description of the weather using LLM or fallback"""
+    # If LLM is disabled, use fallback directly
+    if not USE_LLM_FOR_DESCRIPTIONS:
+        return _get_fallback_description(weather_description)
+
+    # Try to use LLM if enabled
     try:
+        if openai_client is None:
+            logger.warning(
+                "[weather] LLM enabled but OpenAI client not configured, using fallback"
+            )
+            return _get_fallback_description(weather_description)
+
         prompt = f"""Convert this weather description into a funny, rude, and sarcastic one-liner. Keep it short (1 sentence max) and make it entertaining.
 
 Weather description: "{weather_description}"
@@ -189,14 +207,26 @@ def _get_fallback_description(weather_description: str) -> str:
 
     # Check for dynamic roasts by condition
     dynamic_roasts = []
-    if "rain" in weather_lower or "drizzle" in weather_lower or "shower" in weather_lower:
-        dynamic_roasts.append(f"Sky's leaking {weather_description}. Bring a towel or a new life.")
+    if (
+        "rain" in weather_lower
+        or "drizzle" in weather_lower
+        or "shower" in weather_lower
+    ):
+        dynamic_roasts.append(
+            f"Sky's leaking {weather_description}. Bring a towel or a new life."
+        )
     if "snow" in weather_lower:
-        dynamic_roasts.append(f"{weather_description} everywhere—time to question your life choices in traffic.")
+        dynamic_roasts.append(
+            f"{weather_description} everywhere—time to question your life choices in traffic."
+        )
     if "fog" in weather_lower or "mist" in weather_lower:
-        dynamic_roasts.append(f"{weather_description}: because seeing where you're going is overrated.")
+        dynamic_roasts.append(
+            f"{weather_description}: because seeing where you're going is overrated."
+        )
     if "hot" in weather_lower or "heat" in weather_lower or "sunny" in weather_lower:
-        dynamic_roasts.append(f"{weather_description} means your shoes might melt. Evolution at work.")
+        dynamic_roasts.append(
+            f"{weather_description} means your shoes might melt. Evolution at work."
+        )
     if "wind" in weather_lower or "breeze" in weather_lower:
         dynamic_roasts.append(f"{weather_description}—your hair's new worst enemy.")
 
@@ -253,6 +283,11 @@ def _get_fallback_description(weather_description: str) -> str:
     emoji_descriptions = [f"{weather_description} {emoji}" for emoji in emojis]
 
     # Combine all options, prioritizing dynamic roasts if available
-    all_options = dynamic_roasts + straight_replacements + template_combinations + emoji_descriptions
+    all_options = (
+        dynamic_roasts
+        + straight_replacements
+        + template_combinations
+        + emoji_descriptions
+    )
 
     return random.choice(all_options)
