@@ -8,6 +8,7 @@ from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
+from src.db import bakchod_dao
 from src.domain import config, dc
 
 app_config = config.get_config()
@@ -32,6 +33,9 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         dc.log_command_usage("weather", update)
 
+        # Get Bakchod for metadata access
+        bakchod = bakchod_dao.get_bakchod_from_update(update)
+
         # Extract location from message
         location = None
 
@@ -54,12 +58,19 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 caption[8:].strip() if caption.startswith("/weather") else caption
             )
 
+        # If no location provided, try to get from saved metadata
         if not location or location.strip() == "":
-            await update.message.reply_text(
-                "Please provide a location. Usage: `/weather <location>` or reply to a message with `/weather`.",
-                parse_mode=ParseMode.MARKDOWN,
-            )
-            return
+            if bakchod.metadata and bakchod.metadata.get("last_weather_location"):
+                location = bakchod.metadata["last_weather_location"]
+                logger.info(
+                    f"[weather] Using saved location from metadata: {location}"
+                )
+            else:
+                await update.message.reply_text(
+                    "Please provide a location. Usage: `/weather <location>` or reply to a message with `/weather`.",
+                    parse_mode=ParseMode.MARKDOWN,
+                )
+                return
 
         location = location.strip()
         logger.info(f"[weather] location={location}")
@@ -123,6 +134,13 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 response_text += f"\n🛰 AQI: {aqi}"
 
             await sent_message.edit_text(response_text)
+
+            # Persist location in Bakchod metadata after successful retrieval
+            if bakchod.metadata is None:
+                bakchod.metadata = {}
+            bakchod.metadata["last_weather_location"] = location
+            bakchod.save()
+            logger.info(f"[weather] Saved location '{location}' to Bakchod metadata")
 
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 404:
