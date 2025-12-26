@@ -1,3 +1,4 @@
+import random
 import traceback
 
 import requests
@@ -169,8 +170,6 @@ Funny rude description:"""
                 },
                 {"role": "user", "content": prompt},
             ],
-            max_tokens=100,
-            temperature=0.8,
         )
 
         funny_desc = response.choices[0].message.content.strip()
@@ -180,5 +179,80 @@ Funny rude description:"""
 
     except Exception as e:
         logger.warning(f"[weather] Failed to generate funny description: {e}")
-        # Fallback to original description with a prefix
-        return f"Probably {weather_description} or something"
+        # Fallback to randomly selected funny description
+        return _get_fallback_description(weather_description)
+
+
+def _get_fallback_description(weather_description: str) -> str:
+    """Get a randomly selected fallback funny description"""
+    weather_lower = weather_description.lower()
+
+    # Check for dynamic roasts by condition
+    dynamic_roasts = []
+    if "rain" in weather_lower or "drizzle" in weather_lower or "shower" in weather_lower:
+        dynamic_roasts.append(f"Sky's leaking {weather_description}. Bring a towel or a new life.")
+    if "snow" in weather_lower:
+        dynamic_roasts.append(f"{weather_description} everywhere—time to question your life choices in traffic.")
+    if "fog" in weather_lower or "mist" in weather_lower:
+        dynamic_roasts.append(f"{weather_description}: because seeing where you're going is overrated.")
+    if "hot" in weather_lower or "heat" in weather_lower or "sunny" in weather_lower:
+        dynamic_roasts.append(f"{weather_description} means your shoes might melt. Evolution at work.")
+    if "wind" in weather_lower or "breeze" in weather_lower:
+        dynamic_roasts.append(f"{weather_description}—your hair's new worst enemy.")
+
+    # Straight-up replacements
+    straight_replacements = [
+        f"Congrats, it's {weather_description}. Try not to cry.",
+        f"Oh look, {weather_description}. Earth's still spinning, right?",
+        f"Weather forecast: {weather_description} and your plans officially ruined.",
+        f"Spoiler alert: {weather_description}. Still shocked?",
+        f"Today's mood: {weather_description} and aggressively mediocre.",
+        f"BREAKING: {weather_description}. That's it. That's the news.",
+        f"Live footage: {weather_description} doing absolutely nothing for your life.",
+        f"Heads-up, genius—{weather_description} incoming. Dress like you have a clue.",
+        f"Weather's serving {weather_description} again. Compliment the chef.",
+        f"Plot twist: {weather_description}. Riveting, I know.",
+        f"Brace yourself for {weather_description}, aka sky tantrums.",
+        f"Today's special: {weather_description} with a side of regret.",
+        f"Weather update: {weather_description}. Still want to go jogging, champ?",
+        f"Surprise, surprise—{weather_description}. Someone alert the media.",
+        f"Look outside. I'll wait. Yep, {weather_description}. Told ya.",
+    ]
+
+    # Template combinations (Column A + Column B + Column C)
+    # Generate one random combination from the template columns
+    column_a_opts = [
+        "Wow, shocking:",
+        "Alert the village elders:",
+        "Stop the presses:",
+        "In case your window's broken:",
+        "Earth-shattering news:",
+    ]
+    column_b_opts = [
+        weather_description,
+        f"more {weather_description}",
+        f"the same {weather_description}",
+        f"yet another dose of {weather_description}",
+        f"the inevitable {weather_description}",
+    ]
+    column_c_opts = [
+        "…try to contain your enthusiasm.",
+        "…collect your prize for predicting the obvious.",
+        "…your tantrum is scheduled for later.",
+        "…we'll all pretend to care.",
+        "…and other bedtime stories.",
+    ]
+    # Generate multiple random template combinations for variety
+    template_combinations = [
+        f"{random.choice(column_a_opts)} {random.choice(column_b_opts)} {random.choice(column_c_opts)}"
+        for _ in range(15)  # Generate 15 random combinations for variety
+    ]
+
+    # Emoji sprinkles
+    emojis = ["☠️", "🤡", "🙄", "🗑️", "💔"]
+    emoji_descriptions = [f"{weather_description} {emoji}" for emoji in emojis]
+
+    # Combine all options, prioritizing dynamic roasts if available
+    all_options = dynamic_roasts + straight_replacements + template_combinations + emoji_descriptions
+
+    return random.choice(all_options)
