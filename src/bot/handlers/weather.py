@@ -103,6 +103,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             temp = weather_data["main"]["temp"]
             humidity = weather_data["main"]["humidity"]
             wind_speed = weather_data["wind"]["speed"]
+            location_name = weather_data["name"]
 
             # Get AQI if available (from air_pollution API)
             aqi = None
@@ -125,7 +126,8 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             funny_description = await _generate_funny_description(description)
 
             # Format the response
-            response_text = f"{funny_description}\n"
+            response_text = f"📍 {location_name}\n"
+            response_text += f"{funny_description}\n"
             response_text += f"🌡️ Temperature: {temp:.1f} °C\n"
             response_text += f"💦 Humidity: {humidity:.1f}%\n"
             response_text += f"💨 Wind: {wind_speed:.1f} m/s"
