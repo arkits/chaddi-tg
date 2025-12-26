@@ -100,6 +100,8 @@ async def run_telegram_bot():
     application.add_handler(CommandHandler("remindme", handlers.remind.handle))
     application.add_handler(CommandHandler("alarm", handlers.remind.handle))
 
+    application.add_handler(CommandHandler("weather", handlers.weather.handle))
+
     # Add message handlers
     application.add_handler(
         MessageHandler(filters.StatusUpdate.ALL, handlers.defaults.status_update)

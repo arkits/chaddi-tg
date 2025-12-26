@@ -28,6 +28,7 @@ from . import (
     translate,
     tynm,
     version,
+    weather,
     webm,
     ytdl,
 )
