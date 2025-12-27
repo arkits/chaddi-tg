@@ -17,6 +17,7 @@ from . import (
     mom_spacy,
     musiclinks,
     pic,
+    ping,
     quotes,
     remind,
     rokda,

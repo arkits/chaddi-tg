@@ -63,6 +63,7 @@ async def run_telegram_bot():
     application.add_handler(CommandHandler("start", handlers.start.handle))
     application.add_handler(CommandHandler("help", handlers.help.handle))
     application.add_handler(CommandHandler("hi", handlers.hi.handle))
+    application.add_handler(CommandHandler("ping", handlers.ping.handle))
     application.add_handler(CommandHandler("about", handlers.about.handle))
     application.add_handler(CommandHandler("rokda", handlers.rokda.handle))
     application.add_handler(CommandHandler("superpower", handlers.superpower.handle))
