@@ -51,9 +51,11 @@ async def test_handle_success(mock_update, mock_context):
                 with patch("src.bot.handlers.ytdl.os.path.join") as mock_join:
                     mock_join.return_value = "/path/to/test123.mp4"
 
-                    with patch("builtins.open", mock_open(read_data=b"fake video")):
-                        with patch("src.bot.handlers.ytdl.util.delete_file"):
-                            await ytdl.handle(mock_update, mock_context)
+                    with (
+                        patch("builtins.open", mock_open(read_data=b"fake video")),
+                        patch("src.bot.handlers.ytdl.util.delete_file"),
+                    ):
+                        await ytdl.handle(mock_update, mock_context)
 
     mock_update.message.reply_video.assert_called_once()
 
