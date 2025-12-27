@@ -13,6 +13,9 @@ from starlette_exporter import PrometheusMiddleware, handle_metrics
 from src.domain import config, version
 from src.server.routes import api_routes, ui_routes
 
+# Initialize the config
+app_config = config.get_config()
+
 # Initialize Sentry SDK before FastAPI app
 sentry_sdk.init(
     dsn="https://b28179ae59e491947ce4cb052ab4c3fc@o425745.ingest.us.sentry.io/4510605721141248",
@@ -28,10 +31,9 @@ sentry_sdk.init(
     # Set profile_lifecycle to "trace" to automatically
     # run the profiler on when there is an active transaction
     profile_lifecycle="trace",
+    environment=app_config.get("SENTRY", "ENVIRONMENT", fallback="dev"),
 )
 
-# Initialize the config
-app_config = config.get_config()
 
 tags_metadata = [
     {
@@ -43,7 +45,9 @@ tags_metadata = [
 
 v = version.get_version()
 
-fastapi_app = FastAPI(title="chaddi-tg", version=v["git_commit_id"], openapi_tags=tags_metadata)
+fastapi_app = FastAPI(
+    title="chaddi-tg", version=v["git_commit_id"], openapi_tags=tags_metadata
+)
 
 fastapi_app.add_middleware(
     CORSMiddleware,
@@ -85,9 +89,7 @@ from src.server.routes import sio_routes  # noqa: E402
 # Wrap FastAPI app with Socket.IO, Socket.IO will handle /socket.io/* requests
 # All other requests will be passed to FastAPI
 app = socketio.ASGIApp(
-    socketio_server=sio,
-    other_asgi_app=fastapi_app,
-    socketio_path="socket.io"
+    socketio_server=sio, other_asgi_app=fastapi_app, socketio_path="socket.io"
 )
 
 
