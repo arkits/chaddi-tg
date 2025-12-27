@@ -20,4 +20,5 @@ uv sync
 
 cd src
 
+echo ">>> running chaddi-tg..."
 uv run python chaddi.py >../logs/chaddi.log 2>&1 &

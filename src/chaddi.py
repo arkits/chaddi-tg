@@ -25,8 +25,8 @@ sentry_sdk.init(
     # run the profiler on when there is an active transaction
     profile_lifecycle="trace",
     environment=app_config.get("SENTRY", "ENVIRONMENT", fallback="dev"),
+    enable_logs=True,
 )
-
 
 
 async def main():

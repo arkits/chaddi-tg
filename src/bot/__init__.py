@@ -26,25 +26,25 @@ async def post_init(application: Application) -> None:
 
     v = version.get_version()
 
-    await tg_logger.log(
-        """
-*chaddi-tg has started!*
+#     await tg_logger.log(
+#         """
+# *chaddi-tg has started!*
 
-*chaddi-tg version:* `{}`
-*Commit ID:* `{}`
-*Commit Message:* `{}`
-*Commit Time:* `{}`
-*Time Started:* `{}`
-*Uptime:* `{}`
-""".format(
-            v["semver"],
-            v["git_commit_id"],
-            v["git_commit_message"],
-            v["git_commit_time"],
-            v["time_service_started"],
-            v["pretty_uptime"],
-        )
-    )
+# *chaddi-tg version:* `{}`
+# *Commit ID:* `{}`
+# *Commit Message:* `{}`
+# *Commit Time:* `{}`
+# *Time Started:* `{}`
+# *Uptime:* `{}`
+# """.format(
+#             v["semver"],
+#             v["git_commit_id"],
+#             v["git_commit_message"],
+#             v["git_commit_time"],
+#             v["time_service_started"],
+#             v["pretty_uptime"],
+#         )
+#     )
 
     reschedule_saved_jobs(application.job_queue)
     schedule_daily_posts(application.job_queue)

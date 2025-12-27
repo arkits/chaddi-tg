@@ -132,7 +132,9 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
                         await update.message.reply_media_group(media=media_list)
                 except TimedOut:
-                    logger.warning("[pic] Timed out sending media group, falling back to individual uploads")
+                    logger.warning(
+                        "[pic] Timed out sending media group, falling back to individual uploads"
+                    )
                     # Fallback: send images one by one
                     for img_path in downloaded_files:
                         try:
