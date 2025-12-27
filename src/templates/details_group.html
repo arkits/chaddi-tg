@@ -86,6 +86,12 @@
         <label for="check-ask">Enable /ask command</label>
       </div>
       <div class="custom-switch mb-10">
+        <input type="checkbox" class="command-toggle" id="check-ai" value="ai" {% if
+          group.metadata.get('enabled_commands') and 'ai' in group.metadata.get('enabled_commands') %}checked{% endif
+          %}>
+        <label for="check-ai">Enable /ai command</label>
+      </div>
+      <div class="custom-switch mb-10">
         <input type="checkbox" class="setting-toggle" id="check-gm" value="good_morning_enabled" {% if
           group.metadata.get('good_morning_enabled') %}checked{% endif %}>
         <label for="check-gm">Enable Good Morning Greeting</label>
