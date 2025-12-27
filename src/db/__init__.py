@@ -1,7 +1,7 @@
 import json
 
-from peewee import *
-from playhouse.postgres_ext import *
+from peewee import *  # noqa: F403
+from playhouse.postgres_ext import *  # noqa: F403
 
 from src.domain import config
 

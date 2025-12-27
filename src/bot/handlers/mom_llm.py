@@ -54,9 +54,8 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             sent_message = await update.message.reply_text("generating zoke...")
 
-        instructions = open(
-            path.join(util.RESOURCES_DIR, "openai", "mom3-prompt.txt")
-        ).read()
+        with open(path.join(util.RESOURCES_DIR, "openai", "mom3-prompt.txt")) as f:
+            instructions = f.read()
 
         input = f"User({protagonist}): {message[:1000]}"
         input += "\nResponse: "
@@ -116,7 +115,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Now have LLM pick the funniest one
         logger.info("[mom3] asking LLM to pick the funniest joke...")
-        await sent_message.edit_text("(o´▽`o) curating clap back...")
+        await sent_message.edit_text("(o`▽`o) curating clap back...")
 
         selection_prompt = "You are a comedy expert. From the following mom jokes, pick the funniest one. Only return the joke itself, nothing else.\n\n"
         for i, joke in enumerate(jokes, 1):

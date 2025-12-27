@@ -44,11 +44,11 @@ def log_group_from_update(update: Update):
     bakchod = Bakchod.get_by_id(update.message.from_user.id)
 
     try:
-        groupmember = GroupMember.get(
+        _groupmember = GroupMember.get(
             (GroupMember.group_id == group.group_id) & (GroupMember.bakchod_id == bakchod.tg_id)
         )
     except DoesNotExist:
-        groupmember = GroupMember.create(group=group, bakchod=bakchod)
+        _groupmember = GroupMember.create(group=group, bakchod=bakchod)
 
     # logger.debug("[db] updated Group - id={}", group.name)
 

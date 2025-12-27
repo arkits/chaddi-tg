@@ -67,7 +67,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 {translated.text}
 
 ```
-ℹ️ Translated from {translated.src.upper()} to {translated.dest.upper()}
+i Translated from {translated.src.upper()} to {translated.dest.upper()}
 ```
 """
 

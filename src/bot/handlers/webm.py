@@ -29,7 +29,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         dc.log_command_usage("webm", update)
 
-        message = await update.message.reply_text("Starting webm conversion (＠＾◡＾)")
+        message = await update.message.reply_text("Starting webm conversion (^◡^)")
 
         try:
             # Count time taken for webm conversion
@@ -91,12 +91,13 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 str(document.file_id),
                 caption,
             )
-            await context.bot.send_video(
-                chat_id=update.message.chat_id,
-                video=open(WEBM_RESOURCES_DIR + str(document.file_id) + ".mp4", "rb"),
-                write_timeout=CUSTOM_TIMEOUT_SECONDS,
-                caption=caption,
-            )
+            with open(WEBM_RESOURCES_DIR + str(document.file_id) + ".mp4", "rb") as f:
+                await context.bot.send_video(
+                    chat_id=update.message.chat_id,
+                    video=f,
+                    write_timeout=CUSTOM_TIMEOUT_SECONDS,
+                    caption=caption,
+                )
 
             try:
                 await message.delete()

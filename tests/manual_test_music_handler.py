@@ -21,7 +21,7 @@ async def test_music_handler():
     await music.handle(update, context)
 
     if update.message.reply_text.called:
-        args, kwargs = update.message.reply_text.call_args
+        args, _kwargs = update.message.reply_text.call_args
         print(f"SUCCESS: Replied with: {args[0]}")
     else:
         print("FAILURE: Did not reply")
@@ -34,7 +34,7 @@ async def test_music_handler():
     await music.handle(update, context)
 
     if update.message.reply_text.called:
-        args, kwargs = update.message.reply_text.call_args
+        args, _kwargs = update.message.reply_text.call_args
         print(f"SUCCESS: Replied with: {args[0]}")
     else:
         print("FAILURE: Did not reply")

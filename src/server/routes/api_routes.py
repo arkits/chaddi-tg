@@ -123,7 +123,7 @@ async def post_api_set_bakchod_metadata(
         try:
             metadata_json = json.loads(set_bakchod_metadata_params.metadata)
         except Exception as e:
-            raise Exception("Error during json.loads(metadata) :: " + str(e))
+            raise Exception("Error during json.loads(metadata) :: " + str(e)) from e
 
         b.metadata = metadata_json
         b.save()
@@ -162,7 +162,7 @@ async def post_api_set_group_metadata(
         try:
             metadata_json = json.loads(set_group_metadata_params.metadata)
         except Exception as e:
-            raise Exception("Error during json.loads(metadata) :: " + str(e))
+            raise Exception("Error during json.loads(metadata) :: " + str(e)) from e
 
         g.metadata = metadata_json
         g.save()
@@ -418,7 +418,7 @@ async def get_api_bakchod_details(request: Request, tg_id):
             return JSONResponse(content=response, status_code=200)
 
         except Exception:
-            raise Exception("Bakchod not found")
+            raise Exception("Bakchod not found") from None
 
     except Exception as e:
         logger.error("Caught Exception - e={}", e)

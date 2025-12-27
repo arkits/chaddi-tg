@@ -101,7 +101,7 @@ async def start_sutta(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "bakchod_id": update.message.from_user.id,
     }
 
-    job = context.job_queue.run_repeating(
+    _ = context.job_queue.run_repeating(
         update_sutta,
         interval=3,
         first=0,

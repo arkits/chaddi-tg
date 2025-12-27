@@ -27,8 +27,8 @@ IST_TIMEZONE = pytz.timezone("Asia/Kolkata")
 UTC_TIMEZONE = pytz.timezone("UTC")
 
 # Read verbLookupTable on startup
-verb_past_lookup_file = open("resources/verb-past-lookup.json")
-verb_past_lookup = json.loads(verb_past_lookup_file.read())
+with open("resources/verb-past-lookup.json") as verb_past_lookup_file:
+    verb_past_lookup = json.loads(verb_past_lookup_file.read())
 
 
 def pretty_print_rokda(r):
@@ -122,15 +122,15 @@ def pretty_time_delta(seconds):
     hours, seconds = divmod(seconds, 3600)
     minutes, seconds = divmod(seconds, 60)
     if years > 0:
-        return "%dy %dd %dh %dm %ds" % (years, days, hours, minutes, seconds)
+        return f"{years}dy {days}dd {hours}dh {minutes}dm {seconds}ds"
     elif days > 0:
-        return "%dd %dh %dm %ds" % (days, hours, minutes, seconds)
+        return f"{days}dd {hours}dh {minutes}dm {seconds}ds"
     elif hours > 0:
-        return "%dh %dm %ds" % (hours, minutes, seconds)
+        return f"{hours}dh {minutes}dm {seconds}ds"
     elif minutes > 0:
-        return "%dm %ds" % (minutes, seconds)
+        return f"{minutes}dm {seconds}ds"
     else:
-        return "%ds" % (seconds,)
+        return f"{seconds}ds"
 
 
 def get_random_bakchod_from_group(group_id: str, bakchod_id_to_avoid: str) -> Bakchod:
@@ -151,10 +151,7 @@ def get_random_bakchod_from_group(group_id: str, bakchod_id_to_avoid: str) -> Ba
 
 
 def is_admin_tg_user(user: User):
-    if str(user.id) in ADMIN_IDS:
-        return True
-    else:
-        return False
+    return str(user.id) in ADMIN_IDS
 
 
 def paywall_user(bakchod_id: str, cost):
@@ -227,7 +224,7 @@ def extract_magic_word(target_message):
         return None
 
     # choose which pos_type to use...
-    magic_pos_type = list(tokens_sorted.keys())[0]
+    magic_pos_type = next(iter(tokens_sorted.keys()))
     logger.debug("[extract_magic_word] magic_pos_type={}", magic_pos_type)
 
     # choose magic word...

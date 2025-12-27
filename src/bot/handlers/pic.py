@@ -1,3 +1,4 @@
+import contextlib
 import os
 import shutil
 import tempfile
@@ -128,7 +129,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 file_handles = []
                 try:
                     for img_path in downloaded_files:
-                        file_handle = open(img_path, "rb")
+                        file_handle = open(img_path, "rb")  # noqa: SIM115
                         file_handles.append(file_handle)
                         media_list.append(InputMediaPhoto(media=file_handle))
 
@@ -141,10 +142,8 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 finally:
                     # Close all file handles
                     for file_handle in file_handles:
-                        try:
+                        with contextlib.suppress(Exception):
                             file_handle.close()
-                        except Exception:
-                            pass
 
             await sent_message.delete()
 

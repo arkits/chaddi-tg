@@ -433,7 +433,7 @@ Roll a {roll.goal} to {_pretty_roll_rule(roll.rule)} {util.extract_pretty_name_f
 - Only one roll per 5 mins
 
 <b>Prizes:</b>
-- {util.extract_pretty_name_from_bakchod(roll.victim)} gets {_pretty_roll_rule(roll.rule)}'d 
+- {util.extract_pretty_name_from_bakchod(roll.victim)} gets {_pretty_roll_rule(roll.rule)}'d
 - 💵 YOU WIN {roll.prize} {util.ROKDA_STRING} 🎉
 """
 
@@ -445,14 +445,14 @@ Roll a {roll.goal} to {_pretty_roll_rule(roll.rule)} {util.extract_pretty_name_f
 
             if roll.rule == "kick_user":
                 pretty_roll = f"""
-{util.extract_pretty_name_from_bakchod(roll.winrar)} won the current roll by rolling a {roll.goal}! 
+{util.extract_pretty_name_from_bakchod(roll.winrar)} won the current roll by rolling a {roll.goal}!
 
 - 👋 {util.extract_pretty_name_from_bakchod(roll.victim)} has been kicked from this group!
 - 💵 {util.extract_pretty_name_from_bakchod(roll.winrar)} received {roll.prize}{util.ROKDA_STRING}!
 """
             else:
                 pretty_roll = f"""
-{util.extract_pretty_name_from_bakchod(roll.winrar)} won the current roll by rolling a {roll.goal}! 
+{util.extract_pretty_name_from_bakchod(roll.winrar)} won the current roll by rolling a {roll.goal}!
 
 - 🤪 {util.extract_pretty_name_from_bakchod(roll.victim)} is now {_pretty_roll_rule(roll.rule)} for {util.pretty_time_delta(td.total_seconds())}!
 - 💵 {util.extract_pretty_name_from_bakchod(roll.winrar)} received {roll.prize}{util.ROKDA_STRING}!

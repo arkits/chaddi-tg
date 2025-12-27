@@ -50,6 +50,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "pytest>=9.0.2",
     "ruff>=0.14.1",
 ]
 
@@ -87,11 +88,12 @@ select = [
 # Ignore specific rules that might be too strict
 ignore = [
     "E501",   # line too long (handled by formatter)
+    "RUF006",  # asyncio.create_task reference warning
 ]
 
 [tool.ruff.lint.per-file-ignores]
 # Ignore import order issues in __init__.py files
-"__init__.py" = ["F401"]
+"__init__.py" = ["F401", "F405"]
 
 [tool.ruff.format]
 # Use double quotes for strings
