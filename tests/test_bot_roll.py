@@ -417,3 +417,282 @@ def test_generate_new_roll_random():
         assert result is not None
         assert result.goal == 3
         assert result.prize == 650
+
+
+@pytest.mark.asyncio
+async def test_handle_dice_rolls_no_group(mock_update, mock_context):
+    """Test handle_dice_rolls when not in a group."""
+    mock_update.message.chat.type = "private"
+    mock_update.message.chat.id = 123456
+
+    with patch("src.bot.handlers.roll.dc"):
+        await roll.handle_dice_rolls(4, mock_update, mock_context)
+
+        assert not mock_update.message.reply_text.called
+
+
+@pytest.mark.asyncio
+async def test_handle_dice_rolls_no_active_roll(mock_update, mock_context):
+    """Test handle_dice_rolls when no active roll exists."""
+    with (
+        patch("src.bot.handlers.roll.dc"),
+        patch("src.bot.handlers.roll.roll_dao") as mock_roll_dao,
+    ):
+        mock_roll_dao.get_roll_by_group_id.return_value = None
+
+        await roll.handle_dice_rolls(4, mock_update, mock_context)
+
+        assert not mock_update.message.reply_text.called
+
+
+@pytest.mark.asyncio
+async def test_handle_dice_rolls_already_won(mock_update, mock_context):
+    """Test handle_dice_rolls when roll already has a winner."""
+    with (
+        patch("src.bot.handlers.roll.dc"),
+        patch("src.bot.handlers.roll.roll_dao") as mock_roll_dao,
+    ):
+        mock_roll = MagicMock()
+        mock_roll.winrar = MagicMock()
+        mock_roll_dao.get_roll_by_group_id.return_value = mock_roll
+
+        await roll.handle_dice_rolls(4, mock_update, mock_context)
+
+        assert not mock_update.message.reply_text.called
+
+
+@pytest.mark.asyncio
+async def test_handle_dice_rolls_expired(mock_update, mock_context):
+    """Test handle_dice_rolls when roll has expired."""
+    with (
+        patch("src.bot.handlers.roll.dc"),
+        patch("src.bot.handlers.roll.roll_dao") as mock_roll_dao,
+    ):
+        from datetime import datetime, timedelta
+
+        mock_roll = MagicMock()
+        mock_roll.winrar = None
+        mock_roll.expiry = datetime.now() - timedelta(hours=1)
+        mock_roll_dao.get_roll_by_group_id.return_value = mock_roll
+
+        await roll.handle_dice_rolls(4, mock_update, mock_context)
+
+        assert not mock_update.message.reply_text.called
+
+
+@pytest.mark.asyncio
+async def test_handle_dice_rolls_rolled_too_soon(mock_update, mock_context):
+    """Test handle_dice_rolls when user rolled too recently."""
+    with (
+        patch("src.bot.handlers.roll.dc"),
+        patch("src.bot.handlers.roll.roll_dao") as mock_roll_dao,
+        patch("src.bot.handlers.roll.bakchod_dao") as mock_bakchod_dao,
+        patch("src.bot.handlers.roll.util") as mock_util,
+    ):
+        from datetime import datetime, timedelta
+
+        mock_roll = MagicMock()
+        mock_roll.winrar = None
+        mock_roll.expiry = datetime.now() + timedelta(hours=1)
+        mock_roll_dao.get_roll_by_group_id.return_value = mock_roll
+
+        mock_roller = MagicMock()
+        mock_roller.metadata = {
+            "last_time_rolled": (datetime.now() - timedelta(minutes=1)).isoformat()
+        }
+        mock_util.extract_pretty_name_from_bakchod.return_value = "testuser"
+        mock_bakchod_dao.get_bakchod_from_update.return_value = mock_roller
+
+        await roll.handle_dice_rolls(4, mock_update, mock_context)
+
+        mock_update.message.reply_text.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_handle_dice_rolls_no_match(mock_update, mock_context):
+    """Test handle_dice_rolls when dice doesn't match goal."""
+    with (
+        patch("src.bot.handlers.roll.dc"),
+        patch("src.bot.handlers.roll.roll_dao") as mock_roll_dao,
+        patch("src.bot.handlers.roll.bakchod_dao") as mock_bakchod_dao,
+        patch("src.bot.handlers.roll.util") as mock_util,
+    ):
+        from datetime import datetime, timedelta
+
+        mock_roll = MagicMock()
+        mock_roll.winrar = None
+        mock_roll.expiry = datetime.now() + timedelta(hours=1)
+        mock_roll.goal = 3
+        mock_roll_dao.get_roll_by_group_id.return_value = mock_roll
+
+        mock_roller = MagicMock()
+        mock_roller.metadata = {}
+        mock_util.extract_pretty_name_from_bakchod.return_value = "testuser"
+        mock_bakchod_dao.get_bakchod_from_update.return_value = mock_roller
+
+        await roll.handle_dice_rolls(4, mock_update, mock_context)
+
+        assert mock_roller.save.called
+        assert not mock_context.bot.send_message.called
+
+
+def test_generate_pretty_roll_description_ongoing():
+    """Test _generate_pretty_roll_description for ongoing roll."""
+    mock_roll = MagicMock()
+    mock_roll.winrar = None
+    mock_roll.goal = 4
+    mock_roll.rule = "mute_user"
+    mock_roll.prize = 600
+
+    mock_victim = MagicMock()
+    mock_victim.tg_id = 123456
+    mock_victim.username = "victimuser"
+    mock_roll.victim = mock_victim
+
+    with patch("src.bot.handlers.roll.util") as mock_util:
+        mock_util.extract_pretty_name_from_bakchod.return_value = "victimuser"
+        mock_util.ROKDA_STRING = "₹"
+
+        result = roll._generate_pretty_roll_description(mock_roll)
+
+        assert "Roll a 4" in result
+        assert "mute" in result
+        assert "600 ₹" in result
+
+
+def test_generate_pretty_roll_description_won_kick():
+    """Test _generate_pretty_roll_description for won roll with kick rule."""
+    from datetime import datetime, timedelta
+
+    mock_roll = MagicMock()
+    mock_roll.winrar = MagicMock()
+    mock_roll.winrar.tg_id = 123456
+    mock_roll.winrar.username = "winner"
+    mock_roll.goal = 4
+    mock_roll.rule = "kick_user"
+    mock_roll.prize = 600
+    mock_roll.expiry = datetime.now() + timedelta(minutes=30)
+
+    mock_victim = MagicMock()
+    mock_victim.tg_id = 789012
+    mock_victim.username = "victim"
+    mock_roll.victim = mock_victim
+
+    with patch("src.bot.handlers.roll.util") as mock_util:
+
+        def extract_name_side_effect(bakchod):
+            if bakchod.tg_id == 123456:
+                return "winner"
+            elif bakchod.tg_id == 789012:
+                return "victim"
+            return "unknown"
+
+        mock_util.extract_pretty_name_from_bakchod.side_effect = extract_name_side_effect
+        mock_util.ROKDA_STRING = "₹"
+
+        result = roll._generate_pretty_roll_description(mock_roll)
+
+        assert result is not None
+        assert "won the current roll" in result
+        assert "kicked" in result
+        assert "600₹" in result
+
+
+def test_generate_pretty_roll_description_won_mute():
+    """Test _generate_pretty_roll_description for won roll with mute rule."""
+    from datetime import datetime, timedelta
+
+    mock_roll = MagicMock()
+    mock_roll.winrar = MagicMock()
+    mock_roll.winrar.tg_id = 123456
+    mock_roll.winrar.username = "winner"
+    mock_roll.goal = 4
+    mock_roll.rule = "mute_user"
+    mock_roll.prize = 600
+    mock_roll.expiry = datetime.now() + timedelta(minutes=30)
+
+    mock_victim = MagicMock()
+    mock_victim.tg_id = 789012
+    mock_victim.username = "victim"
+    mock_roll.victim = mock_victim
+
+    with patch("src.bot.handlers.roll.util") as mock_util:
+
+        def extract_name_side_effect(bakchod):
+            if bakchod.tg_id == 123456:
+                return "winner"
+            elif bakchod.tg_id == 789012:
+                return "victim"
+            return "unknown"
+
+        mock_util.extract_pretty_name_from_bakchod.side_effect = extract_name_side_effect
+        mock_util.ROKDA_STRING = "₹"
+        mock_util.pretty_time_delta.return_value = "30 minutes"
+
+        result = roll._generate_pretty_roll_description(mock_roll)
+
+        assert result is not None
+        assert "won the current roll" in result
+        assert "mute" in result
+        assert "30 minutes" in result
+        assert "600₹" in result
+
+
+def test_get_random_bakchod_from_group():
+    """Test _get_random_bakchod_from_group returns a bakchod."""
+    import datetime as dt
+
+    with patch("src.bot.handlers.roll.Group") as mock_group_class:
+        mock_group = MagicMock()
+        mock_member1 = MagicMock()
+        mock_bakchod1 = MagicMock()
+        mock_bakchod1.lastseen = dt.datetime.now() - dt.timedelta(hours=1)
+        mock_member1.bakchod = mock_bakchod1
+
+        mock_member2 = MagicMock()
+        mock_bakchod2 = MagicMock()
+        mock_bakchod2.lastseen = dt.datetime.now() - dt.timedelta(minutes=30)
+        mock_member2.bakchod = mock_bakchod2
+
+        mock_group.group_member = [mock_member1, mock_member2]
+        mock_group_class.get_by_id.return_value = mock_group
+
+        result = roll._get_random_bakchod_from_group("-1001234567890")
+
+        assert result is not None
+        assert result in [mock_bakchod1, mock_bakchod2]
+
+
+def test_get_random_bakchod_from_group_empty():
+    """Test _get_random_bakchod_from_group with empty group."""
+    with patch("src.bot.handlers.roll.Group") as mock_group_class:
+        mock_group = MagicMock()
+        mock_group.group_member = []
+        mock_group_class.get_by_id.return_value = mock_group
+
+        result = roll._get_random_bakchod_from_group("-1001234567890")
+
+        assert result is None
+
+
+def test_get_random_bakchod_from_group_single_member():
+    """Test _get_random_bakchod_from_group with single member."""
+    import datetime as dt
+
+    with (
+        patch("src.bot.handlers.roll.Group") as mock_group_class,
+        patch("src.bot.handlers.roll.random") as mock_random,
+    ):
+        mock_group = MagicMock()
+        mock_member = MagicMock()
+        mock_bakchod = MagicMock()
+        mock_bakchod.lastseen = dt.datetime.now()
+        mock_member.bakchod = mock_bakchod
+        mock_group.group_member = [mock_member]
+        mock_group_class.get_by_id.return_value = mock_group
+
+        mock_random.randint.return_value = 0
+
+        result = roll._get_random_bakchod_from_group("-1001234567890")
+
+        assert result == mock_bakchod

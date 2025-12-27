@@ -66,23 +66,24 @@ Testing framework has been successfully set up for chaddi-tg Python project with
       - `tests/test_bot_mom_llm.py` - Mom LLM handler tests (9 tests) - coverage: 65%
       - `tests/test_bot_pic.py` - Pic handler tests (7 tests) - coverage: 30%
       - `tests/test_bot_roll.py` - Roll handler tests (25 tests) - coverage: 50%
-      - `tests/test_bot_tynm.py` - TYNM image handler tests (40 tests) - coverage: 63%
-      - `tests/test_bot_webm.py` - WebM conversion handler tests (12 tests) - coverage: 61%
+     - `tests/test_bot_tynm.py` - TYNM image handler tests (40 tests) - coverage: 63%
+       - `tests/test_bot_webm.py` - WebM conversion handler tests (12 tests) - coverage: 61%
+       - `tests/test_bot_roll.py` - Roll roulette handler tests (32 tests) - coverage: 71%
 
 ### 4. Test Execution
 - Created `scripts/run-tests.sh` script for easy test execution
 - Updated AGENTS.md with testing commands
 
-  ## Test Coverage
+   ## Test Coverage
 
-  ### Current Status
-      - Total statements: 3,739
-      - Covered statements: 2,652
-      - Overall coverage: **71%** (unchanged)
-      - Total tests: 465
-      - Passing tests: 460/465 (99%)
-      - Failing tests: 0
-      - Expected failures (xfail): 5
+   ### Current Status
+       - Total statements: 3,739
+       - Covered statements: 2,693
+       - Overall coverage: **72%** (+1%)
+       - Total tests: 482
+       - Passing tests: 477/482 (99%)
+       - Failing tests: 0
+       - Expected failures (xfail): 5
 
 ### High Coverage Modules (≥80%)
 - src/db/bakchod_dao.py: 100% (36/36 statements)
@@ -106,11 +107,12 @@ Testing framework has been successfully set up for chaddi-tg Python project with
 - src/bot/handlers/start.py: 100% (6/6 statements)
 - src/bot/handlers/version.py: 100% (16/16 statements)
 - src/bot/handlers/help.py: 100% (7/7 statements)
-- src/bot/handlers/rokda.py: 88% (14/16 statements)
-- src/bot/handlers/antiwordle.py: 89% (41/46 statements)
-- src/bot/handlers/ask.py: 90% (43/48 statements)
-- src/bot/handlers/gamble.py: 98% (104/106 statements)
-- src/bot/handlers/aao.py: 86% (38/44 statements)
+ - src/bot/handlers/rokda.py: 88% (14/16 statements)
+ - src/bot/handlers/antiwordle.py: 89% (41/46 statements)
+ - src/bot/handlers/ask.py: 90% (43/48 statements)
+ - src/bot/handlers/gamble.py: 98% (104/106 statements)
+ - src/bot/handlers/roll.py: 71% (204/289 statements)
+ - src/bot/handlers/aao.py: 86% (38/44 statements)
 - src/bot/handlers/mom_rake.py: 89% (32/36 statements)
 - src/bot/handlers/translate.py: 93% (39/42 statements)
 - src/bot/handlers/errors.py: 100% (11/11 statements)
@@ -138,16 +140,15 @@ Testing framework has been successfully set up for chaddi-tg Python project with
 - src/bot/handlers/ytdl.py: 88% (53/60 statements)
 - src/domain/otel_logging.py: 77% (23/30 statements)
 
-### Low Coverage Modules (<50%)
-- src/bot/__init__.py: 15% (11/71 statements)
-- src/bot/handlers/pic.py: 55% (61/110 statements)
-- src/bot/handlers/roll.py: 58% (168/289 statements)
-- src/chaddi.py: 0% (15/15 statements)
-- src/domain/config.py: 0% (12/12 statements)
-- src/sandbox.py: 0% (3/3 statements)
-- src/server/routes/api_routes.py: 23% (216/280 statements)
-- src/server/routes/sio_routes.py: 30% (38/54 statements)
-- src/server/routes/ui_routes.py: 34% (78/119 statements)
+ ### Low Coverage Modules (<50%)
+ - src/bot/__init__.py: 15% (11/71 statements)
+ - src/bot/handlers/pic.py: 55% (61/110 statements)
+ - src/chaddi.py: 0% (15/15 statements)
+ - src/domain/config.py: 0% (12/12 statements)
+ - src/sandbox.py: 0% (3/3 statements)
+ - src/server/routes/api_routes.py: 23% (216/280 statements)
+ - src/server/routes/sio_routes.py: 30% (38/54 statements)
+ - src/server/routes/ui_routes.py: 34% (78/119 statements)
 
 ## Running Tests
 
@@ -424,10 +425,30 @@ Most uncovered code requires extensive mocking or integration tests due to:
 - **40-50% coverage**: Possible with extensive mocking for bot handlers
 - **70-80% coverage**: Requires integration tests and end-to-end testing
 
-## Recent Updates (2025-12-27)
+ ## Recent Updates (2025-12-27)
 
-### Test Additions (Latest)
-- Added 9 new tests to `tests/test_bot_webm.py` for webm conversion handler:
+ ### Test Additions (Latest)
+ - Added 7 new tests to `tests/test_bot_roll.py` for roll roulette handler:
+   - Tests for `handle_dice_rolls()` function (6 tests):
+     - No group (private chat)
+     - No active roll exists
+     - Roll already has a winner
+     - Roll has expired
+     - User rolled too recently (5 min cooldown)
+     - Dice doesn't match goal (no win)
+   - Tests for `_generate_pretty_roll_description()` function (2 tests):
+     - Won roll with kick rule
+     - Won roll with mute rule
+   - Tests for `_get_random_bakchod_from_group()` function (3 tests):
+     - Returns bakchod from group
+     - Empty group returns None
+     - Single member group
+ - Improved roll.py coverage from 50% to 71% (+21%)
+ - Overall coverage improved from 71% to 72% (+1%)
+ - Total tests increased from 465 to 482 (+17 tests)
+
+ ### Test Additions (Previous)
+ - Added 9 new tests to `tests/test_bot_webm.py` for webm conversion handler:
   - Tests for `build_webm_conversion_response()` function (3 tests):
     - Basic response generation
     - Response with caption
