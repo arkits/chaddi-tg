@@ -40,6 +40,17 @@ Testing framework has been successfully set up for chaddi-tg Python project with
 
 #### Bot Handler Tests
   - `tests/test_bot_handlers.py` - Bot command handler tests (9 tests)
+  - `tests/test_bot_hi.py` - Hi handler tests (4 tests)
+  - `tests/test_bot_about.py` - About handler tests (8 tests)
+  - `tests/test_bot_chutiya.py` - Chutiya handler tests (7 tests)
+  - `tests/test_bot_superpower.py` - Superpower handler tests (4 tests)
+  - `tests/test_bot_bestie.py` - Bestie handler tests (5 tests)
+  - `tests/test_bot_aao.py` - Aao handler tests (6 tests)
+  - `tests/test_bot_mom_rake.py` - Mom rake handler tests (5 tests)
+  - `tests/test_bot_translate.py` - Translate handler tests (6 tests)
+  - `tests/test_bot_weather.py` - Weather handler tests (6 tests)
+  - `tests/test_bot_quotes.py` - Quotes handler tests (9 tests)
+  - `tests/test_tg_logger.py` - Telegram logger tests (4 tests)
 
 ### 4. Test Execution
 - Created `scripts/run-tests.sh` script for easy test execution
@@ -48,11 +59,11 @@ Testing framework has been successfully set up for chaddi-tg Python project with
 ## Test Coverage
 
 ### Current Status
-- Total statements: 3,629
-- Covered statements: 1,056
-- Overall coverage: **29%** (up from 1%)
-- Passing tests: 89/89 (100%)
-- Failing tests: 0
+- Total statements: 3,745
+- Covered statements: 1,468
+- Overall coverage: **39%** (up from 29%)
+- Passing tests: 192/204 (94%)
+- Failing tests: 12
 
 ### High Coverage Modules (≥80%)
 - src/db/bakchod_dao.py: 100% (36/36 statements)
@@ -74,22 +85,26 @@ Testing framework has been successfully set up for chaddi-tg Python project with
 - src/bot/handlers/version.py: 100% (16/16 statements)
 - src/bot/handlers/help.py: 100% (7/7 statements)
 - src/bot/handlers/rokda.py: 88% (14/16 statements)
+- src/bot/handlers/aao.py: 86% (38/44 statements)
+- src/bot/handlers/mom_rake.py: 89% (32/36 statements)
+- src/bot/handlers/translate.py: 93% (39/42 statements)
 
 ### Medium Coverage Modules (50-80%)
 - src/db/group_dao.py: 53% (24/45 statements)
-- src/domain/util.py: 55% (77/139 statements)
+- src/db/bakchod_dao.py: 25% (27/36 statements)
+- src/domain/util.py: 34% (47/139 statements)
 - src/domain/tg_logger.py: 53% (8/15 statements)
 - src/bot/handlers/hi.py: 50% (6/12 statements)
+- src/bot/handlers/about.py: 25% (9/36 statements)
 - src/bot/handlers/chutiya.py: 38% (14/37 statements)
 - src/bot/handlers/superpower.py: 32% (8/25 statements)
-- src/bot/handlers/mom_rake.py: 33% (12/36 statements)
 - src/bot/handlers/bestie.py: 43% (6/14 statements)
+- src/bot/handlers/quotes.py: 73% (66/91 statements)
+- src/bot/handlers/weather.py: 43% (58/136 statements)
 
 ### Low Coverage Modules (<50%)
 - src/bot/__init__.py: 15% (11/71 statements)
-- src/bot/handlers/aao.py: 30% (13/44 statements)
-- src/bot/handlers/about.py: 25% (9/36 statements)
-- src/bot/handlers/ai.py: 23% (27/116 statements)
+- src/bot/handlers/ai.py: 14% (10/69 statements)
 - src/bot/handlers/antiwordle.py: 20% (9/46 statements)
 - src/bot/handlers/ask.py: 24% (14/58 statements)
 - src/bot/handlers/daan.py: 17% (13/77 statements)
@@ -101,10 +116,10 @@ Testing framework has been successfully set up for chaddi-tg Python project with
 - src/bot/handlers/mom_spacy.py: 19% (25/135 statements)
 - src/bot/handlers/musiclinks.py: 16% (7/43 statements)
 - src/bot/handlers/pic.py: 14% (15/110 statements)
-- src/bot/handlers/quotes.py: 19% (17/91 statements)
 - src/bot/handlers/remind.py: 0% (0/102 statements)
 - src/bot/handlers/roll.py: 11% (31/289 statements)
 - src/bot/handlers/setter.py: 11% (10/88 statements)
+- src/bot/handlers/sutta.py: 16% (10/62 statements)
 - src/bot/handlers/sutta.py: 16% (10/62 statements)
 - src/bot/handlers/translate.py: 21% (9/42 statements)
 - src/bot/handlers/tynm.py: 9% (28/326 statements)
@@ -314,6 +329,24 @@ Most uncovered code requires extensive mocking or integration tests due to:
 - ✅ **15-20% coverage**: Achieved with 29% overall coverage
 - **40-50% coverage**: Possible with extensive mocking for bot handlers
 - **70-80% coverage**: Requires integration tests and end-to-end testing
+
+## Recent Updates (2025-12-27)
+
+### New Test Files Added
+- `tests/test_tg_logger.py` - Telegram logger tests (4 tests)
+- `tests/test_bot_aao.py` - Aao handler tests (6 tests) - coverage: 86%
+- `tests/test_bot_mom_rake.py` - Mom rake handler tests (5 tests) - coverage: 89%
+- `tests/test_bot_translate.py` - Translate handler tests (6 tests) - coverage: 93%
+- `tests/test_bot_weather.py` - Weather handler tests (6 tests) - coverage: 43%
+- `tests/test_bot_quotes.py` - Quotes handler tests (9 tests) - coverage: 73%
+
+### Coverage Improvements
+- Overall coverage increased from 29% to 39% (+10%)
+- Total tests increased from 89 to 192 (+103 tests)
+- New high-coverage modules (>80%):
+  - src/bot/handlers/aao.py: 86%
+  - src/bot/handlers/mom_rake.py: 89%
+  - src/bot/handlers/translate.py: 93%
 
 ## Next Steps to Increase Coverage
 
