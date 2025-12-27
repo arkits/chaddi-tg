@@ -63,7 +63,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             results = list(ddgs.images(
                 query=search_query,
                 max_results=5,
-                safesearch="off"
+                safesearch="on"
             ))
             
             if len(results) == 0:
