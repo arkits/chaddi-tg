@@ -7,6 +7,8 @@ from src.domain.util import (
     choose_random_element_from_list,
     extract_pretty_name_from_tg_user,
     get_group_id_from_update,
+    get_nlp,
+    get_verb_past_lookup,
     normalize_datetime,
     pretty_print_rokda,
     pretty_time_delta,
@@ -198,3 +200,15 @@ def test_normalize_datetime_aware():
     assert result.hour == 17
     assert result.minute == 30
     assert result.tzinfo is not None
+
+
+def test_get_verb_past_lookup():
+    """Test get_verb_past_lookup function."""
+    result = get_verb_past_lookup()
+    assert isinstance(result, dict)
+
+
+def test_get_nlp():
+    """Test get_nlp function."""
+    result = get_nlp()
+    assert result is not None

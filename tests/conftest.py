@@ -28,6 +28,7 @@ def mock_get(section, option, fallback=None):
         return {
             "TG_ADMIN_USERS": "123456,789012",
             "YTDL_MAX_DOWNLOAD_TIME": "300",
+            "BOT_USERNAME": "chaddi_bot",
         }.get(option, fallback or "")
     return fallback or ""
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define the command as a variable for easy updates
-COMMAND='opencode run --model opencode/glm-4.7-free "Continue to add more tests. Refer to TESTING_SETUP.md for the current status. Run lint, format, and test commands. Finally, update the TESTING_SETUP.md file to reflect the new status. Finally commit your changes and push to the remote repository."'
+COMMAND='opencode run --model opencode/glm-4.7-free "Continue to add more tests. Refer to TESTING_SETUP.md for the current status. Run lint, format, and test commands. You MUST ensure that there are no errors or warnings. Do NOT continue until all tests pass and there are no lint or formatting errors. Then, update the TESTING_SETUP.md file to reflect the new status. Finally, commit your changes and push to the remote repository."'
 
 echo "Starting loop. Press [CTRL+C] to stop."
 

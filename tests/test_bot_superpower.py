@@ -59,8 +59,15 @@ class TestSuperpower:
     @patch("src.bot.handlers.superpower.util")
     def test_superpower_countdown_calc_future(self, mock_util):
         """Test superpower_countdown_calc when superpower day is in future."""
+        import pytz
+
+        ist = pytz.timezone("Asia/Kolkata")
+
         with patch("src.bot.handlers.superpower.datetime") as mock_datetime:
-            mock_datetime.now.return_value = datetime(2019, 6, 1, 0, 0, 0)
+            # Create timezone-aware datetime
+            naive_now = datetime(2019, 6, 1, 0, 0, 0)
+            aware_now = ist.localize(naive_now)
+            mock_datetime.now.return_value = aware_now
             mock_datetime.side_effect = lambda *args, **kwargs: datetime(*args, **kwargs)
             mock_util.pretty_time_delta.return_value = "7 months"
 
@@ -73,8 +80,15 @@ class TestSuperpower:
     @patch("src.bot.handlers.superpower.util")
     def test_superpower_countdown_calc_past(self, mock_util):
         """Test superpower_countdown_calc when superpower day is in past."""
+        import pytz
+
+        ist = pytz.timezone("Asia/Kolkata")
+
         with patch("src.bot.handlers.superpower.datetime") as mock_datetime:
-            mock_datetime.now.return_value = datetime(2020, 6, 1, 0, 0, 0)
+            # Create timezone-aware datetime
+            naive_now = datetime(2020, 6, 1, 0, 0, 0)
+            aware_now = ist.localize(naive_now)
+            mock_datetime.now.return_value = aware_now
             mock_datetime.side_effect = lambda *args, **kwargs: datetime(*args, **kwargs)
             mock_util.pretty_time_delta.return_value = "5 months"
 
