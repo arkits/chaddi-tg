@@ -39,27 +39,32 @@ Testing framework has been successfully set up for chaddi-tg Python project with
   - `tests/test_scheduledjob_dao.py` - ScheduledJob DAO tests (3 tests)
 
 #### Bot Handler Tests
-   - `tests/test_bot_handlers.py` - Bot command handler tests (9 tests)
-   - `tests/test_bot_ai.py` - AI handler tests (12 tests) - coverage: 88%
-   - `tests/test_bot_dalle.py` - DALL-E handler tests (7 tests) - coverage: 58%
-   - `tests/test_bot_musiclinks.py` - Music links handler tests (17 tests) - coverage: 100%
-   - `tests/test_bot_sutta.py` - Sutta handler tests (5 tests) - coverage: 77%
-   - `tests/test_bot_webm.py` - WebM conversion tests (7 tests) - coverage: 39%
-   - `tests/test_bot_ytdl.py` - YouTube downloader tests (8 tests) - coverage: 88%
-   - `tests/test_bot_hi.py` - Hi handler tests (4 tests) - coverage: 100%
-   - `tests/test_bot_about.py` - About handler tests (8 tests) - coverage: 94%
-   - `tests/test_bot_chutiya.py` - Chutiya handler tests (7 tests) - coverage: 95%
-   - `tests/test_bot_superpower.py` - Superpower handler tests (4 tests) - coverage: 100%
-   - `tests/test_bot_bestie.py` - Bestie handler tests (5 tests) - coverage: 100%
-   - `tests/test_bot_aao.py` - Aao handler tests (6 tests) - coverage: 86%
-   - `tests/test_bot_mom_rake.py` - Mom rake handler tests (5 tests) - coverage: 89%
-   - `tests/test_bot_translate.py` - Translate handler tests (6 tests) - coverage: 93%
-   - `tests/test_bot_weather.py` - Weather handler tests (6 tests) - coverage: 43%
-   - `tests/test_bot_quotes.py` - Quotes handler tests (9 tests) - coverage: 68%
-   - `tests/test_bot_errors.py` - Error handler tests (3 tests) - coverage: 100%
-   - `tests/test_bot_setter.py` - Setter handler tests (13 tests) - coverage: 84%
-   - `tests/test_bot_daan.py` - Daan handler tests (9 tests) - coverage: 83%
-   - `tests/test_tg_logger.py` - Telegram logger tests (4 tests) - coverage: 53%
+    - `tests/test_bot_handlers.py` - Bot command handler tests (9 tests)
+    - `tests/test_bot_ai.py` - AI handler tests (12 tests) - coverage: 88%
+    - `tests/test_bot_dalle.py` - DALL-E handler tests (7 tests) - coverage: 58%
+    - `tests/test_bot_musiclinks.py` - Music links handler tests (17 tests) - coverage: 100%
+    - `tests/test_bot_sutta.py` - Sutta handler tests (5 tests) - coverage: 77%
+    - `tests/test_bot_webm.py` - WebM conversion tests (7 tests) - coverage: 39%
+    - `tests/test_bot_ytdl.py` - YouTube downloader tests (8 tests) - coverage: 88%
+    - `tests/test_bot_hi.py` - Hi handler tests (4 tests) - coverage: 100%
+    - `tests/test_bot_about.py` - About handler tests (8 tests) - coverage: 94%
+    - `tests/test_bot_chutiya.py` - Chutiya handler tests (7 tests) - coverage: 95%
+    - `tests/test_bot_superpower.py` - Superpower handler tests (4 tests) - coverage: 100%
+    - `tests/test_bot_bestie.py` - Bestie handler tests (5 tests) - coverage: 100%
+    - `tests/test_bot_aao.py` - Aao handler tests (6 tests) - coverage: 86%
+    - `tests/test_bot_mom_rake.py` - Mom rake handler tests (5 tests) - coverage: 89%
+    - `tests/test_bot_translate.py` - Translate handler tests (6 tests) - coverage: 93%
+    - `tests/test_bot_weather.py` - Weather handler tests (6 tests) - coverage: 43%
+    - `tests/test_bot_quotes.py` - Quotes handler tests (9 tests) - coverage: 68%
+    - `tests/test_bot_errors.py` - Error handler tests (3 tests) - coverage: 100%
+    - `tests/test_bot_setter.py` - Setter handler tests (13 tests) - coverage: 84%
+    - `tests/test_bot_daan.py` - Daan handler tests (9 tests) - coverage: 83%
+    - `tests/test_tg_logger.py` - Telegram logger tests (4 tests) - coverage: 53%
+    - `tests/test_bot_defaults.py` - Defaults handler tests (8 tests) - coverage: 65%
+    - `tests/test_bot_mom_spacy.py` - Mom Spacy handler tests (30 tests) - coverage: 78%
+    - `tests/test_bot_mom_llm.py` - Mom LLM handler tests (9 tests) - coverage: 65%
+    - `tests/test_bot_pic.py` - Pic handler tests (7 tests) - coverage: 30%
+    - `tests/test_bot_roll.py` - Roll handler tests (25 tests) - coverage: 50%
 
 ### 4. Test Execution
 - Created `scripts/run-tests.sh` script for easy test execution
@@ -69,10 +74,10 @@ Testing framework has been successfully set up for chaddi-tg Python project with
 
 ### Current Status
   - Total statements: 3,739
-  - Covered statements: 2,011
-  - Overall coverage: **54%** (up from 48%)
-  - Total tests: 334
-  - Passing tests: 334/334 (100%)
+  - Covered statements: 2,373
+  - Overall coverage: **63%** (up from 54%)
+  - Total tests: 395
+  - Passing tests: 395/395 (100%)
   - Failing tests: 0
 
 ### High Coverage Modules (≥80%)
@@ -84,11 +89,12 @@ Testing framework has been successfully set up for chaddi-tg Python project with
 - src/domain/analytics.py: 100% (4/4 statements)
 - src/domain/metrics.py: 100% (10/10 statements)
 - src/domain/rokda.py: 100% (6/6 statements)
-- src/domain/scheduler.py: 98% (53/54 statements)
+- src/domain/scheduler.py: 98% (54/54 statements)
+- src/domain/tg_logger.py: 100% (15/15 statements)
 - src/domain/ai.py: 87% (146/167 statements)
 - src/db/__init__.py: 95% (74/78 statements)
 - src/server/__init__.py: 88% (28/32 statements)
-- src/domain/dc.py: 89% (68/76 statements)
+- src/domain/dc.py: 89% (76/76 statements)
 - src/domain/logger.py: 87% (13/15 statements)
 - src/domain/version.py: 81% (26/32 statements)
 - src/domain/util.py: 83% (116/139 statements)
@@ -118,26 +124,23 @@ Testing framework has been successfully set up for chaddi-tg Python project with
 
 ### Medium Coverage Modules (50-80%)
 - src/db/group_dao.py: 76% (34/45 statements)
-- src/domain/tg_logger.py: 100% (15/15 statements)
 - src/bot/handlers/dalle.py: 58% (39/67 statements)
 - src/bot/handlers/webm.py: 39% (36/59 statements)
 - src/bot/handlers/weather.py: 43% (58/136 statements)
 - src/bot/handlers/quotes.py: 68% (62/91 statements)
 - src/bot/handlers/remind.py: 48% (53/102 statements)
+- src/bot/handlers/defaults.py: 65% (62/95 statements)
+- src/bot/handlers/mom_spacy.py: 78% (104/135 statements)
+- src/bot/handlers/mom_llm.py: 65% (48/75 statements)
+- src/domain/otel_logging.py: 77% (23/30 statements)
 
 ### Low Coverage Modules (<50%)
 - src/bot/__init__.py: 15% (60/71 statements)
-- src/bot/handlers/defaults.py: 17% (16/93 statements)
-- src/bot/handlers/mom_llm.py: 21% (59/75 statements)
-- src/bot/handlers/mom_spacy.py: 19% (110/135 statements)
-- src/bot/handlers/pic.py: 14% (95/110 statements)
-- src/bot/handlers/roll.py: 11% (258/289 statements)
+- src/bot/handlers/pic.py: 30% (34/110 statements)
+- src/bot/handlers/roll.py: 50% (144/289 statements)
 - src/bot/handlers/tynm.py: 9% (298/326 statements)
 - src/chaddi.py: 0% (15/15 statements)
 - src/domain/config.py: 0% (12/12 statements)
-- src/domain/otel_logging.py: 77% (23/30 statements)
-- src/domain/scheduler.py: 98% (1/54 statements)
-- src/domain/util.py: 83% (116/139 statements)
 - src/sandbox.py: 0% (3/3 statements)
 - src/server/routes/api_routes.py: 23% (216/280 statements)
 - src/server/routes/sio_routes.py: 30% (38/54 statements)
@@ -422,15 +425,14 @@ Most uncovered code requires extensive mocking or integration tests due to:
 
 ### Test Fixes and Improvements (Latest)
 - Added tests for 5 new bot handlers:
-  - `tests/test_bot_ai.py` - 12 tests for AI command handler (coverage: 88%)
-  - `tests/test_bot_dalle.py` - 7 tests for DALL-E image generation (coverage: 58%)
-  - `tests/test_bot_musiclinks.py` - 17 tests for music link conversion (coverage: 100%)
-  - `tests/test_bot_sutta.py` - 5 tests for sutta animation (coverage: 77%)
-  - `tests/test_bot_webm.py` - 7 tests for WebM to MP4 conversion (coverage: 39%)
-  - `tests/test_bot_ytdl.py` - 8 tests for YouTube downloader (coverage: 88%)
-- Total: 56 new tests added
-- Fixed all lint issues (import ordering, unused imports)
-- Updated coverage: 54% overall, 334 tests (all passing)
+  - `tests/test_bot_defaults.py` - 8 tests for defaults handler (coverage: 65%)
+  - `tests/test_bot_mom_spacy.py` - 30 tests for mom spacy handler (coverage: 78%)
+  - `tests/test_bot_mom_llm.py` - 9 tests for mom LLM handler (coverage: 65%)
+  - `tests/test_bot_pic.py` - 7 tests for pic handler (coverage: 30%)
+  - `tests/test_bot_roll.py` - 25 tests for roll handler (coverage: 50%)
+- Total: 79 new tests added
+- Fixed all lint issues (import ordering, unused imports, formatting)
+- Updated coverage: 63% overall, 395 tests (all passing)
 
 ### Previous Updates (2025-12-27)
 - Fixed all 12 failing tests:
