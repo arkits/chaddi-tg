@@ -75,6 +75,7 @@ class TestTranslate:
         mock_translation.text = "Hola mundo"
         mock_translation.src = "en"
         mock_translation.dest = "es"
+        mock_translator.translate.return_value = mock_translation
 
         with patch("src.bot.handlers.translate.translator", mock_translator):
             await translate.handle(mock_update, MagicMock())

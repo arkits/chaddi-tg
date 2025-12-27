@@ -19,7 +19,7 @@ async def log_error(update: Update, context: ContextTypes.DEFAULT_TYPE):
         traceback.format_exc(),
     )
 
-    tg_logger.log(
+    await tg_logger.log(
         """
 *⚠️ A fatal error was caught!*
 

@@ -7,10 +7,7 @@ class TestMessageDao:
     @patch("src.db.message_dao.Bakchod")
     @patch("src.db.message_dao.Message")
     @patch("src.db.message_dao.metrics")
-    @patch("src.db.message_dao.util")
-    def test_log_message_from_update_success(
-        self, mock_util, mock_metrics, mock_message, mock_bakchod
-    ):
+    def test_log_message_from_update_success(self, mock_metrics, mock_message, mock_bakchod):
         """Test successfully logging a message from update."""
         mock_bakchod_instance = MagicMock()
         mock_bakchod.get_by_id.return_value = mock_bakchod_instance

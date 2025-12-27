@@ -48,9 +48,9 @@ dependencies = [
     "uvicorn>=0.38.0",
     "sentry-sdk[fastapi]>=2.48.0",
     "posthog>=7.4.2",
-    "opentelemetry-api>=1.27.0",
-    "opentelemetry-sdk>=1.27.0",
-    "opentelemetry-exporter-otlp-proto-http>=1.27.0",
+    "opentelemetry-api>=1.39.1",
+    "opentelemetry-sdk>=1.39.1",
+    "opentelemetry-exporter-otlp-proto-http>=1.39.1",
     "typer>=0.21.0",
     "opentelemetry-exporter-otlp>=1.39.1",
 ]
