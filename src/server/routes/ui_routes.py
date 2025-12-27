@@ -71,7 +71,7 @@ async def get_groups(request: Request):
 
 
 @router.get("/messages", response_class=HTMLResponse)
-async def get_groups(request: Request):
+async def get_messages(request: Request):
     # Get the last X messages
     messages = Message.select().limit(100).order_by(Message.time_sent.desc())
 
@@ -146,7 +146,7 @@ async def get_details_group_messages(
 
 
 @router.get("/quotes", response_class=HTMLResponse)
-async def get_groups(request: Request):
+async def get_quotes(request: Request):
     quotes = Quote.select().limit(100).order_by(Quote.created.desc())
     quotes_count = Quote.select().count()
 

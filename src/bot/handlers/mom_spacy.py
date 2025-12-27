@@ -20,7 +20,8 @@ COMMAND_COST = 200
 
 rake = Rake()
 
-preposition_to_verb_map = json.loads(open("resources/preposition-to-verb-map.json").read())
+with open("resources/preposition-to-verb-map.json") as f:
+    preposition_to_verb_map = json.loads(f.read())
 
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -172,10 +173,9 @@ def spacy_joke(message, protagonist):
 def joke_mom(sentence, protagonist, force=False):
     target = "your mom"
 
-    if not force:
+    if not force and random.random() > 0.95:
         # flip the joke occasionally
-        if random.random() > 0.95:
-            target, protagonist = protagonist, target
+        target, protagonist = protagonist, target
 
     # extract parts of speech and generate insults
     if sentence is not None:
@@ -183,11 +183,11 @@ def joke_mom(sentence, protagonist, force=False):
         if verb != 0:
             return f"{protagonist} {verb} {target} last night"
         else:
-            adjective = get_POS(sentence, "ADJ")
+            adjective = get_pos(sentence, "ADJ")
             if adjective != 0:
                 return f"{protagonist} is nice but you are {adjective}"
             else:
-                propn = get_POS(sentence, "PROPN")
+                propn = get_pos(sentence, "PROPN")
                 if propn != 0:
                     past = get_verb_past(propn)
                     return f"{protagonist} {past} {target} last night"
@@ -198,10 +198,10 @@ def joke_mom(sentence, protagonist, force=False):
 
 
 # return the first relevant part of speech tag
-def get_POS(sentence, POS):
+def get_pos(sentence, pos):
     doc = util.get_nlp()(sentence)
     for token in doc:
-        if token.pos_ == POS:
+        if token.pos_ == pos:
             return token.text
     return 0
 
@@ -217,11 +217,11 @@ def get_verb(sentence):
             verbs.append(str(token.lemma_))
 
     if verbs:
-        verbPast = get_verb_past(random.choice(verbs))
-        return verbPast
+        verb_past = get_verb_past(random.choice(verbs))
+        return verb_past
 
     else:
-        noun = get_POS(sentence, "NOUN")
+        noun = get_pos(sentence, "NOUN")
 
         if noun:
             # see if the noun has a verb form

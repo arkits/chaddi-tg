@@ -34,7 +34,7 @@ async def handle(
         video_url = message_params[1]
         logger.info("[ytdl] video_url={}", video_url)
 
-        message = await update.message.reply_text("Downloading video via youtube-dl (＠＾◡＾)")
+        message = await update.message.reply_text("Downloading video via youtube-dl (^◡^)")
 
         try:
             video_info = ydl.extract_info(video_url, download=False)
@@ -59,14 +59,19 @@ async def handle(
 
             if p_killed:
                 await message.edit_text(
-                    "Download cancelled... took too long ヽ(`⌒´メ)ノ Try again with please (⌒_⌒;)"
+                    "Download cancelled... took too long /(`⌒`メ)/ Try again with please (⌒_⌒;)"
                 )
                 return
 
             external_files = os.listdir(os.path.join(util.RESOURCES_DIR, "external"))
-            video_file = list(
-                filter(lambda x: str(x).startswith(video_info["id"]), external_files)
-            )[0]
+            video_file = next(
+                (x for x in external_files if str(x).startswith(video_info["id"])),
+                None,
+            )
+
+            if video_file is None:
+                await message.edit_text("Failed to find downloaded video file!")
+                return
 
             downloaded_video_path = os.path.join(util.RESOURCES_DIR, "external", video_file)
 
@@ -79,19 +84,20 @@ URL: {}
             )
 
             logger.debug("[ytdl] replying to the request message with downloaded video")
-            await message.edit_text("Uploading video (－.－)...zzz")
-            await update.message.reply_video(
-                timeout=5000,
-                video=open(downloaded_video_path, "rb"),
-                caption=caption,
-            )
+            await message.edit_text("Uploading video (-.-)...zzz")
+            with open(downloaded_video_path, "rb") as f:
+                await update.message.reply_video(
+                    timeout=5000,
+                    video=f,
+                    caption=caption,
+                )
 
             await message.delete()
             util.delete_file(downloaded_video_path)
 
         except Exception as e:
             logger.error("[ytdl] Caught error in ytdl download e={}", e)
-            await message.edit_text(f"Error downloading the video! (〃＞＿＜;〃) {e}")
+            await message.edit_text(f"Error downloading the video! (\"\" > _ < ;\"\" ) {e}")
             raise e
 
     except Exception as e:

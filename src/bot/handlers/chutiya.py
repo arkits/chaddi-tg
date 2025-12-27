@@ -66,7 +66,6 @@ def acronymify(word):
 
 # throws a random word that starts with letter
 def pick_a_word(letter):
-    words = list()
     verb_lookup_table = util.get_verb_past_lookup()
     words = [x for x in verb_lookup_table[0].values() if x.startswith(letter)]
     return random.choice(words)

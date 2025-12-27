@@ -244,19 +244,19 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 font_username_size,
             )
 
-            caption_w, caption_h = draw.textsize(caption, font=font_caption)
+            _caption_w, caption_h = draw.textsize(caption, font=font_caption)
 
             # Generate the username
             username = "~ " + util.extract_pretty_name_from_tg_user(
                 update.message.reply_to_message.from_user
             )
-            username_w, username_h = draw.textsize(username, font=font_username)
+            _username_w, username_h = draw.textsize(username, font=font_username)
 
             # Generate the timestamp of the message
             timestamp = util.normalize_datetime(update.message.reply_to_message.date)
             timestamp_str = timestamp.strftime("%d/%m/%Y, %I:%M %p")
             timestamp_str += f"\n {update.message.reply_to_message.chat.title}"
-            timestamp_w, timestamp_h = draw.textsize(timestamp_str, font=font_subtitle)
+            _timestamp_w, timestamp_h = draw.textsize(timestamp_str, font=font_subtitle)
 
             # Calculate the position of the caption
             caption_x, caption_y = (

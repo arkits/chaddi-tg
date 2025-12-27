@@ -27,9 +27,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         b = bakchod_dao.get_or_create_bakchod_from_tg_user(update.message.from_user)
 
-        if "dalle" in b.metadata and b.metadata["dalle"] == True:
-            pass
-        else:
+        if "dalle" not in b.metadata or not b.metadata["dalle"]:
             logger.info("[dalle] denied request for disabled bakchod={}", b.pretty_name)
             await update.message.reply_text(
                 f"/dalle is not enabled for you. Ping @arkits with your TG ID - {b.tg_id}"

@@ -110,8 +110,7 @@ async def handle_bakchod_metadata_effects(
             if key == "auto_mom":
                 auto_mom_metadata = bakchod.metadata[key]
 
-                if group_id is not None and group_id in auto_mom_metadata["group_ids"]:
-                    if random.random() > 0.5:
+                if group_id is not None and group_id in auto_mom_metadata["group_ids"] and random.random() > 0.5:
                         logger.info(
                             "[metadata] auto_mom - victim={} message={}",
                             util.extract_pretty_name_from_bakchod(bakchod),
