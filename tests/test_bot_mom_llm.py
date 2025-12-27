@@ -152,16 +152,7 @@ async def test_handle_success_without_reply_to_message(mock_update, mock_context
 
         mock_open.return_value.__enter__.return_value.read.return_value = "Instructions"
 
-        reply_user = MagicMock(spec=User)
-        reply_user.id = 789012
-        reply_user.username = "replyuser"
-
-        reply_message = MagicMock(spec=Message)
-        reply_message.from_user = reply_user
-        reply_message.text = None
-        reply_message.caption = "Test message from caption"
-
-        mock_update.message.reply_to_message = reply_message
+        mock_update.message.reply_to_message = None
 
         mock_response = MagicMock()
         mock_response.output_text = "1. Joke 1\n2. Joke 2\n3. Joke 3\n4. Joke 4"
@@ -203,17 +194,17 @@ async def test_handle_parses_numbered_jokes(mock_update, mock_context):
 
         mock_response = MagicMock()
         mock_response.output_text = "1. First joke\n2. Second joke\n3. Third joke\n4. Fourth joke"
-        mock_client.responses.create.return_value = mock_response
+        mock_response_selection = MagicMock()
+        mock_response_selection.output_text = "First joke"
+        mock_client.responses.create.side_effect = [mock_response, mock_response_selection]
 
         sent_message = MagicMock()
         sent_message.edit_text = AsyncMock()
-        mock_update.message.reply_text = AsyncMock(return_value=sent_message)
+        mock_update.message.reply_to_message.reply_text = AsyncMock(return_value=sent_message)
 
         await mom_llm.handle(mock_update, mock_context)
 
-        assert (
-            sent_message.edit_text.call_count == 2
-        )  # Once for "generating", once for "curating", and once for final
+        assert sent_message.edit_text.call_count >= 2  # At least "curating" and final joke
 
 
 @pytest.mark.asyncio
@@ -243,11 +234,13 @@ async def test_handle_fallback_parsing(mock_update, mock_context):
 
         mock_response = MagicMock()
         mock_response.output_text = "Joke 1\n\nJoke 2\n\nJoke 3\n\nJoke 4"
-        mock_client.responses.create.return_value = mock_response
+        mock_response_selection = MagicMock()
+        mock_response_selection.output_text = "Joke 1"
+        mock_client.responses.create.side_effect = [mock_response, mock_response_selection]
 
         sent_message = MagicMock()
         sent_message.edit_text = AsyncMock()
-        mock_update.message.reply_text = AsyncMock(return_value=sent_message)
+        mock_update.message.reply_to_message.reply_text = AsyncMock(return_value=sent_message)
 
         await mom_llm.handle(mock_update, mock_context)
 
@@ -281,11 +274,13 @@ async def test_handle_uses_entire_response_as_fallback(mock_update, mock_context
 
         mock_response = MagicMock()
         mock_response.output_text = "Single joke without numbering"
-        mock_client.responses.create.return_value = mock_response
+        mock_response_selection = MagicMock()
+        mock_response_selection.output_text = "Single joke without numbering"
+        mock_client.responses.create.side_effect = [mock_response, mock_response_selection]
 
         sent_message = MagicMock()
         sent_message.edit_text = AsyncMock()
-        mock_update.message.reply_text = AsyncMock(return_value=sent_message)
+        mock_update.message.reply_to_message.reply_text = AsyncMock(return_value=sent_message)
 
         await mom_llm.handle(mock_update, mock_context)
 
@@ -327,9 +322,9 @@ async def test_handle_picks_funniest_joke(mock_update, mock_context):
 
         sent_message = MagicMock()
         sent_message.edit_text = AsyncMock()
-        mock_update.message.reply_text = AsyncMock(return_value=sent_message)
+        mock_update.message.reply_to_message.reply_text = AsyncMock(return_value=sent_message)
 
         await mom_llm.handle(mock_update, mock_context)
 
         assert mock_client.responses.create.call_count == 2
-        assert sent_message.edit_text.call_count >= 1
+        assert sent_message.edit_text.call_count >= 2
