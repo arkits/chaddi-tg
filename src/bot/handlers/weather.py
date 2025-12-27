@@ -168,7 +168,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             logger.error(
                 f"[weather] Error processing weather: {e}\n{traceback.format_exc()}"
             )
-            await sent_message.edit_text(f"Error processing weather data: {str(e)}")
+            await sent_message.edit_text(f"Error processing weather data: {e!s}")
 
     except Exception as e:
         logger.error(

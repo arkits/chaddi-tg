@@ -467,7 +467,7 @@ async def get_dashboard_metrics(request: Request):
         cache_key = "metrics"
         if cache_key not in metrics_cache:
             metrics_cache[cache_key] = _compute_dashboard_metrics()
-        
+
         response = metrics_cache[cache_key]
         return JSONResponse(content=response, status_code=200)
 
@@ -590,7 +590,7 @@ async def get_dashboard_version(request: Request):
         cache_key = "version"
         if cache_key not in version_cache:
             version_cache[cache_key] = _compute_dashboard_version()
-        
+
         response = version_cache[cache_key]
         return JSONResponse(content=response, status_code=200)
 

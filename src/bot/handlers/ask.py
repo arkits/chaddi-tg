@@ -1,12 +1,14 @@
 import time
 import traceback
+
+from loguru import logger
 from openai import OpenAI
 from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
-from loguru import logger
-from src.domain import config, dc, util
+
 from src.db import Group
+from src.domain import config, dc, util
 
 app_config = config.get_config()
 client = OpenAI(api_key=app_config.get("OPENAI", "API_KEY"))

@@ -9,7 +9,7 @@ from loguru import logger
 from telegram import InputMediaPhoto, Update
 from telegram.ext import ContextTypes
 
-from src.domain import config, dc, util
+from src.domain import config, dc
 
 app_config = config.get_config()
 
@@ -65,7 +65,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 max_results=5,
                 safesearch="on"
             ))
-            
+
             if len(results) == 0:
                 await sent_message.edit_text("No images found for your search query.")
                 return
@@ -77,11 +77,11 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     image_url = result.get("image")
                     if not image_url:
                         continue
-                    
+
                     # Download image
                     response = requests.get(image_url, timeout=10, allow_redirects=True)
                     response.raise_for_status()
-                    
+
                     # Determine file extension from content type or URL
                     content_type = response.headers.get("content-type", "")
                     if "jpeg" in content_type or "jpg" in content_type:
@@ -97,15 +97,15 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         ext = os.path.splitext(image_url.split("?")[0])[1]
                         if ext not in [".jpg", ".jpeg", ".png", ".gif", ".webp"]:
                             ext = ".jpg"  # Default to jpg
-                    
+
                     # Save image
                     image_path = os.path.join(download_dir, f"image_{idx}{ext}")
                     with open(image_path, "wb") as f:
                         f.write(response.content)
-                    
+
                     downloaded_files.append(image_path)
                     logger.info(f"[pic] Downloaded image {idx+1}/5: {image_url[:50]}...")
-                    
+
                 except Exception as e:
                     logger.warning(f"[pic] Error downloading image {idx+1}: {e}")
                     continue
@@ -131,7 +131,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         file_handle = open(img_path, "rb")
                         file_handles.append(file_handle)
                         media_list.append(InputMediaPhoto(media=file_handle))
-                    
+
                     await update.message.reply_media_group(media=media_list)
                 except Exception as e:
                     logger.warning(
@@ -153,7 +153,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"[pic] Error processing images: {e}\n{traceback.format_exc()}"
             )
             await sent_message.edit_text(
-                f"Error processing images: {str(e)}"
+                f"Error processing images: {e!s}"
             )
         finally:
             # Cleanup

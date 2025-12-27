@@ -68,7 +68,7 @@ async def stream_logs_to_client(sid):
         await sio.emit("log_connected", {"message": "Connected to log stream"}, room=sid)
 
         # Open file and read initial lines
-        with open(log_file_path, "r") as file:
+        with open(log_file_path) as file:
             # Read last 100 lines initially
             lines = file.readlines()
             initial_lines = lines[-100:] if len(lines) > 100 else lines

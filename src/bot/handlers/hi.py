@@ -1,4 +1,3 @@
-import datetime
 import random
 
 from telegram import Update

@@ -13,7 +13,7 @@ def add_quote_from_update(update: Update) -> Quote:
 
     # Check if message is forwarded (handle both old and new API versions)
     forward_from = getattr(quoted_message, 'forward_from', None)
-    
+
     if forward_from:
         # if the message is a forwarded message, then use the original author
         author_bakchod = bakchod_dao.get_or_create_bakchod_from_tg_user(forward_from)

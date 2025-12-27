@@ -14,11 +14,9 @@ from src.db import (
     GroupMember,
     Message,
     Quote,
-    Roll,
     ScheduledJob,
     group_dao,
 )
-from src.domain import version
 
 router = APIRouter()
 
@@ -223,6 +221,7 @@ async def get_jobs(request: Request):
 @router.get("/commands", response_class=HTMLResponse)
 async def get_commands(request: Request):
     from datetime import datetime, timedelta
+
     from peewee import fn
 
     # Get total command count
@@ -263,7 +262,7 @@ async def get_commands(request: Request):
         .order_by(fn.COUNT(CommandUsage.id).desc())
         .limit(10)
     )
-    commands_by_group = [{"name": row.group.name, "count": row.count} for row in commands_by_group_query]
+    commands_by_group = [{"name": row.name, "count": row.count} for row in commands_by_group_query]
 
     # Get commands by user
     commands_by_user_query = (
@@ -280,8 +279,8 @@ async def get_commands(request: Request):
     )
     commands_by_user = [
         {
-            "pretty_name": row.from_bakchod.pretty_name,
-            "username": row.from_bakchod.username,
+            "pretty_name": row.pretty_name,
+            "username": row.username,
             "count": row.count
         }
         for row in commands_by_user_query
