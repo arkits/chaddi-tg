@@ -40,20 +40,20 @@ Testing framework has been successfully set up for chaddi-tg Python project with
 
 #### Bot Handler Tests
    - `tests/test_bot_handlers.py` - Bot command handler tests (9 tests)
-   - `tests/test_bot_hi.py` - Hi handler tests (4 tests)
-   - `tests/test_bot_about.py` - About handler tests (8 tests)
-   - `tests/test_bot_chutiya.py` - Chutiya handler tests (7 tests)
-   - `tests/test_bot_superpower.py` - Superpower handler tests (4 tests)
-   - `tests/test_bot_bestie.py` - Bestie handler tests (5 tests)
-   - `tests/test_bot_aao.py` - Aao handler tests (6 tests)
-   - `tests/test_bot_mom_rake.py` - Mom rake handler tests (5 tests)
-   - `tests/test_bot_translate.py` - Translate handler tests (6 tests)
-   - `tests/test_bot_weather.py` - Weather handler tests (6 tests)
-   - `tests/test_bot_quotes.py` - Quotes handler tests (9 tests)
-   - `tests/test_bot_errors.py` - Error handler tests (3 tests)
-   - `tests/test_bot_setter.py` - Setter handler tests (13 tests)
-   - `tests/test_bot_daan.py` - Daan handler tests (9 tests)
-   - `tests/test_tg_logger.py` - Telegram logger tests (4 tests)
+   - `tests/test_bot_hi.py` - Hi handler tests (4 tests) - coverage: 100%
+   - `tests/test_bot_about.py` - About handler tests (8 tests) - coverage: 94%
+   - `tests/test_bot_chutiya.py` - Chutiya handler tests (7 tests) - coverage: 95%
+   - `tests/test_bot_superpower.py` - Superpower handler tests (4 tests) - coverage: 100%
+   - `tests/test_bot_bestie.py` - Bestie handler tests (5 tests) - coverage: 100%
+   - `tests/test_bot_aao.py` - Aao handler tests (6 tests) - coverage: 86%
+   - `tests/test_bot_mom_rake.py` - Mom rake handler tests (5 tests) - coverage: 89%
+   - `tests/test_bot_translate.py` - Translate handler tests (6 tests) - coverage: 93%
+   - `tests/test_bot_weather.py` - Weather handler tests (6 tests) - coverage: 43%
+   - `tests/test_bot_quotes.py` - Quotes handler tests (9 tests) - coverage: 68%
+   - `tests/test_bot_errors.py` - Error handler tests (3 tests) - coverage: 100%
+   - `tests/test_bot_setter.py` - Setter handler tests (13 tests) - coverage: 84%
+   - `tests/test_bot_daan.py` - Daan handler tests (9 tests) - coverage: 83%
+   - `tests/test_tg_logger.py` - Telegram logger tests (4 tests) - coverage: 53%
 
 ### 4. Test Execution
 - Created `scripts/run-tests.sh` script for easy test execution
@@ -63,11 +63,11 @@ Testing framework has been successfully set up for chaddi-tg Python project with
 
 ### Current Status
 - Total statements: 3,745
-- Covered statements: 1,583
-- Overall coverage: **42%** (up from 39%)
-- Total tests: 229
-- Passing tests: 217/229 (95%)
-- Failing tests: 12
+- Covered statements: 2,135
+- Overall coverage: **57%** (up from 42%)
+- Total tests: 231
+- Passing tests: 231/231 (100%)
+- Failing tests: 0
 
 ### High Coverage Modules (≥80%)
 - src/db/bakchod_dao.py: 100% (36/36 statements)
@@ -209,7 +209,7 @@ make format
 - test_reward_rokda_none
 - test_reward_rokda_large_value
 
-#### Util Tests (23)
+#### Util Tests (25) - coverage: 83% (up from 34%)
 - test_pretty_print_rokda_rounding
 - test_pretty_print_rokda_integer
 - test_pretty_print_rokda_small_value
@@ -334,31 +334,33 @@ Most uncovered code requires extensive mocking or integration tests due to:
 
 ## Recent Updates (2025-12-27)
 
-### New Test Files Added
-- `tests/test_tg_logger.py` - Telegram logger tests (4 tests)
-- `tests/test_bot_aao.py` - Aao handler tests (6 tests) - coverage: 86%
-- `tests/test_bot_mom_rake.py` - Mom rake handler tests (5 tests) - coverage: 89%
-- `tests/test_bot_translate.py` - Translate handler tests (6 tests) - coverage: 93%
-- `tests/test_bot_weather.py` - Weather handler tests (6 tests) - coverage: 43%
-- `tests/test_bot_quotes.py` - Quotes handler tests (9 tests) - coverage: 68%
-- `tests/test_bot_errors.py` - Error handler tests (3 tests) - coverage: 100%
-- `tests/test_bot_setter.py` - Setter handler tests (13 tests) - coverage: 84%
-- `tests/test_bot_daan.py` - Daan handler tests (9 tests) - coverage: 83%
+### Test Fixes and Improvements
+- Fixed all 12 failing tests:
+  - `tests/test_bot_bestie.py` - Fixed dictionary access for user ID
+  - `tests/test_bot_chutiya.py` - Fixed random mocking for word selection
+  - `tests/test_bot_superpower.py` - Fixed timezone-aware datetime mocking
+  - `tests/test_otel_logging.py` - Fixed module-level config mocking
+- Added 2 new tests to `tests/test_util.py` for `get_verb_past_lookup()` and `get_nlp()`
+- Fixed all lint issues (N806, N803, SIM117)
+- Updated coverage: 57% overall, 231 tests (all passing)
 
 ### Coverage Improvements
-- Overall coverage increased from 29% to 42% (+13%)
-- Total tests increased from 89 to 229 (+140 tests)
+- Overall coverage increased from 29% to 57% (+28%)
+- Total tests increased from 89 to 231 (+142 tests)
 - New high-coverage modules (>80%):
-  - src/bot/handlers/aao.py: 86%
-  - src/bot/handlers/mom_rake.py: 89%
-  - src/bot/handlers/translate.py: 93%
-  - src/bot/handlers/errors.py: 100%
-  - src/bot/handlers/setter.py: 84%
-  - src/bot/handlers/daan.py: 83%
-  - src/bot/handlers/about.py: 94%
-  - src/bot/handlers/bestie.py: 79%
-  - src/bot/handlers/chutiya.py: 92%
-  - src/bot/handlers/superpower.py: 80%
+   - src/bot/handlers/aao.py: 86%
+   - src/bot/handlers/mom_rake.py: 89%
+   - src/bot/handlers/translate.py: 93%
+   - src/bot/handlers/errors.py: 100%
+   - src/bot/handlers/setter.py: 84%
+   - src/bot/handlers/daan.py: 83%
+   - src/bot/handlers/about.py: 94%
+   - src/bot/handlers/bestie.py: 100%
+   - src/bot/handlers/chutiya.py: 95%
+   - src/bot/handlers/hi.py: 100%
+   - src/bot/handlers/superpower.py: 100%
+   - src/domain/otel_logging.py: 77%
+   - src/domain/util.py: 83% (up from 34%)
 
 ## Next Steps to Increase Coverage
 

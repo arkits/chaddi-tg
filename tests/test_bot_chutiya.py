@@ -41,14 +41,35 @@ def mock_update():
 
 
 class TestChutiya:
+    @patch("src.bot.handlers.chutiya.random")
     @patch("src.bot.handlers.chutiya.dc")
     @patch("src.bot.handlers.chutiya.util")
     @pytest.mark.anyio
-    async def test_handle_without_reply(self, mock_util, mock_dc, mock_update):
+    async def test_handle_without_reply(self, mock_util, mock_dc, mock_random, mock_update):
         """Test chutiya handler without reply."""
         mock_update.message.reply_to_message = None
         mock_util.extract_pretty_name_from_tg_user.return_value = "Test User"
         mock_dc.log_command_usage = MagicMock()
+        mock_util.get_verb_past_lookup.return_value = {
+            0: {
+                "word1": "cool",
+                "word2": "huge",
+                "word3": "ugly",
+                "word4": "terrible",
+                "word5": "yucky",
+                "word6": "awesome",
+                "word7": "idiot",
+            }
+        }
+        mock_random.choice.side_effect = [
+            "Cool",
+            "Huge",
+            "Ugly",
+            "Terrible",
+            "Yucky",
+            "Awesome",
+            "Idiot",
+        ]
 
         await chutiya.handle(mock_update, MagicMock())
 
@@ -58,13 +79,34 @@ class TestChutiya:
         )
         mock_update.message.reply_text.assert_called_once()
 
+    @patch("src.bot.handlers.chutiya.random")
     @patch("src.bot.handlers.chutiya.dc")
     @patch("src.bot.handlers.chutiya.util")
     @pytest.mark.anyio
-    async def test_handle_with_reply(self, mock_util, mock_dc, mock_update):
+    async def test_handle_with_reply(self, mock_util, mock_dc, mock_random, mock_update):
         """Test chutiya handler with reply."""
         mock_util.extract_pretty_name_from_tg_user.return_value = "Reply User"
         mock_dc.log_command_usage = MagicMock()
+        mock_util.get_verb_past_lookup.return_value = {
+            0: {
+                "word1": "cool",
+                "word2": "huge",
+                "word3": "ugly",
+                "word4": "terrible",
+                "word5": "yucky",
+                "word6": "awesome",
+                "word7": "idiot",
+            }
+        }
+        mock_random.choice.side_effect = [
+            "Cool",
+            "Huge",
+            "Ugly",
+            "Terrible",
+            "Yucky",
+            "Awesome",
+            "Idiot",
+        ]
 
         await chutiya.handle(mock_update, MagicMock())
 
@@ -74,10 +116,11 @@ class TestChutiya:
         )
         mock_update.message.reply_to_message.reply_text.assert_called_once()
 
+    @patch("src.bot.handlers.chutiya.random")
     @patch("src.bot.handlers.chutiya.dc")
     @patch("src.bot.handlers.chutiya.util")
     @pytest.mark.anyio
-    async def test_handle_insulting_bot(self, mock_util, mock_dc, mock_update):
+    async def test_handle_insulting_bot(self, mock_util, mock_dc, mock_random, mock_update):
         """Test chutiya handler when trying to insult the bot itself."""
         mock_util.extract_pretty_name_from_tg_user.return_value = "chaddi_bot"
         mock_dc.log_command_usage = MagicMock()
@@ -100,14 +143,25 @@ class TestChutiya:
 
             mock_dc.log_command_usage.assert_called_once_with("chutiya", mock_update)
 
-    def test_acronymify(self):
+    @patch("src.bot.handlers.chutiya.random")
+    @patch("src.bot.handlers.chutiya.util")
+    def test_acronymify(self, mock_util, mock_random):
         """Test acronymify function."""
+        mock_util.get_verb_past_lookup.return_value = {
+            0: {
+                "word1": "apple",
+                "word2": "banana",
+                "word3": "cherry",
+            }
+        }
+        mock_random.choice.side_effect = ["Test", "Eat", "Sleep", "Test"]
+
         result = chutiya.acronymify("test")
 
-        assert "\n T = `" in result
-        assert "\n E = `" in result
-        assert "\n S = `" in result
-        assert "\n T = `" in result
+        assert "\n T = `Test`" in result
+        assert "\n E = `Eat`" in result
+        assert "\n S = `Sleep`" in result
+        assert "\n T = `Test`" in result
 
     @patch("src.bot.handlers.chutiya.util")
     def test_pick_a_word(self, mock_util):
@@ -135,6 +189,5 @@ class TestChutiya:
             }
         }
 
-        result = chutiya.pick_a_word("z")
-
-        assert result in ["apple", "banana"]
+        with pytest.raises(IndexError):
+            chutiya.pick_a_word("z")

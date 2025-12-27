@@ -98,13 +98,13 @@ class TestQuotes:
         mock_update.message.text = "/quotes remove 1"
         mock_util.is_admin_tg_user.return_value = True
 
-        with patch("src.bot.handlers.quotes.Quote") as mock_Quote:
-            mock_Quote.delete_by_id.return_value = 1
+        with patch("src.bot.handlers.quotes.Quote") as mock_quote:
+            mock_quote.delete_by_id.return_value = 1
 
             await quotes.handle(mock_update, MagicMock())
 
             mock_dc.log_command_usage.assert_called_once_with("quotes", mock_update)
-            mock_Quote.delete_by_id.assert_called_once_with("1")
+            mock_quote.delete_by_id.assert_called_once_with("1")
 
     @patch("src.bot.handlers.quotes.util")
     @patch("src.bot.handlers.quotes.dc")
@@ -140,26 +140,26 @@ class TestQuotes:
             assert "1" in result
 
     @patch("src.bot.handlers.quotes.Quote")
-    def test_get_random_quote_from_group(self, mock_Quote):
+    def test_get_random_quote_from_group(self, mock_quote):
         """Test get_random_quote_from_group function."""
-        mock_quote = MagicMock()
-        mock_quote.quote_id = 1
-        mock_quote.text = "Test quote"
+        mock_quote_obj = MagicMock()
+        mock_quote_obj.quote_id = 1
+        mock_quote_obj.text = "Test quote"
 
         mock_query = MagicMock()
-        mock_query.execute.return_value = [mock_quote]
-        mock_Quote.select.return_value.where.return_value = mock_query
+        mock_query.execute.return_value = [mock_quote_obj]
+        mock_quote.select.return_value.where.return_value = mock_query
 
         result = quotes.get_random_quote_from_group("-1001234567890")
 
         assert result is not None
 
     @patch("src.bot.handlers.quotes.Quote")
-    def test_get_random_quote_from_group_empty(self, mock_Quote):
+    def test_get_random_quote_from_group_empty(self, mock_quote):
         """Test get_random_quote_from_group with no quotes."""
         mock_query = MagicMock()
         mock_query.execute.return_value = []
-        mock_Quote.select.return_value.where.return_value = mock_query
+        mock_quote.select.return_value.where.return_value = mock_query
 
         result = quotes.get_random_quote_from_group("-1001234567890")
 

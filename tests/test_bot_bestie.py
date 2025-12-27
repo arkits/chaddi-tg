@@ -13,6 +13,7 @@ def mock_update():
     user.id = 222021705
     user.username = "bestie1"
     user.first_name = "Bestie"
+    user.__getitem__ = lambda self, key: {"id": 222021705}[key]
 
     chat = MagicMock(spec=Chat)
     chat.id = -1001234567890
@@ -36,6 +37,7 @@ class TestBestie:
     async def test_handle_with_bestie_user(self, mock_dc, mock_update):
         """Test bestie handler with bestie user."""
         mock_update.message.from_user.id = 222021705
+        mock_update.message.from_user.__getitem__ = lambda self, key: {"id": 222021705}[key]
 
         with patch("src.bot.handlers.bestie.random_reply", return_value="gussa aa ri"):
             await bestie.handle(mock_update, MagicMock())
@@ -48,6 +50,7 @@ class TestBestie:
     async def test_handle_with_second_bestie_user(self, mock_dc, mock_update):
         """Test bestie handler with second bestie user."""
         mock_update.message.from_user.id = 148933790
+        mock_update.message.from_user.__getitem__ = lambda self, key: {"id": 148933790}[key]
 
         with patch("src.bot.handlers.bestie.random_reply", return_value="nhi ho ra"):
             await bestie.handle(mock_update, MagicMock())
@@ -60,6 +63,7 @@ class TestBestie:
     async def test_handle_with_non_bestie_user(self, mock_dc, mock_update):
         """Test bestie handler with non-bestie user."""
         mock_update.message.from_user.id = 999999
+        mock_update.message.from_user.__getitem__ = lambda self, key: {"id": 999999}[key]
 
         await bestie.handle(mock_update, MagicMock())
 
@@ -71,6 +75,7 @@ class TestBestie:
     async def test_handle_without_logging(self, mock_dc, mock_update):
         """Test bestie handler with log_to_dc=False."""
         mock_update.message.from_user.id = 222021705
+        mock_update.message.from_user.__getitem__ = lambda self, key: {"id": 222021705}[key]
 
         with patch("src.bot.handlers.bestie.random_reply", return_value="chid chid ho ra"):
             await bestie.handle(mock_update, MagicMock(), log_to_dc=False)
