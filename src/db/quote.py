@@ -12,7 +12,7 @@ def add_quote_from_update(update: Update) -> Quote:
     quoted_message = update.message.reply_to_message
 
     # Check if message is forwarded (handle both old and new API versions)
-    forward_from = getattr(quoted_message, 'forward_from', None)
+    forward_from = getattr(quoted_message, "forward_from", None)
 
     if forward_from:
         # if the message is a forwarded message, then use the original author

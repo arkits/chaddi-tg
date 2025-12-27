@@ -13,9 +13,7 @@ async def test_music_handler():
 
     # Test Case 1: Spotify Link
     print("\nTest Case 1: Spotify Link")
-    update.message.text = (
-        "Check this out: https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC"
-    )
+    update.message.text = "Check this out: https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC"
     update.message.reply_text = AsyncMock()
 
     await music.handle(update, context)
@@ -28,7 +26,9 @@ async def test_music_handler():
 
     # Test Case 2: Apple Music Link
     print("\nTest Case 2: Apple Music Link")
-    update.message.text = "https://music.apple.com/us/album/never-gonna-give-you-up/1558533900?i=1558534271"
+    update.message.text = (
+        "https://music.apple.com/us/album/never-gonna-give-you-up/1558533900?i=1558534271"
+    )
     update.message.reply_text = AsyncMock()
 
     await music.handle(update, context)

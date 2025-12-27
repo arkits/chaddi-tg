@@ -200,9 +200,7 @@ async def get_api_quotes(request: Request, page_number: int = 1):
                 "quote_id": quote.quote_id,
                 "created": str(quote.created),
                 "text": quote.text,
-                "author_bakchod": util.extract_pretty_name_from_bakchod(
-                    quote.author_bakchod
-                ),
+                "author_bakchod": util.extract_pretty_name_from_bakchod(quote.author_bakchod),
                 "quoted_in_group": quote.quoted_in_group.name,
                 "quote_capture_bakchod": util.extract_pretty_name_from_bakchod(
                     quote.quote_capture_bakchod
@@ -238,9 +236,7 @@ async def get_api_quote_details(request: Request, quote_id: str = "random"):
             "text": q.text,
             "author_bakchod": util.extract_pretty_name_from_bakchod(q.author_bakchod),
             "quoted_in_group": q.quoted_in_group.name,
-            "quote_capture_bakchod": util.extract_pretty_name_from_bakchod(
-                q.quote_capture_bakchod
-            ),
+            "quote_capture_bakchod": util.extract_pretty_name_from_bakchod(q.quote_capture_bakchod),
         }
 
         return JSONResponse(content=response_message, status_code=200)
@@ -339,9 +335,7 @@ async def get_api_group_messages(
 
         total_pages = total_messages // items_per_page + 1
 
-        messages = group_dao.get_all_messages_by_group_id(
-            group_id, page_number, items_per_page
-        )
+        messages = group_dao.get_all_messages_by_group_id(group_id, page_number, items_per_page)
 
         response = {
             "current_page": page_number,
@@ -507,9 +501,7 @@ async def get_dashboard_activity(request: Request):
                     "pretty_name": (
                         most_active_bakchod.pretty_name if most_active_bakchod else None
                     ),
-                    "username": (
-                        most_active_bakchod.username if most_active_bakchod else None
-                    ),
+                    "username": (most_active_bakchod.username if most_active_bakchod else None),
                 }
                 if most_active_bakchod
                 else None
@@ -521,9 +513,7 @@ async def get_dashboard_activity(request: Request):
                 if most_active_group
                 else None
             ),
-            "latest_message_time": (
-                str(latest_message.time_sent) if latest_message else None
-            ),
+            "latest_message_time": (str(latest_message.time_sent) if latest_message else None),
         }
 
         return JSONResponse(content=response, status_code=200)
@@ -571,15 +561,9 @@ def _compute_dashboard_version():
 
     return {
         "semver": str(v["semver"]) if v.get("semver") else "unknown",
-        "git_commit_id": (
-            str(v["git_commit_id"]) if v.get("git_commit_id") else "unknown"
-        ),
-        "git_commit_time": (
-            str(v["git_commit_time"]) if v.get("git_commit_time") else "unknown"
-        ),
-        "pretty_uptime": (
-            str(v["pretty_uptime"]) if v.get("pretty_uptime") else "unknown"
-        ),
+        "git_commit_id": (str(v["git_commit_id"]) if v.get("git_commit_id") else "unknown"),
+        "git_commit_time": (str(v["git_commit_time"]) if v.get("git_commit_time") else "unknown"),
+        "pretty_uptime": (str(v["pretty_uptime"]) if v.get("pretty_uptime") else "unknown"),
     }
 
 

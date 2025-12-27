@@ -37,6 +37,15 @@ wheels = [
 ]
 
 [[package]]
+name = "backoff"
+version = "2.2.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/47/d7/5bbeb12c44d7c4f2fb5b56abce497eb5ed9f34d85701de869acedd602619/backoff-2.2.1.tar.gz", hash = "sha256:03f829f5bb1923180821643f8753b0502c3b682293992485b0eef2807afa5cba", size = 17001, upload-time = "2022-10-05T19:19:32.061Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/df/73/b6e24bd22e6720ca8ee9a85a0c4a2971af8497d8f3193fa05390cbd46e09/backoff-2.2.1-py3-none-any.whl", hash = "sha256:63579f9a0628e06278f7e47b7d7d5b6ce20dc65c5e96a6f3ca99a6adca0396e8", size = 15148, upload-time = "2022-10-05T19:19:30.546Z" },
+]
+
+[[package]]
 name = "bidict"
 version = "0.23.1"
 source = { registry = "https://pypi.org/simple" }
@@ -203,6 +212,7 @@ dependencies = [
     { name = "openai" },
     { name = "peewee" },
     { name = "pillow" },
+    { name = "posthog" },
     { name = "preshed" },
     { name = "prometheus-client" },
     { name = "psycopg2" },
@@ -219,7 +229,7 @@ dependencies = [
     { name = "pyyaml" },
     { name = "rake-nltk" },
     { name = "requests" },
-    { name = "sentry-sdk", extra = ["fastapi"] },
+    { name = "sentry-sdk" },
     { name = "shortuuid" },
     { name = "spacy" },
     { name = "spacy-legacy" },
@@ -256,6 +266,7 @@ requires-dist = [
     { name = "openai", specifier = ">=2.6.0" },
     { name = "peewee", specifier = ">=3.18.2" },
     { name = "pillow", specifier = ">=12.0.0" },
+    { name = "posthog", specifier = ">=7.4.2" },
     { name = "preshed", specifier = ">=3.0.10" },
     { name = "prometheus-client", specifier = ">=0.23.1" },
     { name = "psycopg2", specifier = ">=2.9.11" },
@@ -272,7 +283,7 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "rake-nltk", specifier = ">=1.0.6" },
     { name = "requests", specifier = ">=2.32.5" },
-    { name = "sentry-sdk", extras = ["fastapi"], specifier = ">=2.48.0" },
+    { name = "sentry-sdk", specifier = ">=2.48.0" },
     { name = "shortuuid", specifier = ">=1.0.13" },
     { name = "spacy", specifier = ">=3.8.7" },
     { name = "spacy-legacy", specifier = ">=3.0.12" },
@@ -1098,6 +1109,23 @@ wheels = [
 ]
 
 [[package]]
+name = "posthog"
+version = "7.4.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "backoff" },
+    { name = "distro" },
+    { name = "python-dateutil" },
+    { name = "requests" },
+    { name = "six" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/fb/a9/90bee782b3122b69462c579c496e2431786d3d1adebd1bff66d5e69f66cf/posthog-7.4.2.tar.gz", hash = "sha256:5953f31a21c5e2485ac57eb5d600a231a70118f884f438c0e8b493c30373c409", size = 144136, upload-time = "2025-12-22T11:03:15.301Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c5/95/ed48309ec45d8856e38c07ff2f65e7f904e2e4249905d2bf903e2eb0ad32/posthog-7.4.2-py3-none-any.whl", hash = "sha256:36954f06f4adede905d97faeb24926a705a4d86f4a308506b15b41b661ef064c", size = 166516, upload-time = "2025-12-22T11:03:14.27Z" },
+]
+
+[[package]]
 name = "preshed"
 version = "3.0.10"
 source = { registry = "https://pypi.org/simple" }
@@ -1540,11 +1568,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/40/f0/0e9dc590513d5e742d7799e2038df3a05167cba084c6ca4f3cdd75b55164/sentry_sdk-2.48.0.tar.gz", hash = "sha256:5213190977ff7fdff8a58b722fb807f8d5524a80488626ebeda1b5676c0c1473", size = 384828, upload-time = "2025-12-16T14:55:41.722Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/4d/19/8d77f9992e5cbfcaa9133c3bf63b4fbbb051248802e1e803fed5c552fbb2/sentry_sdk-2.48.0-py2.py3-none-any.whl", hash = "sha256:6b12ac256769d41825d9b7518444e57fa35b5642df4c7c5e322af4d2c8721172", size = 414555, upload-time = "2025-12-16T14:55:40.152Z" },
-]
-
-[package.optional-dependencies]
-fastapi = [
-    { name = "fastapi" },
 ]
 
 [[package]]

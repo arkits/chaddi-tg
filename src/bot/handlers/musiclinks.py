@@ -27,9 +27,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.get(
-                f"https://api.song.link/v1-alpha.1/links?url={url}"
-            )
+            response = await client.get(f"https://api.song.link/v1-alpha.1/links?url={url}")
 
             if response.status_code != 200:
                 logger.error(

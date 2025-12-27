@@ -112,6 +112,4 @@ class CommandUsage(BaseModel):
 
 
 db.connect()
-db.create_tables(
-    [Bakchod, Message, Group, GroupMember, Quote, Roll, ScheduledJob, CommandUsage]
-)
+db.create_tables([Bakchod, Message, Group, GroupMember, Quote, Roll, ScheduledJob, CommandUsage])

@@ -97,7 +97,7 @@ URL: {}
 
         except Exception as e:
             logger.error("[ytdl] Caught error in ytdl download e={}", e)
-            await message.edit_text(f"Error downloading the video! (\"\" > _ < ;\"\" ) {e}")
+            await message.edit_text(f'Error downloading the video! ("" > _ < ;"" ) {e}')
             raise e
 
     except Exception as e:

@@ -67,9 +67,7 @@ async def daily_post_callback(context: ContextTypes.DEFAULT_TYPE):
     logger.info("Running daily post job")
 
     groups = Group.select()
-    enabled_groups = [
-        g for g in groups if g.metadata and g.metadata.get("good_morning_enabled")
-    ]
+    enabled_groups = [g for g in groups if g.metadata and g.metadata.get("good_morning_enabled")]
 
     if not enabled_groups:
         logger.info("No groups have good morning enabled")
@@ -99,9 +97,7 @@ async def daily_post_callback(context: ContextTypes.DEFAULT_TYPE):
         message_text = f"🌅 {greeting}\n\n"
         if quote:
             author_name = (
-                quote.author_bakchod.pretty_name
-                or quote.author_bakchod.username
-                or "Unknown"
+                quote.author_bakchod.pretty_name or quote.author_bakchod.username or "Unknown"
             )
             message_text += f"💡 *Daily Quote:*\n_{quote.text}_\n- {author_name}"
 

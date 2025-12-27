@@ -54,17 +54,13 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Check for caption in current message
         if not location and update.message.caption:
             caption = update.message.caption
-            location = (
-                caption[8:].strip() if caption.startswith("/weather") else caption
-            )
+            location = caption[8:].strip() if caption.startswith("/weather") else caption
 
         # If no location provided, try to get from saved metadata
         if not location or location.strip() == "":
             if bakchod.metadata and bakchod.metadata.get("last_weather_location"):
                 location = bakchod.metadata["last_weather_location"]
-                logger.info(
-                    f"[weather] Using saved location from metadata: {location}"
-                )
+                logger.info(f"[weather] Using saved location from metadata: {location}")
             else:
                 await update.message.reply_text(
                     "Please provide a location. Usage: `/weather <location>` or reply to a message with `/weather`.",
@@ -161,22 +157,14 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         except KeyError as e:
             logger.error(f"[weather] Missing data in API response: {e}")
-            await sent_message.edit_text(
-                "Error parsing weather data. Please try again later."
-            )
+            await sent_message.edit_text("Error parsing weather data. Please try again later.")
         except Exception as e:
-            logger.error(
-                f"[weather] Error processing weather: {e}\n{traceback.format_exc()}"
-            )
+            logger.error(f"[weather] Error processing weather: {e}\n{traceback.format_exc()}")
             await sent_message.edit_text(f"Error processing weather data: {e!s}")
 
     except Exception as e:
-        logger.error(
-            f"Caught Error in weather.handle - {e} \n {traceback.format_exc()}"
-        )
-        await update.message.reply_text(
-            "Something went wrong while processing your request."
-        )
+        logger.error(f"Caught Error in weather.handle - {e} \n {traceback.format_exc()}")
+        await update.message.reply_text("Something went wrong while processing your request.")
 
 
 async def _generate_funny_description(weather_description: str) -> str:
@@ -188,9 +176,7 @@ async def _generate_funny_description(weather_description: str) -> str:
     # Try to use LLM if enabled
     try:
         if openai_client is None:
-            logger.warning(
-                "[weather] LLM enabled but OpenAI client not configured, using fallback"
-            )
+            logger.warning("[weather] LLM enabled but OpenAI client not configured, using fallback")
             return _get_fallback_description(weather_description)
 
         prompt = f"""Convert this weather description into a funny, rude, and sarcastic one-liner. Keep it short (1 sentence max) and make it entertaining.
@@ -227,14 +213,8 @@ def _get_fallback_description(weather_description: str) -> str:
 
     # Check for dynamic roasts by condition
     dynamic_roasts = []
-    if (
-        "rain" in weather_lower
-        or "drizzle" in weather_lower
-        or "shower" in weather_lower
-    ):
-        dynamic_roasts.append(
-            f"Sky's leaking {weather_description}. Bring a towel or a new life."
-        )
+    if "rain" in weather_lower or "drizzle" in weather_lower or "shower" in weather_lower:
+        dynamic_roasts.append(f"Sky's leaking {weather_description}. Bring a towel or a new life.")
     if "snow" in weather_lower:
         dynamic_roasts.append(
             f"{weather_description} everywhere—time to question your life choices in traffic."
@@ -304,10 +284,7 @@ def _get_fallback_description(weather_description: str) -> str:
 
     # Combine all options, prioritizing dynamic roasts if available
     all_options = (
-        dynamic_roasts
-        + straight_replacements
-        + template_combinations
-        + emoji_descriptions
+        dynamic_roasts + straight_replacements + template_combinations + emoji_descriptions
     )
 
     return random.choice(all_options)

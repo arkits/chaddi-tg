@@ -83,9 +83,7 @@ def acquire_external_resource(resource_url, resource_name):
         )
 
     else:
-        logger.info(
-            "[acquire_external_resource] downloading resource_url={}", resource_url
-        )
+        logger.info("[acquire_external_resource] downloading resource_url={}", resource_url)
 
         r = requests.get(resource_url, allow_redirects=True, timeout=30)
         r.raise_for_status()  # Raise an exception for bad status codes
@@ -134,9 +132,7 @@ def pretty_time_delta(seconds):
 
 
 def get_random_bakchod_from_group(group_id: str, bakchod_id_to_avoid: str) -> Bakchod:
-    groupmembers = (
-        GroupMember.select().where(GroupMember.group_id == group_id).execute()
-    )
+    groupmembers = GroupMember.select().where(GroupMember.group_id == group_id).execute()
 
     random_groupmember = choose_random_element_from_list(groupmembers)
 

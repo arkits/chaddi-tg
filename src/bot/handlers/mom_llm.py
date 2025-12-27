@@ -70,9 +70,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             + f"\n\nGenerate exactly {num_jokes} different variations of your response. Format your output as:\n1. [first joke]\n2. [second joke]\n3. [third joke]\n4. [fourth joke]"
         )
 
-        logger.debug(
-            "[mom3] prompt={} \n {} \n {}", instructions, input, multi_joke_instructions
-        )
+        logger.debug("[mom3] prompt={} \n {} \n {}", instructions, input, multi_joke_instructions)
 
         response = client.responses.create(
             model=MODEL_NAME, instructions=multi_joke_instructions, input=input
@@ -88,12 +86,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         for line in lines:
             line = line.strip()
             # Match lines starting with "1.", "2.", etc.
-            if (
-                line
-                and len(line) > 3
-                and line[0].isdigit()
-                and line[1:3] in [". ", ".)"]
-            ):
+            if line and len(line) > 3 and line[0].isdigit() and line[1:3] in [". ", ".)"]:
                 joke = line[3:].strip() if line[2] == " " else line[2:].strip()
                 jokes.append(joke)
                 logger.info("[mom3] joke {}: '{}'", len(jokes), joke)

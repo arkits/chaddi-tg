@@ -61,11 +61,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             # Search for images using DuckDuckGo
             ddgs = DDGS()
             # Search for images
-            results = list(ddgs.images(
-                query=search_query,
-                max_results=5,
-                safesearch="on"
-            ))
+            results = list(ddgs.images(query=search_query, max_results=5, safesearch="on"))
 
             if len(results) == 0:
                 await sent_message.edit_text("No images found for your search query.")
@@ -105,10 +101,10 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         f.write(response.content)
 
                     downloaded_files.append(image_path)
-                    logger.info(f"[pic] Downloaded image {idx+1}/5: {image_url[:50]}...")
+                    logger.info(f"[pic] Downloaded image {idx + 1}/5: {image_url[:50]}...")
 
                 except Exception as e:
-                    logger.warning(f"[pic] Error downloading image {idx+1}: {e}")
+                    logger.warning(f"[pic] Error downloading image {idx + 1}: {e}")
                     continue
 
             if len(downloaded_files) == 0:
@@ -142,12 +138,8 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await sent_message.delete()
 
         except Exception as e:
-            logger.error(
-                f"[pic] Error processing images: {e}\n{traceback.format_exc()}"
-            )
-            await sent_message.edit_text(
-                f"Error processing images: {e!s}"
-            )
+            logger.error(f"[pic] Error processing images: {e}\n{traceback.format_exc()}")
+            await sent_message.edit_text(f"Error processing images: {e!s}")
         finally:
             # Cleanup
             try:
@@ -157,7 +149,5 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 logger.warning(f"[pic] Error cleaning up temp directory: {e}")
 
     except Exception as e:
-        logger.error(
-            f"Caught Error in pic.handle - {e} \n {traceback.format_exc()}"
-        )
+        logger.error(f"Caught Error in pic.handle - {e} \n {traceback.format_exc()}")
         await update.message.reply_text("Something went wrong while processing your request.")

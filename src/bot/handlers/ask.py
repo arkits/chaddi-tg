@@ -32,9 +32,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
             group = Group.get_by_id(update.effective_chat.id)
             if not group or "ask" not in group.metadata.get("enabled_commands", []):
-                logger.info(
-                    f"[ask] Command disabled for group {update.effective_chat.id}"
-                )
+                logger.info(f"[ask] Command disabled for group {update.effective_chat.id}")
                 await update.message.reply_text(
                     "This command is not enabled for this group.",
                     parse_mode=ParseMode.MARKDOWN,

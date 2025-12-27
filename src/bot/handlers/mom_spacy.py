@@ -263,5 +263,3 @@ def random_reply(protagonist):
     random_int = random.randint(0, len(replies) - 1)
 
     return replies[random_int]
-
-

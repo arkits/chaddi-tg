@@ -242,21 +242,16 @@ async def get_commands(request: Request):
         .order_by(fn.COUNT(CommandUsage.id).desc())
         .limit(10)
     )
-    top_commands = [{"command_name": row.command_name, "count": row.count} for row in top_commands_query]
+    top_commands = [
+        {"command_name": row.command_name, "count": row.count} for row in top_commands_query
+    ]
 
     # Get recent command executions
-    recent_executions = (
-        CommandUsage.select()
-        .order_by(CommandUsage.executed_at.desc())
-        .limit(50)
-    )
+    recent_executions = CommandUsage.select().order_by(CommandUsage.executed_at.desc()).limit(50)
 
     # Get commands by group
     commands_by_group_query = (
-        CommandUsage.select(
-            Group.name,
-            fn.COUNT(CommandUsage.id).alias("count")
-        )
+        CommandUsage.select(Group.name, fn.COUNT(CommandUsage.id).alias("count"))
         .join(Group, on=(CommandUsage.group == Group.group_id))
         .group_by(Group.name)
         .order_by(fn.COUNT(CommandUsage.id).desc())
@@ -267,9 +262,7 @@ async def get_commands(request: Request):
     # Get commands by user
     commands_by_user_query = (
         CommandUsage.select(
-            Bakchod.pretty_name,
-            Bakchod.username,
-            fn.COUNT(CommandUsage.id).alias("count")
+            Bakchod.pretty_name, Bakchod.username, fn.COUNT(CommandUsage.id).alias("count")
         )
         .join(Bakchod, on=(CommandUsage.from_bakchod == Bakchod.tg_id))
         .where(Bakchod.pretty_name.is_null(False))
@@ -278,23 +271,20 @@ async def get_commands(request: Request):
         .limit(10)
     )
     commands_by_user = [
-        {
-            "pretty_name": row.pretty_name,
-            "username": row.username,
-            "count": row.count
-        }
+        {"pretty_name": row.pretty_name, "username": row.username, "count": row.count}
         for row in commands_by_user_query
     ]
 
     # Get hourly distribution for last 24 hours
     hourly_data = []
     for i in range(24):
-        hour_start = datetime.now() - timedelta(hours=i+1)
+        hour_start = datetime.now() - timedelta(hours=i + 1)
         hour_end = datetime.now() - timedelta(hours=i)
-        count = CommandUsage.select().where(
-            (CommandUsage.executed_at >= hour_start) &
-            (CommandUsage.executed_at < hour_end)
-        ).count()
+        count = (
+            CommandUsage.select()
+            .where((CommandUsage.executed_at >= hour_start) & (CommandUsage.executed_at < hour_end))
+            .count()
+        )
         hourly_data.insert(0, {"hour": hour_start.strftime("%H:00"), "count": count})
 
     return templates.TemplateResponse(

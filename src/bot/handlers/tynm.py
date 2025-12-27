@@ -60,7 +60,11 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             logger.info("Successfully loaded NM_IMG from {}", selected_image)
 
         except Exception as e:
-            logger.error("Failed to load NM_IMG from local resources: {} traceback={}", e, traceback.format_exc())
+            logger.error(
+                "Failed to load NM_IMG from local resources: {} traceback={}",
+                e,
+                traceback.format_exc(),
+            )
             await update.message.reply_text("Failed to load image. Please try again later.")
             return
 
@@ -347,7 +351,9 @@ def add_fancy_border(img: Image) -> Image:
     img_width, img_height = img.size
 
     # Create a new image with border space
-    bordered_img = Image.new("RGB", (img_width + 2 * border_width, img_height + 2 * border_width), color=(255, 255, 255))
+    bordered_img = Image.new(
+        "RGB", (img_width + 2 * border_width, img_height + 2 * border_width), color=(255, 255, 255)
+    )
 
     # Convert to RGB if needed
     if img.mode != "RGB":
@@ -362,21 +368,39 @@ def add_fancy_border(img: Image) -> Image:
     # Outer border (thick, dark) - draw multiple rectangles for thickness
     for i in range(outer_border_width):
         draw.rectangle(
-            [(outer_border_width - i, outer_border_width - i), (img_width + 2 * border_width - outer_border_width + i, img_height + 2 * border_width - outer_border_width + i)],
+            [
+                (outer_border_width - i, outer_border_width - i),
+                (
+                    img_width + 2 * border_width - outer_border_width + i,
+                    img_height + 2 * border_width - outer_border_width + i,
+                ),
+            ],
             outline=(0, 0, 0),
         )
 
     # Middle border (medium, orange/saffron)
     for i in range(4):
         draw.rectangle(
-            [(outer_border_width + 3 - i, outer_border_width + 3 - i), (img_width + 2 * border_width - outer_border_width - 3 + i, img_height + 2 * border_width - outer_border_width - 3 + i)],
+            [
+                (outer_border_width + 3 - i, outer_border_width + 3 - i),
+                (
+                    img_width + 2 * border_width - outer_border_width - 3 + i,
+                    img_height + 2 * border_width - outer_border_width - 3 + i,
+                ),
+            ],
             outline=(255, 153, 51),
         )
 
     # Inner border (thin, white)
     for i in range(2):
         draw.rectangle(
-            [(outer_border_width + 7 - i, outer_border_width + 7 - i), (img_width + 2 * border_width - outer_border_width - 7 + i, img_height + 2 * border_width - outer_border_width - 7 + i)],
+            [
+                (outer_border_width + 7 - i, outer_border_width + 7 - i),
+                (
+                    img_width + 2 * border_width - outer_border_width - 7 + i,
+                    img_height + 2 * border_width - outer_border_width - 7 + i,
+                ),
+            ],
             outline=(255, 255, 255),
         )
 
@@ -385,20 +409,88 @@ def add_fancy_border(img: Image) -> Image:
     corner_thickness = 3
 
     # Top-left corner
-    draw.line([(outer_border_width, outer_border_width), (outer_border_width + corner_size, outer_border_width)], fill=(255, 153, 51), width=corner_thickness)
-    draw.line([(outer_border_width, outer_border_width), (outer_border_width, outer_border_width + corner_size)], fill=(255, 153, 51), width=corner_thickness)
+    draw.line(
+        [
+            (outer_border_width, outer_border_width),
+            (outer_border_width + corner_size, outer_border_width),
+        ],
+        fill=(255, 153, 51),
+        width=corner_thickness,
+    )
+    draw.line(
+        [
+            (outer_border_width, outer_border_width),
+            (outer_border_width, outer_border_width + corner_size),
+        ],
+        fill=(255, 153, 51),
+        width=corner_thickness,
+    )
 
     # Top-right corner
-    draw.line([(img_width + 2 * border_width - outer_border_width, outer_border_width), (img_width + 2 * border_width - outer_border_width - corner_size, outer_border_width)], fill=(255, 153, 51), width=corner_thickness)
-    draw.line([(img_width + 2 * border_width - outer_border_width, outer_border_width), (img_width + 2 * border_width - outer_border_width, outer_border_width + corner_size)], fill=(255, 153, 51), width=corner_thickness)
+    draw.line(
+        [
+            (img_width + 2 * border_width - outer_border_width, outer_border_width),
+            (img_width + 2 * border_width - outer_border_width - corner_size, outer_border_width),
+        ],
+        fill=(255, 153, 51),
+        width=corner_thickness,
+    )
+    draw.line(
+        [
+            (img_width + 2 * border_width - outer_border_width, outer_border_width),
+            (img_width + 2 * border_width - outer_border_width, outer_border_width + corner_size),
+        ],
+        fill=(255, 153, 51),
+        width=corner_thickness,
+    )
 
     # Bottom-left corner
-    draw.line([(outer_border_width, img_height + 2 * border_width - outer_border_width), (outer_border_width + corner_size, img_height + 2 * border_width - outer_border_width)], fill=(255, 153, 51), width=corner_thickness)
-    draw.line([(outer_border_width, img_height + 2 * border_width - outer_border_width), (outer_border_width, img_height + 2 * border_width - outer_border_width - corner_size)], fill=(255, 153, 51), width=corner_thickness)
+    draw.line(
+        [
+            (outer_border_width, img_height + 2 * border_width - outer_border_width),
+            (outer_border_width + corner_size, img_height + 2 * border_width - outer_border_width),
+        ],
+        fill=(255, 153, 51),
+        width=corner_thickness,
+    )
+    draw.line(
+        [
+            (outer_border_width, img_height + 2 * border_width - outer_border_width),
+            (outer_border_width, img_height + 2 * border_width - outer_border_width - corner_size),
+        ],
+        fill=(255, 153, 51),
+        width=corner_thickness,
+    )
 
     # Bottom-right corner
-    draw.line([(img_width + 2 * border_width - outer_border_width, img_height + 2 * border_width - outer_border_width), (img_width + 2 * border_width - outer_border_width - corner_size, img_height + 2 * border_width - outer_border_width)], fill=(255, 153, 51), width=corner_thickness)
-    draw.line([(img_width + 2 * border_width - outer_border_width, img_height + 2 * border_width - outer_border_width), (img_width + 2 * border_width - outer_border_width, img_height + 2 * border_width - outer_border_width - corner_size)], fill=(255, 153, 51), width=corner_thickness)
+    draw.line(
+        [
+            (
+                img_width + 2 * border_width - outer_border_width,
+                img_height + 2 * border_width - outer_border_width,
+            ),
+            (
+                img_width + 2 * border_width - outer_border_width - corner_size,
+                img_height + 2 * border_width - outer_border_width,
+            ),
+        ],
+        fill=(255, 153, 51),
+        width=corner_thickness,
+    )
+    draw.line(
+        [
+            (
+                img_width + 2 * border_width - outer_border_width,
+                img_height + 2 * border_width - outer_border_width,
+            ),
+            (
+                img_width + 2 * border_width - outer_border_width,
+                img_height + 2 * border_width - outer_border_width - corner_size,
+            ),
+        ],
+        fill=(255, 153, 51),
+        width=corner_thickness,
+    )
 
     return bordered_img
 
