@@ -1,5 +1,5 @@
-def reward_rokda(r: int):
-    if (r < 0) or r is None:
+def reward_rokda(r):
+    if r is None or (r < 0):
         r = 0
 
     # Egalitarian policy - Poor users get more increment than richer users

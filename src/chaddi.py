@@ -4,7 +4,7 @@ import sentry_sdk
 from loguru import logger
 
 from src.bot import run_telegram_bot
-from src.domain import config
+from src.domain import config, otel_logging
 from src.server import run_server
 
 app_config = config.get_config()
@@ -27,6 +27,9 @@ sentry_sdk.init(
     environment=app_config.get("SENTRY", "ENVIRONMENT", fallback="dev"),
     enable_logs=True,
 )
+
+# Initialize OpenTelemetry logging for PostHog
+otel_logging.setup_otel_logging()
 
 
 async def main():
