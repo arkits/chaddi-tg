@@ -48,13 +48,6 @@ sys.modules["playhouse.postgres_ext"] = mock_postgres
 sys.modules["en_core_web_sm"] = MagicMock()
 sys.modules["spacy"] = MagicMock()
 
-# Mock remind handler to avoid circular import
-sys.modules["src.bot.handlers.remind"] = MagicMock()
-sys.modules["src.bot.handlers.remind"].build_job_name = lambda *args: "_".join(
-    str(arg) for arg in args
-)
-sys.modules["src.bot.handlers.remind"].reminder_handler = lambda *args: None
-
 
 # Mock FastAPI StaticFiles to avoid directory dependency
 def mock_static_files(*args, **kwargs):
