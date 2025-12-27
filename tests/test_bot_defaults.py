@@ -166,9 +166,10 @@ async def test_handle_bakchod_metadata_effects_auto_mom(mock_update, mock_contex
         patch("src.bot.handlers.defaults.random") as mock_random,
         patch("src.bot.handlers.defaults.util") as mock_util,
     ):
-        mock_random.return_value = 0.6  # > 0.5 so auto_mom triggers
+        mock_random.random.return_value = 0.6  # > 0.5 so auto_mom triggers
         mock_mom_spacy.joke_mom.return_value = "Test joke"
         mock_util.extract_pretty_name_from_bakchod.return_value = "Test User"
+        mock_util.get_group_id_from_update.return_value = -1001234567890
         mock_update.message.text = "Test message"
 
         mock_bakchod = MagicMock()

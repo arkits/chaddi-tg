@@ -60,7 +60,8 @@ Testing framework has been successfully set up for chaddi-tg Python project with
     - `tests/test_bot_setter.py` - Setter handler tests (13 tests) - coverage: 84%
     - `tests/test_bot_daan.py` - Daan handler tests (9 tests) - coverage: 83%
     - `tests/test_tg_logger.py` - Telegram logger tests (4 tests) - coverage: 53%
-    - `tests/test_bot_defaults.py` - Defaults handler tests (8 tests) - coverage: 65%
+    - `tests/test_bot_defaults.py` - Defaults handler tests (8 tests) - coverage: 92%
+    - `tests/test_bot_remind.py` - Remind handler tests (24 tests) - coverage: 95%
     - `tests/test_bot_mom_spacy.py` - Mom Spacy handler tests (30 tests) - coverage: 78%
     - `tests/test_bot_mom_llm.py` - Mom LLM handler tests (9 tests) - coverage: 65%
     - `tests/test_bot_pic.py` - Pic handler tests (7 tests) - coverage: 30%
@@ -73,13 +74,13 @@ Testing framework has been successfully set up for chaddi-tg Python project with
  ## Test Coverage
 
 ### Current Status
-   - Total statements: 3,739
-   - Covered statements: 2,405
-   - Overall coverage: **64%** (up from 63%)
-   - Total tests: 413
-   - Passing tests: 407/413 (98.5%)
-   - Failing tests: 1
-   - Expected failures (xfail): 5
+    - Total statements: 3,739
+    - Covered statements: 2,463
+    - Overall coverage: **66%** (up from 64%)
+    - Total tests: 417
+    - Passing tests: 417/417 (100%)
+    - Failing tests: 0
+    - Expected failures (xfail): 5
 
 ### High Coverage Modules (≥80%)
 - src/db/bakchod_dao.py: 100% (36/36 statements)
@@ -129,8 +130,8 @@ Testing framework has been successfully set up for chaddi-tg Python project with
 - src/bot/handlers/webm.py: 19% (48/59 statements)
 - src/bot/handlers/weather.py: 15% (115/136 statements)
 - src/bot/handlers/quotes.py: 19% (74/91 statements)
-- src/bot/handlers/remind.py: 17% (85/102 statements)
-- src/bot/handlers/defaults.py: 65% (30/93 statements)
+  - src/bot/handlers/remind.py: 95% (97/102 statements)
+- src/bot/handlers/defaults.py: 92% (86/93 statements)
 - src/bot/handlers/mom_spacy.py: 88% (16/135 statements)
 - src/bot/handlers/mom_llm.py: 21% (59/75 statements)
 - src/bot/handlers/mom_rake.py: 33% (24/36 statements)
@@ -425,6 +426,22 @@ Most uncovered code requires extensive mocking or integration tests due to:
 
 ## Recent Updates (2025-12-27)
 
+### Test Additions (Latest)
+- Added 9 new tests to `tests/test_bot_remind.py` for remind handler:
+  - Test for `remove_job_if_exists()` function (2 tests)
+  - Tests for main `handle()` function (4 tests):
+    - Too many reminders check
+    - Invalid due seconds
+    - Too large due seconds (> 10 years)
+    - Successful reminder creation
+  - Tests for `reminder_handler()` callback (3 tests):
+    - With custom reminder message
+    - Without custom message
+    - Exception handling
+- Improved remind.py coverage from 48% to 95% (+47%)
+- Overall coverage improved from 64% to 66% (+2%)
+- Total tests increased from 413 to 417 (+4 tests)
+
 ### Test Fixes and Improvements (Latest)
 - Fixed failing tests in existing test files:
   - Fixed 2 tests in `tests/test_bot_defaults.py`
@@ -449,7 +466,7 @@ Most uncovered code requires extensive mocking or integration tests due to:
 
 ### New Test Files Added (2025-12-27)
 Added tests for 4 previously untested bot handlers:
-- `tests/test_bot_remind.py` - 9 tests for remind functionality (coverage: 18%)
+  - `tests/test_bot_remind.py` - 24 tests for remind functionality (coverage: 95%)
 - `tests/test_bot_antiwordle.py` - 12 tests for antiwordle game detection (coverage: 89%)
 - `tests/test_bot_ask.py` - 7 tests for AI问答 command (coverage: 90%)
 - `tests/test_bot_gamble.py` - 23 tests for gambling functionality (coverage: 98%)
