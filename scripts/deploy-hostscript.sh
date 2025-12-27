@@ -23,13 +23,21 @@ if [ -d "chaddi-tg" ]; then
     cd scripts
     ./kill-chaddi.sh
 
-    echo ">>> starting new chaddi"
-    ./run-prod.sh
-    echo ""
-
+    echo ">>> sleeping for 5 seconds"
     sleep 5
-    echo ">>> checking processes"
-    ps aux | grep "python chaddi.py"
+    echo ">>> done sleeping"
+
+    echo ">>> starting new chaddi-tg"
+    ./run-prod.sh
+
+    PID=$(ps -eaf | grep "chaddi.py" | grep -v grep | awk '{print $2}')
+    echo ">>> PID of chaddi-tg: $PID"
+
+    PORT=5100
+    PID_PORT=$(lsof -t -i:$PORT)
+    echo ">>> PID of server on port $PORT: $PID_PORT"
+
+    echo ">>> done starting new chaddi-tg"
 
 else
 
