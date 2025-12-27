@@ -63,9 +63,10 @@ Testing framework has been successfully set up for chaddi-tg Python project with
     - `tests/test_bot_defaults.py` - Defaults handler tests (8 tests) - coverage: 92%
     - `tests/test_bot_remind.py` - Remind handler tests (24 tests) - coverage: 95%
     - `tests/test_bot_mom_spacy.py` - Mom Spacy handler tests (30 tests) - coverage: 78%
-    - `tests/test_bot_mom_llm.py` - Mom LLM handler tests (9 tests) - coverage: 65%
-    - `tests/test_bot_pic.py` - Pic handler tests (7 tests) - coverage: 30%
-    - `tests/test_bot_roll.py` - Roll handler tests (25 tests) - coverage: 50%
+     - `tests/test_bot_mom_llm.py` - Mom LLM handler tests (9 tests) - coverage: 65%
+     - `tests/test_bot_pic.py` - Pic handler tests (7 tests) - coverage: 30%
+     - `tests/test_bot_roll.py` - Roll handler tests (25 tests) - coverage: 50%
+     - `tests/test_bot_tynm.py` - TYNM image handler tests (40 tests) - coverage: 63%
 
 ### 4. Test Execution
 - Created `scripts/run-tests.sh` script for easy test execution
@@ -73,14 +74,14 @@ Testing framework has been successfully set up for chaddi-tg Python project with
 
  ## Test Coverage
 
-### Current Status
-    - Total statements: 3,739
-    - Covered statements: 2,463
-    - Overall coverage: **66%** (up from 64%)
-    - Total tests: 417
-    - Passing tests: 417/417 (100%)
-    - Failing tests: 0
-    - Expected failures (xfail): 5
+ ### Current Status
+     - Total statements: 3,739
+     - Covered statements: 2,639
+     - Overall coverage: **71%** (up from 66%)
+     - Total tests: 462
+     - Passing tests: 457/462 (99%)
+     - Failing tests: 0
+     - Expected failures (xfail): 5
 
 ### High Coverage Modules (≥80%)
 - src/db/bakchod_dao.py: 100% (36/36 statements)
@@ -90,15 +91,15 @@ Testing framework has been successfully set up for chaddi-tg Python project with
 - src/db/scheduledjob_dao.py: 100% (12/12 statements)
 - src/domain/analytics.py: 100% (4/4 statements)
 - src/domain/metrics.py: 100% (10/10 statements)
-- src/domain/rokda.py: 83% (5/6 statements)
-- src/domain/scheduler.py: 98% (1/54 statements)
+- src/domain/rokda.py: 100% (6/6 statements)
+- src/domain/scheduler.py: 98% (53/54 statements)
 - src/domain/tg_logger.py: 100% (15/15 statements)
 - src/domain/ai.py: 87% (146/167 statements)
 - src/db/__init__.py: 95% (74/78 statements)
 - src/server/__init__.py: 88% (28/32 statements)
-- src/domain/dc.py: 89% (8/76 statements)
-- src/domain/logger.py: 87% (2/15 statements)
-- src/domain/version.py: 81% (6/32 statements)
+- src/domain/dc.py: 89% (68/76 statements)
+- src/domain/logger.py: 87% (13/15 statements)
+- src/domain/version.py: 81% (26/32 statements)
 - src/domain/util.py: 83% (116/139 statements)
 - src/bot/handlers/ping.py: 100% (12/12 statements)
 - src/bot/handlers/start.py: 100% (6/6 statements)
@@ -119,29 +120,27 @@ Testing framework has been successfully set up for chaddi-tg Python project with
 - src/bot/handlers/chutiya.py: 100% (37/37 statements)
 - src/bot/handlers/hi.py: 100% (12/12 statements)
 - src/bot/handlers/superpower.py: 100% (25/25 statements)
-- src/bot/handlers/ai.py: 87% (146/167 statements)
-- src/bot/handlers/musiclinks.py: 100% (43/43 statements)
-- src/bot/handlers/sutta.py: 16% (52/62 statements)
-- src/bot/handlers/ytdl.py: 23% (46/60 statements)
+ - src/bot/handlers/musiclinks.py: 100% (43/43 statements)
 
 ### Medium Coverage Modules (50-80%)
-- src/db/group_dao.py: 76% (34/45 statements)
-- src/bot/handlers/dalle.py: 19% (54/67 statements)
-- src/bot/handlers/webm.py: 19% (48/59 statements)
-- src/bot/handlers/weather.py: 15% (115/136 statements)
-- src/bot/handlers/quotes.py: 19% (74/91 statements)
-  - src/bot/handlers/remind.py: 95% (97/102 statements)
+- src/db/group_dao.py: 82% (37/45 statements)
+- src/bot/handlers/dalle.py: 58% (39/67 statements)
+- src/bot/handlers/webm.py: 39% (23/59 statements)
+- src/bot/handlers/weather.py: 43% (58/136 statements)
+- src/bot/handlers/quotes.py: 68% (62/91 statements)
+- src/bot/handlers/remind.py: 95% (97/102 statements)
 - src/bot/handlers/defaults.py: 92% (86/93 statements)
-- src/bot/handlers/mom_spacy.py: 88% (16/135 statements)
-- src/bot/handlers/mom_llm.py: 21% (59/75 statements)
-- src/bot/handlers/mom_rake.py: 33% (24/36 statements)
-- src/domain/otel_logging.py: 77% (7/30 statements)
+- src/bot/handlers/mom_spacy.py: 88% (119/135 statements)
+- src/bot/handlers/mom_llm.py: 93% (70/75 statements)
+- src/bot/handlers/sutta.py: 77% (48/62 statements)
+- src/bot/handlers/tynm.py: 63% (204/326 statements)
+- src/bot/handlers/ytdl.py: 88% (53/60 statements)
+- src/domain/otel_logging.py: 77% (23/30 statements)
 
 ### Low Coverage Modules (<50%)
-- src/bot/__init__.py: 15% (60/71 statements)
-- src/bot/handlers/pic.py: 55% (49/110 statements)
-- src/bot/handlers/roll.py: 55% (131/289 statements)
-- src/bot/handlers/tynm.py: 9% (298/326 statements)
+- src/bot/__init__.py: 15% (11/71 statements)
+- src/bot/handlers/pic.py: 55% (61/110 statements)
+- src/bot/handlers/roll.py: 58% (168/289 statements)
 - src/chaddi.py: 0% (15/15 statements)
 - src/domain/config.py: 0% (12/12 statements)
 - src/sandbox.py: 0% (3/3 statements)
@@ -427,6 +426,25 @@ Most uncovered code requires extensive mocking or integration tests due to:
 ## Recent Updates (2025-12-27)
 
 ### Test Additions (Latest)
+- Added 40 new tests to `tests/test_bot_tynm.py` for tynm image handler:
+  - Tests for `generate_wrapped_caption()` function (6 tests)
+  - Tests for `add_fancy_border()` function (4 tests)
+  - Tests for `add_thank_you_text()` function (3 tests)
+  - Tests for `draw_firework()` function (4 tests)
+  - Tests for `draw_flower()` function (4 tests)
+  - Tests for `add_decorative_elements()` function (4 tests)
+  - Tests for `place_image()` function (8 tests)
+  - Tests for `build_file_path()` function (3 tests)
+  - Tests for main `handle()` function (4 tests):
+    - No reply to message
+    - TYNM directory not exists
+    - No images in directory
+    - Image load failure
+- Improved tynm.py coverage from 9% to 63% (+54%)
+- Overall coverage improved from 66% to 71% (+5%)
+- Total tests increased from 417 to 462 (+45 tests)
+
+### Test Additions (Previous)
 - Added 9 new tests to `tests/test_bot_remind.py` for remind handler:
   - Test for `remove_job_if_exists()` function (2 tests)
   - Tests for main `handle()` function (4 tests):
