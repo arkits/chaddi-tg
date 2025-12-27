@@ -6,12 +6,14 @@ from datetime import datetime
 import sentry_sdk
 from loguru import logger
 from playhouse.shortcuts import model_to_dict
+from sentry_sdk import metrics
 from telegram import Update
 
 from src.db import Bakchod, CommandUsage, Group, bakchod_dao, group_dao, message_dao
 from src.server import sio
 
-from . import analytics, metrics, util
+from . import analytics, util
+from . import metrics as prom_metrics
 
 
 def log_command_usage(command_name: str, update: Update):
@@ -54,6 +56,13 @@ def log_command_usage(command_name: str, update: Update):
                 },
             )
 
+            # Sentry: Track command usage metric
+            metrics.count(
+                "dc.command.used",
+                1,
+                attributes={"command": command_name, "chat_type": chat.type},
+            )
+
             # PostHog: Track command usage event
             try:
                 analytics.posthog.capture(
@@ -92,8 +101,10 @@ def log_command_usage(command_name: str, update: Update):
                 )
                 # Sentry: Capture database error (scope context already set)
                 sentry_sdk.capture_exception(db_error)
+                # Sentry: Track database error metric
+                metrics.count("dc.command.db_error", 1, attributes={"command": command_name})
 
-            metrics.inc_command_usage_count(command_name, update)
+            prom_metrics.inc_command_usage_count(command_name, update)
 
         return
 
@@ -147,6 +158,13 @@ def sync_persistence_data(update: Update):
             m = message_dao.log_message_from_update(update)
 
             group_dao.log_group_from_update(update)
+
+            # Sentry: Track message sync metric
+            metrics.count(
+                "dc.message.synced",
+                1,
+                attributes={"chat_type": update.message.chat.type},
+            )
 
             # PostHog: Track message sync event
             try:

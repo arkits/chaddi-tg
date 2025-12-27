@@ -1,3 +1,4 @@
+import asyncio
 import contextlib
 import os
 import shutil
@@ -8,6 +9,7 @@ import requests
 from ddgs import DDGS
 from loguru import logger
 from telegram import InputMediaPhoto, Update
+from telegram.error import TimedOut
 from telegram.ext import ContextTypes
 
 from src.domain import config, dc
@@ -129,11 +131,22 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                             media_list.append(InputMediaPhoto(media=file_handle))
 
                         await update.message.reply_media_group(media=media_list)
+                except TimedOut:
+                    logger.warning("[pic] Timed out sending media group, falling back to individual uploads")
+                    # Fallback: send images one by one
+                    for img_path in downloaded_files:
+                        try:
+                            with open(img_path, "rb") as f:
+                                await update.message.reply_photo(photo=f)
+                                # Small delay to avoid rate limiting
+                                await asyncio.sleep(0.5)
+                        except Exception as e:
+                            logger.warning(f"[pic] Error sending individual image: {e}")
+                            continue
                 except Exception as e:
                     logger.warning(
                         f"[pic] Error uploading media group: {e}\n{traceback.format_exc()}"
                     )
-                    # Don't fail the whole command if media group fails
 
             await sent_message.delete()
 
