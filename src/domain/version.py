@@ -1,6 +1,7 @@
 import subprocess
-from datetime import datetime, timezone
+from datetime import datetime
 
+import pytz
 from loguru import logger
 
 from src.domain import util
@@ -46,7 +47,7 @@ GIT_COMMIT_ID = (
 GIT_COMMIT_TIME = util.normalize_datetime(
     datetime.fromtimestamp(
         int(subprocess.check_output(["git", "show", "-s", "--format=%ct"]).strip().decode("utf-8")),
-        tz=timezone.utc,
+        tz=pytz.UTC,
     )
 )
 
@@ -56,7 +57,7 @@ GIT_COMMIT_MESSAGE = (
 )
 
 
-TIME_SERVICE_STARTED = util.normalize_datetime(datetime.now(timezone.utc))
+TIME_SERVICE_STARTED = util.normalize_datetime(datetime.now(pytz.UTC))
 
 logger.info(
     "[version] parsed GIT_COMMIT_ID={} GIT_COMMIT_TIME={} GIT_COMMIT_MESSAGE={} TIME_SERVICE_STARTED={}",
@@ -68,7 +69,7 @@ logger.info(
 
 
 def get_version():
-    now = util.normalize_datetime(datetime.now(timezone.utc))
+    now = util.normalize_datetime(datetime.now(pytz.UTC))
     uptime = now - TIME_SERVICE_STARTED
 
     # Format times consistently (remove microseconds)
