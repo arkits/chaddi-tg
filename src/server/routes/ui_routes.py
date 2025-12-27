@@ -63,7 +63,7 @@ async def get_bakchods(request: Request):
 
 @router.get("/groups", response_class=HTMLResponse)
 async def get_groups(request: Request):
-    groups = Group.select().order_by(Group.updated.desc())
+    groups = Group.select().order_by(Group.updated.desc()).limit(100)
     groups_count = Group.select().count()
 
     return templates.TemplateResponse(
