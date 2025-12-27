@@ -49,7 +49,6 @@ def mock_group():
     group = MagicMock()
     group.group_id = -1001234567890
     group.name = "Test Group"
-    group.group_id = -1001234567890
     return group
 
 

@@ -1,5 +1,6 @@
 """Unified LLM interface wrapper for OpenAI and Gemini providers."""
 
+import asyncio
 import base64
 import contextlib
 import inspect
@@ -19,7 +20,7 @@ AI_PROVIDER = app_config.get(
 )  # "openai", "gemini", or "openrouter"
 
 # Model names
-OPENAI_MODEL = app_config.get("AI", "OPENAI_MODEL", fallback="gpt-5-mini-2025-08-07")
+OPENAI_MODEL = app_config.get("AI", "OPENAI_MODEL", fallback="gpt-4o-mini")
 GEMINI_MODEL = app_config.get("AI", "GEMINI_MODEL", fallback="gemini-2.5-flash")
 OPENROUTER_MODEL = app_config.get("AI", "OPENROUTER_MODEL", fallback="openai/gpt-4o-mini")
 
@@ -185,34 +186,24 @@ class LLMClient:
 
         content.append({"type": "text", "text": message_text})
 
-        # Stream response from OpenAI
-        stream = _openai_client.chat.completions.create(
-            model=self.model,
-            messages=[{"role": "user", "content": content}],
-            stream=True,
-        )
+        # Stream response from OpenAI in thread pool to avoid blocking
+        def stream_openai():
+            stream = _openai_client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": content}],
+                stream=True,
+            )
+            response_text = ""
+            for chunk in stream:
+                if chunk.choices[0].delta.content is not None:
+                    response_text += chunk.choices[0].delta.content
+            return response_text
 
-        response_text = ""
-        last_update_time = 0
+        response_text = await asyncio.to_thread(stream_openai)
 
-        for chunk in stream:
-            if chunk.choices[0].delta.content is not None:
-                response_text += chunk.choices[0].delta.content
-
-                # Call on_chunk callback periodically
-                if on_chunk:
-                    current_time = time.time()
-                    if current_time - last_update_time > update_interval:
-                        try:
-                            await _call_callback(on_chunk, response_text)
-                            last_update_time = current_time
-                        except Exception as e:
-                            logger.warning(f"[ai] Error in on_chunk callback: {e}")
-
-        # Final callback with complete text
+        # Call on_chunk callback periodically
         if on_chunk:
-            with contextlib.suppress(Exception):
-                await _call_callback(on_chunk, response_text)
+            await _call_callback(on_chunk, response_text)
 
         return response_text
 

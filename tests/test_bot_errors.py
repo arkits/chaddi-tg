@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from telegram import Update
@@ -27,6 +27,7 @@ class TestErrors:
     async def test_log_error_with_valid_update(self, mock_update, mock_context):
         """Test error logging with valid update."""
         with patch("src.bot.handlers.errors.tg_logger") as mock_tg_logger:
+            mock_tg_logger.log = AsyncMock()
             await errors.log_error(mock_update, mock_context)
 
             mock_update.to_json.assert_called()
@@ -48,6 +49,7 @@ class TestErrors:
     async def test_log_error_with_traceback(self, mock_update, mock_context):
         """Test error logging includes traceback."""
         with patch("src.bot.handlers.errors.tg_logger") as mock_tg_logger:
+            mock_tg_logger.log = AsyncMock()
             await errors.log_error(mock_update, mock_context)
 
             call_args = mock_tg_logger.log.call_args[0][0]

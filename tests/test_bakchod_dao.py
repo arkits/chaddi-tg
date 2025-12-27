@@ -21,7 +21,6 @@ class TestBakchodDao:
         mock_message.from_user = mock_user
 
         mock_update = MagicMock()
-        mock_update.message = mock_update.message
         mock_update.message = mock_message
 
         result = bakchod_dao.get_bakchod_from_update(mock_update)
