@@ -10,7 +10,7 @@ from loguru import logger
 from starlette_exporter import PrometheusMiddleware, handle_metrics
 
 from src.domain import config, version
-from src.server.routes import api_routes, sio_routes, ui_routes
+from src.server.routes import api_routes, ui_routes
 
 # Initialize the config
 app_config = config.get_config()
@@ -60,6 +60,9 @@ fastapi_app.sio = sio
 fastapi_app.include_router(api_routes.router, prefix="/api", tags=["api"])
 
 fastapi_app.include_router(ui_routes.router, tags=["ui"])
+
+# Import sio_routes after sio is defined so handlers can register
+from src.server.routes import sio_routes
 
 # Wrap FastAPI app with Socket.IO, Socket.IO will handle /socket.io/* requests
 # All other requests will be passed to FastAPI

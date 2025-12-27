@@ -89,7 +89,9 @@ select = [
 ignore = [
     "E501",   # line too long (handled by formatter)
     "RUF006",  # asyncio.create_task reference warning
-]
+    "F821",    # undefined names (dynamic attributes)
+    "E402",    # module level import not at top
+    ]
 
 [tool.ruff.lint.per-file-ignores]
 # Ignore import order issues in __init__.py files
