@@ -126,24 +126,18 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 # Telegram allows up to 10 media in a group, so we can send all 5
                 # Open files and create media list
                 media_list = []
-                file_handles = []
                 try:
-                    for img_path in downloaded_files:
-                        file_handle = open(img_path, "rb")  # noqa: SIM115
-                        file_handles.append(file_handle)
-                        media_list.append(InputMediaPhoto(media=file_handle))
+                    with contextlib.ExitStack() as stack:
+                        for img_path in downloaded_files:
+                            file_handle = stack.enter_context(open(img_path, "rb"))
+                            media_list.append(InputMediaPhoto(media=file_handle))
 
-                    await update.message.reply_media_group(media=media_list)
+                        await update.message.reply_media_group(media=media_list)
                 except Exception as e:
                     logger.warning(
                         f"[pic] Error uploading media group: {e}\n{traceback.format_exc()}"
                     )
                     # Don't fail the whole command if media group fails
-                finally:
-                    # Close all file handles
-                    for file_handle in file_handles:
-                        with contextlib.suppress(Exception):
-                            file_handle.close()
 
             await sent_message.delete()
 

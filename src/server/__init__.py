@@ -80,7 +80,7 @@ fastapi_app.include_router(api_routes.router, prefix="/api", tags=["api"])
 fastapi_app.include_router(ui_routes.router, tags=["ui"])
 
 # Import sio_routes after sio is defined so handlers can register
-from src.server.routes import sio_routes
+from src.server.routes import sio_routes  # noqa: E402
 
 # Wrap FastAPI app with Socket.IO, Socket.IO will handle /socket.io/* requests
 # All other requests will be passed to FastAPI
