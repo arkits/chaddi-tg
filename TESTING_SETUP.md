@@ -39,18 +39,21 @@ Testing framework has been successfully set up for chaddi-tg Python project with
   - `tests/test_scheduledjob_dao.py` - ScheduledJob DAO tests (3 tests)
 
 #### Bot Handler Tests
-  - `tests/test_bot_handlers.py` - Bot command handler tests (9 tests)
-  - `tests/test_bot_hi.py` - Hi handler tests (4 tests)
-  - `tests/test_bot_about.py` - About handler tests (8 tests)
-  - `tests/test_bot_chutiya.py` - Chutiya handler tests (7 tests)
-  - `tests/test_bot_superpower.py` - Superpower handler tests (4 tests)
-  - `tests/test_bot_bestie.py` - Bestie handler tests (5 tests)
-  - `tests/test_bot_aao.py` - Aao handler tests (6 tests)
-  - `tests/test_bot_mom_rake.py` - Mom rake handler tests (5 tests)
-  - `tests/test_bot_translate.py` - Translate handler tests (6 tests)
-  - `tests/test_bot_weather.py` - Weather handler tests (6 tests)
-  - `tests/test_bot_quotes.py` - Quotes handler tests (9 tests)
-  - `tests/test_tg_logger.py` - Telegram logger tests (4 tests)
+   - `tests/test_bot_handlers.py` - Bot command handler tests (9 tests)
+   - `tests/test_bot_hi.py` - Hi handler tests (4 tests)
+   - `tests/test_bot_about.py` - About handler tests (8 tests)
+   - `tests/test_bot_chutiya.py` - Chutiya handler tests (7 tests)
+   - `tests/test_bot_superpower.py` - Superpower handler tests (4 tests)
+   - `tests/test_bot_bestie.py` - Bestie handler tests (5 tests)
+   - `tests/test_bot_aao.py` - Aao handler tests (6 tests)
+   - `tests/test_bot_mom_rake.py` - Mom rake handler tests (5 tests)
+   - `tests/test_bot_translate.py` - Translate handler tests (6 tests)
+   - `tests/test_bot_weather.py` - Weather handler tests (6 tests)
+   - `tests/test_bot_quotes.py` - Quotes handler tests (9 tests)
+   - `tests/test_bot_errors.py` - Error handler tests (3 tests)
+   - `tests/test_bot_setter.py` - Setter handler tests (13 tests)
+   - `tests/test_bot_daan.py` - Daan handler tests (9 tests)
+   - `tests/test_tg_logger.py` - Telegram logger tests (4 tests)
 
 ### 4. Test Execution
 - Created `scripts/run-tests.sh` script for easy test execution
@@ -60,9 +63,10 @@ Testing framework has been successfully set up for chaddi-tg Python project with
 
 ### Current Status
 - Total statements: 3,745
-- Covered statements: 1,468
-- Overall coverage: **39%** (up from 29%)
-- Passing tests: 192/204 (94%)
+- Covered statements: 1,583
+- Overall coverage: **42%** (up from 39%)
+- Total tests: 229
+- Passing tests: 217/229 (95%)
 - Failing tests: 12
 
 ### High Coverage Modules (≥80%)
@@ -88,6 +92,14 @@ Testing framework has been successfully set up for chaddi-tg Python project with
 - src/bot/handlers/aao.py: 86% (38/44 statements)
 - src/bot/handlers/mom_rake.py: 89% (32/36 statements)
 - src/bot/handlers/translate.py: 93% (39/42 statements)
+- src/bot/handlers/errors.py: 100% (11/11 statements)
+- src/bot/handlers/setter.py: 84% (74/88 statements)
+- src/bot/handlers/daan.py: 83% (64/77 statements)
+- src/bot/handlers/about.py: 94% (34/36 statements)
+- src/bot/handlers/bestie.py: 79% (11/14 statements)
+- src/bot/handlers/chutiya.py: 92% (34/37 statements)
+- src/bot/handlers/superpower.py: 80% (20/25 statements)
+- src/bot/handlers/rokda.py: 88% (14/16 statements)
 
 ### Medium Coverage Modules (50-80%)
 - src/db/group_dao.py: 53% (24/45 statements)
@@ -95,22 +107,16 @@ Testing framework has been successfully set up for chaddi-tg Python project with
 - src/domain/util.py: 34% (47/139 statements)
 - src/domain/tg_logger.py: 53% (8/15 statements)
 - src/bot/handlers/hi.py: 50% (6/12 statements)
-- src/bot/handlers/about.py: 25% (9/36 statements)
-- src/bot/handlers/chutiya.py: 38% (14/37 statements)
-- src/bot/handlers/superpower.py: 32% (8/25 statements)
-- src/bot/handlers/bestie.py: 43% (6/14 statements)
-- src/bot/handlers/quotes.py: 73% (66/91 statements)
+- src/bot/handlers/quotes.py: 68% (62/91 statements)
 - src/bot/handlers/weather.py: 43% (58/136 statements)
 
 ### Low Coverage Modules (<50%)
 - src/bot/__init__.py: 15% (11/71 statements)
 - src/bot/handlers/ai.py: 14% (10/69 statements)
 - src/bot/handlers/antiwordle.py: 20% (9/46 statements)
-- src/bot/handlers/ask.py: 24% (14/58 statements)
-- src/bot/handlers/daan.py: 17% (13/77 statements)
+- src/bot/handlers/ask.py: 21% (10/48 statements)
 - src/bot/handlers/dalle.py: 19% (13/67 statements)
 - src/bot/handlers/defaults.py: 17% (16/93 statements)
-- src/bot/handlers/errors.py: 55% (6/11 statements)
 - src/bot/handlers/gamble.py: 11% (12/106 statements)
 - src/bot/handlers/mom_llm.py: 21% (16/75 statements)
 - src/bot/handlers/mom_spacy.py: 19% (25/135 statements)
@@ -118,17 +124,13 @@ Testing framework has been successfully set up for chaddi-tg Python project with
 - src/bot/handlers/pic.py: 14% (15/110 statements)
 - src/bot/handlers/remind.py: 0% (0/102 statements)
 - src/bot/handlers/roll.py: 11% (31/289 statements)
-- src/bot/handlers/setter.py: 11% (10/88 statements)
 - src/bot/handlers/sutta.py: 16% (10/62 statements)
-- src/bot/handlers/sutta.py: 16% (10/62 statements)
-- src/bot/handlers/translate.py: 21% (9/42 statements)
 - src/bot/handlers/tynm.py: 9% (28/326 statements)
-- src/bot/handlers/weather.py: 15% (21/136 statements)
 - src/bot/handlers/webm.py: 19% (11/59 statements)
 - src/bot/handlers/ytdl.py: 23% (14/60 statements)
 - src/chaddi.py: 0% (0/15 statements)
 - src/domain/config.py: 0% (0/12 statements)
-- src/domain/otel_logging.py: 0% (0/30 statements)
+- src/domain/otel_logging.py: 43% (13/30 statements)
 - src/sandbox.py: 0% (0/3 statements)
 - src/server/routes/api_routes.py: 23% (64/280 statements)
 - src/server/routes/sio_routes.py: 30% (16/54 statements)
@@ -338,15 +340,25 @@ Most uncovered code requires extensive mocking or integration tests due to:
 - `tests/test_bot_mom_rake.py` - Mom rake handler tests (5 tests) - coverage: 89%
 - `tests/test_bot_translate.py` - Translate handler tests (6 tests) - coverage: 93%
 - `tests/test_bot_weather.py` - Weather handler tests (6 tests) - coverage: 43%
-- `tests/test_bot_quotes.py` - Quotes handler tests (9 tests) - coverage: 73%
+- `tests/test_bot_quotes.py` - Quotes handler tests (9 tests) - coverage: 68%
+- `tests/test_bot_errors.py` - Error handler tests (3 tests) - coverage: 100%
+- `tests/test_bot_setter.py` - Setter handler tests (13 tests) - coverage: 84%
+- `tests/test_bot_daan.py` - Daan handler tests (9 tests) - coverage: 83%
 
 ### Coverage Improvements
-- Overall coverage increased from 29% to 39% (+10%)
-- Total tests increased from 89 to 192 (+103 tests)
+- Overall coverage increased from 29% to 42% (+13%)
+- Total tests increased from 89 to 229 (+140 tests)
 - New high-coverage modules (>80%):
   - src/bot/handlers/aao.py: 86%
   - src/bot/handlers/mom_rake.py: 89%
   - src/bot/handlers/translate.py: 93%
+  - src/bot/handlers/errors.py: 100%
+  - src/bot/handlers/setter.py: 84%
+  - src/bot/handlers/daan.py: 83%
+  - src/bot/handlers/about.py: 94%
+  - src/bot/handlers/bestie.py: 79%
+  - src/bot/handlers/chutiya.py: 92%
+  - src/bot/handlers/superpower.py: 80%
 
 ## Next Steps to Increase Coverage
 
@@ -359,13 +371,13 @@ Add tests for:
 
 ### Priority 2: Bot Handlers (aim: 45-55%)
 Add tests with mocking for:
-- src/bot/handlers/about.py - Basic command (25% → target 60%)
 - src/bot/handlers/hi.py - Basic command (50% → target 70%)
-- src/bot/handlers/chutiya.py - Simple handler (38% → target 60%)
-- src/bot/handlers/superpower.py - Logic-based handler (32% → target 60%)
-- src/bot/handlers/bestie.py - Simple query (43% → target 70%)
-- src/bot/handlers/mom_rake.py - NLP-based (33% → target 50%)
+- src/bot/handlers/mom_spacy.py - NLP-based handler (19% → target 40%)
+- src/bot/handlers/mom_llm.py - LLM-based handler (21% → target 40%)
 - src/bot/handlers/defaults.py - Complex handler (17% → target 40%)
+- src/bot/handlers/gamble.py - Gambling handler (11% → target 35%)
+- src/bot/handlers/ask.py - AI问答 handler (21% → target 40%)
+- src/bot/handlers/antiwordle.py - Antiwordle game (20% → target 40%)
 
 ### Priority 3: Server Routes (aim: 50-60%)
 Add tests for:
