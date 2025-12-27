@@ -62,26 +62,27 @@ Testing framework has been successfully set up for chaddi-tg Python project with
     - `tests/test_tg_logger.py` - Telegram logger tests (4 tests) - coverage: 53%
     - `tests/test_bot_defaults.py` - Defaults handler tests (8 tests) - coverage: 92%
     - `tests/test_bot_remind.py` - Remind handler tests (24 tests) - coverage: 95%
-    - `tests/test_bot_mom_spacy.py` - Mom Spacy handler tests (30 tests) - coverage: 78%
-     - `tests/test_bot_mom_llm.py` - Mom LLM handler tests (9 tests) - coverage: 65%
-     - `tests/test_bot_pic.py` - Pic handler tests (7 tests) - coverage: 30%
-     - `tests/test_bot_roll.py` - Roll handler tests (25 tests) - coverage: 50%
-     - `tests/test_bot_tynm.py` - TYNM image handler tests (40 tests) - coverage: 63%
+     - `tests/test_bot_mom_spacy.py` - Mom Spacy handler tests (30 tests) - coverage: 78%
+      - `tests/test_bot_mom_llm.py` - Mom LLM handler tests (9 tests) - coverage: 65%
+      - `tests/test_bot_pic.py` - Pic handler tests (7 tests) - coverage: 30%
+      - `tests/test_bot_roll.py` - Roll handler tests (25 tests) - coverage: 50%
+      - `tests/test_bot_tynm.py` - TYNM image handler tests (40 tests) - coverage: 63%
+      - `tests/test_bot_webm.py` - WebM conversion handler tests (12 tests) - coverage: 61%
 
 ### 4. Test Execution
 - Created `scripts/run-tests.sh` script for easy test execution
 - Updated AGENTS.md with testing commands
 
- ## Test Coverage
+  ## Test Coverage
 
- ### Current Status
-     - Total statements: 3,739
-     - Covered statements: 2,639
-     - Overall coverage: **71%** (up from 66%)
-     - Total tests: 462
-     - Passing tests: 457/462 (99%)
-     - Failing tests: 0
-     - Expected failures (xfail): 5
+  ### Current Status
+      - Total statements: 3,739
+      - Covered statements: 2,652
+      - Overall coverage: **71%** (unchanged)
+      - Total tests: 465
+      - Passing tests: 460/465 (99%)
+      - Failing tests: 0
+      - Expected failures (xfail): 5
 
 ### High Coverage Modules (≥80%)
 - src/db/bakchod_dao.py: 100% (36/36 statements)
@@ -125,7 +126,7 @@ Testing framework has been successfully set up for chaddi-tg Python project with
 ### Medium Coverage Modules (50-80%)
 - src/db/group_dao.py: 82% (37/45 statements)
 - src/bot/handlers/dalle.py: 58% (39/67 statements)
-- src/bot/handlers/webm.py: 39% (23/59 statements)
+- src/bot/handlers/webm.py: 61% (23/59 statements)
 - src/bot/handlers/weather.py: 43% (58/136 statements)
 - src/bot/handlers/quotes.py: 68% (62/91 statements)
 - src/bot/handlers/remind.py: 95% (97/102 statements)
@@ -426,6 +427,26 @@ Most uncovered code requires extensive mocking or integration tests due to:
 ## Recent Updates (2025-12-27)
 
 ### Test Additions (Latest)
+- Added 9 new tests to `tests/test_bot_webm.py` for webm conversion handler:
+  - Tests for `build_webm_conversion_response()` function (3 tests):
+    - Basic response generation
+    - Response with caption
+    - Response with empty caption
+  - Tests for main `handle()` function (9 tests):
+    - No document
+    - No file name
+    - Not a webm file
+    - Conversion error handling
+    - Command usage logging
+    - Outer try block exception handling
+    - Successful webm conversion
+    - ffmpeg conversion failure
+    - Reply to text handling
+- Improved webm.py coverage from 39% to 61% (+22%)
+- Overall coverage maintained at 71%
+- Total tests increased from 462 to 465 (+3 tests)
+
+### Test Additions (Previous)
 - Added 40 new tests to `tests/test_bot_tynm.py` for tynm image handler:
   - Tests for `generate_wrapped_caption()` function (6 tests)
   - Tests for `add_fancy_border()` function (4 tests)
