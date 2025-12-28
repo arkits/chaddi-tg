@@ -138,7 +138,9 @@ class LLMClient:
 
     async def generate_streaming(
         self,
-        message_text: str,
+        message_text: str | None = None,
+        messages: list[dict[str, str]] | None = None,
+        system_prompt: str | None = None,
         image_bytes: bytes | None = None,
         image_mime_type: str | None = None,
         on_chunk: Callable[[str], None | Awaitable[None]] | None = None,
@@ -148,7 +150,9 @@ class LLMClient:
         Generate streaming response from LLM.
 
         Args:
-            message_text: Text prompt for the LLM.
+            message_text: Text prompt for the LLM (deprecated, use messages instead).
+            messages: List of message dicts with "role" and "content" keys.
+            system_prompt: Optional system prompt to set the assistant's behavior.
             image_bytes: Optional image bytes to include.
             image_mime_type: MIME type of the image (e.g., "image/jpeg").
             on_chunk: Optional callback function called with accumulated text on each update.
@@ -157,22 +161,71 @@ class LLMClient:
         Returns:
             Complete response text.
         """
-        if self.provider == "openai":
-            return await self._generate_openai_streaming(
-                message_text, image_bytes, on_chunk, update_interval
-            )
-        elif self.provider == "openrouter":
-            return await self._generate_openrouter_streaming(
-                message_text, image_bytes, on_chunk, update_interval
-            )
-        elif self.provider == "gemini":
-            # Gemini doesn't support streaming in the same way, so we'll use non-streaming
-            # and simulate streaming with periodic callbacks
-            return await self._generate_gemini_with_simulation(
-                message_text, image_bytes, image_mime_type, on_chunk, update_interval
-            )
+        # Convert messages to format expected by providers
+        if messages:
+            # Use messages list
+            if self.provider == "openai":
+                return await self._generate_openai_streaming(
+                    messages=messages,
+                    system_prompt=system_prompt,
+                    image_bytes=image_bytes,
+                    on_chunk=on_chunk,
+                    update_interval=update_interval,
+                )
+            elif self.provider == "openrouter":
+                return await self._generate_openrouter_streaming(
+                    messages=messages,
+                    system_prompt=system_prompt,
+                    image_bytes=image_bytes,
+                    on_chunk=on_chunk,
+                    update_interval=update_interval,
+                )
+            elif self.provider == "gemini":
+                # Gemini doesn't support streaming in the same way, so we'll use non-streaming
+                # and simulate streaming with periodic callbacks
+                return await self._generate_gemini_with_simulation(
+                    messages=messages,
+                    system_prompt=system_prompt,
+                    image_bytes=image_bytes,
+                    image_mime_type=image_mime_type,
+                    on_chunk=on_chunk,
+                    update_interval=update_interval,
+                )
+            else:
+                raise ValueError(f"Unsupported provider: {self.provider}")
         else:
-            raise ValueError(f"Unsupported provider: {self.provider}")
+            # Fallback to message_text for backward compatibility
+            if not message_text:
+                raise ValueError("Either message_text or messages must be provided")
+            if self.provider == "openai":
+                return await self._generate_openai_streaming(
+                    message_text=message_text,
+                    system_prompt=system_prompt,
+                    image_bytes=image_bytes,
+                    on_chunk=on_chunk,
+                    update_interval=update_interval,
+                )
+            elif self.provider == "openrouter":
+                return await self._generate_openrouter_streaming(
+                    message_text=message_text,
+                    system_prompt=system_prompt,
+                    image_bytes=image_bytes,
+                    on_chunk=on_chunk,
+                    update_interval=update_interval,
+                )
+            elif self.provider == "gemini":
+                # Gemini doesn't support streaming in the same way, so we'll use non-streaming
+                # and simulate streaming with periodic callbacks
+                return await self._generate_gemini_with_simulation(
+                    message_text=message_text,
+                    system_prompt=system_prompt,
+                    image_bytes=image_bytes,
+                    image_mime_type=image_mime_type,
+                    on_chunk=on_chunk,
+                    update_interval=update_interval,
+                )
+            else:
+                raise ValueError(f"Unsupported provider: {self.provider}")
 
     async def generate(
         self,
@@ -205,33 +258,69 @@ class LLMClient:
 
     async def _generate_openai_streaming(
         self,
-        message_text: str,
-        image_bytes: bytes | None,
-        on_chunk: Callable[[str], None] | None,
-        update_interval: float,
+        message_text: str | None = None,
+        messages: list[dict[str, str]] | None = None,
+        system_prompt: str | None = None,
+        image_bytes: bytes | None = None,
+        on_chunk: Callable[[str], None] | None = None,
+        update_interval: float = 1.0,
     ) -> str:
         """Generate streaming response from OpenAI."""
-        # Build content for the message
-        content = []
+        # Build messages list
+        if messages:
+            # Use provided messages list, but handle images in the last user message
+            formatted_messages = []
 
-        if image_bytes:
-            base64_image = base64.b64encode(bytes(image_bytes)).decode("utf-8")
-            content.append(
-                {
-                    "type": "image_url",
-                    "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
-                }
-            )
+            # Add system prompt if provided (must be first)
+            if system_prompt:
+                formatted_messages.append({"role": "system", "content": system_prompt})
 
-        content.append({"type": "text", "text": message_text})
+            for msg in messages:
+                if msg["role"] == "user" and image_bytes and msg == messages[-1]:
+                    # Add image to the last user message
+                    content = []
+                    base64_image = base64.b64encode(bytes(image_bytes)).decode("utf-8")
+                    content.append(
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
+                        }
+                    )
+                    content.append({"type": "text", "text": msg["content"]})
+                    formatted_messages.append({"role": "user", "content": content})
+                else:
+                    formatted_messages.append(msg)
+        else:
+            # Build content for single message
+            if not message_text:
+                raise ValueError("Either message_text or messages must be provided")
+            formatted_messages = []
+
+            # Add system prompt if provided (must be first)
+            if system_prompt:
+                formatted_messages.append({"role": "system", "content": system_prompt})
+
+            content = []
+
+            if image_bytes:
+                base64_image = base64.b64encode(bytes(image_bytes)).decode("utf-8")
+                content.append(
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
+                    }
+                )
+
+            content.append({"type": "text", "text": message_text})
+            formatted_messages.append({"role": "user", "content": content})
 
         # Stream response from OpenAI in thread pool to avoid blocking
         def stream_openai():
             stream = _openai_client.chat.completions.create(
                 model=self.model,
-                messages=[{"role": "user", "content": content}],
+                messages=formatted_messages,
                 stream=True,
-                max_tokens=2000,
+                max_completion_tokens=2000,
             )
             response_text = ""
             for chunk in stream:
@@ -271,40 +360,71 @@ class LLMClient:
             model=self.model,
             messages=[{"role": "user", "content": content}],
             stream=False,
-            max_tokens=2000,
+            max_completion_tokens=2000,
         )
 
         return response.choices[0].message.content or ""
 
     async def _generate_openrouter_streaming(
         self,
-        message_text: str,
-        image_bytes: bytes | None,
-        on_chunk: Callable[[str], None] | None,
-        update_interval: float,
+        message_text: str | None = None,
+        messages: list[dict[str, str]] | None = None,
+        system_prompt: str | None = None,
+        image_bytes: bytes | None = None,
+        on_chunk: Callable[[str], None] | None = None,
+        update_interval: float = 1.0,
     ) -> str:
         """Generate streaming response from OpenRouter (OpenAI-compatible API)."""
-        # Build content for the message
-        content = []
+        # Build messages list (same logic as OpenAI)
+        if messages:
+            formatted_messages = []
 
-        if image_bytes:
-            base64_image = base64.b64encode(bytes(image_bytes)).decode("utf-8")
-            content.append(
-                {
-                    "type": "image_url",
-                    "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
-                }
-            )
+            # Add system prompt if provided (must be first)
+            if system_prompt:
+                formatted_messages.append({"role": "system", "content": system_prompt})
 
-        content.append({"type": "text", "text": message_text})
+            for msg in messages:
+                if msg["role"] == "user" and image_bytes and msg == messages[-1]:
+                    content = []
+                    base64_image = base64.b64encode(bytes(image_bytes)).decode("utf-8")
+                    content.append(
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
+                        }
+                    )
+                    content.append({"type": "text", "text": msg["content"]})
+                    formatted_messages.append({"role": "user", "content": content})
+                else:
+                    formatted_messages.append(msg)
+        else:
+            if not message_text:
+                raise ValueError("Either message_text or messages must be provided")
+            formatted_messages = []
+
+            # Add system prompt if provided (must be first)
+            if system_prompt:
+                formatted_messages.append({"role": "system", "content": system_prompt})
+
+            content = []
+            if image_bytes:
+                base64_image = base64.b64encode(bytes(image_bytes)).decode("utf-8")
+                content.append(
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
+                    }
+                )
+            content.append({"type": "text", "text": message_text})
+            formatted_messages.append({"role": "user", "content": content})
 
         # Stream response from OpenRouter in thread pool to avoid blocking
         def stream_openrouter():
             stream = _openrouter_client.chat.completions.create(
                 model=self.model,
-                messages=[{"role": "user", "content": content}],
+                messages=formatted_messages,
                 stream=True,
-                max_tokens=2000,
+                max_completion_tokens=2000,
             )
             response_text = ""
             for chunk in stream:
@@ -345,7 +465,7 @@ class LLMClient:
             model=self.model,
             messages=[{"role": "user", "content": content}],
             stream=False,
-            max_tokens=2000,
+            max_completion_tokens=2000,
         )
 
         return response.choices[0].message.content or ""
@@ -384,13 +504,42 @@ class LLMClient:
 
     async def _generate_gemini_with_simulation(
         self,
-        message_text: str,
-        image_bytes: bytes | None,
-        image_mime_type: str | None,
-        on_chunk: Callable[[str], None] | None,
-        update_interval: float,
+        message_text: str | None = None,
+        messages: list[dict[str, str]] | None = None,
+        system_prompt: str | None = None,
+        image_bytes: bytes | None = None,
+        image_mime_type: str | None = None,
+        on_chunk: Callable[[str], None] | None = None,
+        update_interval: float = 1.0,
     ) -> str:
         """Generate response from Gemini with simulated streaming via callbacks."""
+        # Convert messages to text format for Gemini (Gemini doesn't support structured messages)
+        if messages:
+            # Convert messages list to a single text prompt
+            conversation_text = ""
+
+            # Add system prompt if provided
+            if system_prompt:
+                conversation_text += f"System: {system_prompt}\n\n"
+
+            for msg in messages:
+                role = msg.get("role", "user")
+                content = msg.get("content", "")
+                if role == "system":
+                    # System messages already handled above
+                    continue
+                elif role == "user":
+                    conversation_text += f"User: {content}\n\n"
+                elif role == "assistant":
+                    conversation_text += f"Assistant: {content}\n\n"
+            message_text = conversation_text.strip()
+        elif not message_text:
+            raise ValueError("Either message_text or messages must be provided")
+        else:
+            # Add system prompt to single message if provided
+            if system_prompt:
+                message_text = f"System: {system_prompt}\n\n{message_text}"
+
         # Get the full response
         response_text = await self._generate_gemini(message_text, image_bytes, image_mime_type)
 
