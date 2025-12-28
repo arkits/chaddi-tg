@@ -2,6 +2,7 @@ import time
 from unittest.mock import MagicMock, patch
 
 import pytest
+from telegram.constants import ParseMode
 
 from src.domain import scheduler
 
@@ -124,11 +125,12 @@ class TestScheduler:
 
         mock_context.bot.send_message.assert_not_called()
 
+    @patch("src.domain.scheduler.util")
     @patch("src.domain.scheduler.Group")
     @patch("src.domain.scheduler.Quote")
     @pytest.mark.anyio
     async def test_daily_post_callback_with_enabled_groups(
-        self, mock_quote_class, mock_group_class
+        self, mock_quote_class, mock_group_class, mock_util
     ):
         """Test daily post callback with enabled groups."""
         # Mock group with good morning enabled
@@ -146,6 +148,7 @@ class TestScheduler:
         mock_author.username = "testauthor"
         mock_quote.author_bakchod = mock_author
         mock_quote_class.select.return_value.order_by.return_value.limit.return_value.first.return_value = mock_quote
+        mock_util.extract_pretty_name_from_bakchod.return_value = "@testauthor"
 
         mock_context = MagicMock()
         mock_context.bot.send_message = MagicMock()
@@ -155,6 +158,7 @@ class TestScheduler:
         assert mock_context.bot.send_message.called
         call_args = mock_context.bot.send_message.call_args
         assert call_args[1]["chat_id"] == "test_group_id"
+        assert call_args[1]["parse_mode"] == ParseMode.HTML
 
     @patch("src.domain.scheduler.Group")
     @patch("src.domain.scheduler.Quote")
@@ -180,10 +184,13 @@ class TestScheduler:
         call_args = mock_context.bot.send_message.call_args
         assert call_args[1]["chat_id"] == "test_group_id"
 
+    @patch("src.domain.scheduler.util")
     @patch("src.domain.scheduler.Group")
     @patch("src.domain.scheduler.Quote")
     @pytest.mark.anyio
-    async def test_daily_post_callback_send_failure(self, mock_quote_class, mock_group_class):
+    async def test_daily_post_callback_send_failure(
+        self, mock_quote_class, mock_group_class, mock_util
+    ):
         """Test daily post callback when sending message fails."""
         mock_group = MagicMock()
         mock_group.group_id = "test_group_id"
@@ -198,6 +205,7 @@ class TestScheduler:
         mock_author.username = None
         mock_quote.author_bakchod = mock_author
         mock_quote_class.select.return_value.order_by.return_value.limit.return_value.first.return_value = mock_quote
+        mock_util.extract_pretty_name_from_bakchod.return_value = "Test Author"
 
         mock_context = MagicMock()
         mock_context.bot.send_message.side_effect = Exception("Send failed")

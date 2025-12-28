@@ -14,6 +14,10 @@ class TestIsWordleResult:
         assert result is True
 
     def test_is_wordle_result_none_message(self):
+        result = antiwordle.is_wordle_result(None)
+        assert result is False
+
+    def test_is_wordle_result_empty_string(self):
         result = antiwordle.is_wordle_result("")
         assert result is False
 

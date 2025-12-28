@@ -388,6 +388,7 @@ def test_generate_new_roll_from_params():
 def test_generate_new_roll_random():
     """Test generate_new_roll creates roll with random params."""
     with (
+        patch("src.bot.handlers.roll.Group") as mock_group_model,
         patch("src.bot.handlers.roll.group_dao") as mock_group_dao,
         patch("src.bot.handlers.roll.bakchod_dao") as mock_bakchod_dao,
         patch("src.bot.handlers.roll.roll_dao") as mock_roll_dao,
@@ -400,6 +401,7 @@ def test_generate_new_roll_random():
         mock_group = MagicMock()
         mock_group.group_id = -1001234567890
         mock_group_dao.get_group_by_id.return_value = mock_group
+        mock_group_model.get_by_id.return_value = mock_group
 
         mock_victim = MagicMock()
         mock_victim.tg_id = 789012
