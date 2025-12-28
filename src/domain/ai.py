@@ -24,6 +24,14 @@ logger.info(f"[ai] AI_PROVIDER: {AI_PROVIDER}")
 OPENAI_MODEL = app_config.get("AI", "OPENAI_MODEL", fallback="gpt-5-nano-2025-08-07")
 GEMINI_MODEL = app_config.get("AI", "GEMINI_MODEL", fallback="gemini-2.5-flash")
 OPENROUTER_MODEL = app_config.get("AI", "OPENROUTER_MODEL", fallback="moonshotai/kimi-k2-0905")
+# Optional fallback models for OpenRouter (comma-separated list)
+OPENROUTER_FALLBACK_MODELS = app_config.get("AI", "OPENROUTER_FALLBACK_MODELS", fallback="")
+# Parse fallback models into a list if configured
+_openrouter_fallback_models = (
+    [m.strip() for m in OPENROUTER_FALLBACK_MODELS.split(",") if m.strip()]
+    if OPENROUTER_FALLBACK_MODELS
+    else None
+)
 
 # Always import standard OpenAI first to ensure Sentry can instrument it
 from openai import OpenAI as StandardOpenAI  # noqa: E402
@@ -111,23 +119,35 @@ async def _call_callback(callback: Callable[[str], None | Awaitable[None]], text
 class LLMClient:
     """Unified interface for LLM providers (OpenAI and Gemini)."""
 
-    def __init__(self, provider: str | None = None, model: str | None = None):
+    def __init__(
+        self,
+        provider: str | None = None,
+        model: str | None = None,
+        models: list[str] | None = None,
+    ):
         """
         Initialize LLM client.
 
         Args:
             provider: "openai", "gemini", or "openrouter". If None, uses configured default.
             model: Model name. If None, uses configured default for provider.
+            models: List of fallback model IDs for OpenRouter. If None, uses configured default.
+                    Only used when provider is "openrouter".
         """
         self.provider = provider or AI_PROVIDER
         if self.provider == "openai":
             self.model = model or OPENAI_MODEL
+            self.models = None  # Fallback models not supported for OpenAI
         elif self.provider == "gemini":
             self.model = model or GEMINI_MODEL
+            self.models = None  # Fallback models not supported for Gemini
         elif self.provider == "openrouter":
             self.model = model or OPENROUTER_MODEL
+            # Use provided models, or fall back to configured defaults
+            self.models = models if models is not None else _openrouter_fallback_models
         else:
             self.model = model or OPENAI_MODEL
+            self.models = None
 
         if self.provider == "openai" and _openai_client is None:
             raise ValueError("OpenAI client is not configured.")
@@ -420,12 +440,21 @@ class LLMClient:
 
         # Stream response from OpenRouter in thread pool to avoid blocking
         def stream_openrouter():
-            stream = _openrouter_client.chat.completions.create(
-                model=self.model,
-                messages=formatted_messages,
-                stream=True,
-                max_completion_tokens=2000,
-            )
+            # Build extra_body with models if fallback models are configured
+            extra_body = {}
+            if self.models:
+                extra_body["models"] = self.models
+
+            create_kwargs = {
+                "model": self.model,
+                "messages": formatted_messages,
+                "stream": True,
+                "max_completion_tokens": 2000,
+            }
+            if extra_body:
+                create_kwargs["extra_body"] = extra_body
+
+            stream = _openrouter_client.chat.completions.create(**create_kwargs)
             response_text = ""
             for chunk in stream:
                 # Check if choices exist and have at least one element
@@ -460,13 +489,22 @@ class LLMClient:
 
         content.append({"type": "text", "text": message_text})
 
+        # Build extra_body with models if fallback models are configured
+        extra_body = {}
+        if self.models:
+            extra_body["models"] = self.models
+
         # Generate response from OpenRouter
-        response = _openrouter_client.chat.completions.create(
-            model=self.model,
-            messages=[{"role": "user", "content": content}],
-            stream=False,
-            max_completion_tokens=2000,
-        )
+        create_kwargs = {
+            "model": self.model,
+            "messages": [{"role": "user", "content": content}],
+            "stream": False,
+            "max_completion_tokens": 2000,
+        }
+        if extra_body:
+            create_kwargs["extra_body"] = extra_body
+
+        response = _openrouter_client.chat.completions.create(**create_kwargs)
 
         return response.choices[0].message.content or ""
 
@@ -581,6 +619,15 @@ def get_gemini_client(model: str | None = None) -> LLMClient:
     return LLMClient(provider="gemini", model=model)
 
 
-def get_openrouter_client(model: str | None = None) -> LLMClient:
-    """Get OpenRouter client with optional custom model."""
-    return LLMClient(provider="openrouter", model=model)
+def get_openrouter_client(model: str | None = None, models: list[str] | None = None) -> LLMClient:
+    """
+    Get OpenRouter client with optional custom model and fallback models.
+
+    Args:
+        model: Primary model name. If None, uses configured default.
+        models: List of fallback model IDs. If None, uses configured default.
+
+    Returns:
+        LLMClient configured for OpenRouter.
+    """
+    return LLMClient(provider="openrouter", model=model, models=models)

@@ -84,6 +84,7 @@ async def test_handle_no_message_provided(
     mock_context.args = None
     mock_update.message.reply_to_message = None
     mock_update.message.photo = None
+    mock_update.message.caption = None
 
     await ai.handle(mock_update, mock_context)
 
