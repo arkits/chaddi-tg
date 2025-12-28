@@ -124,6 +124,40 @@ def parse_request(
         group.save()
         return response
 
+    elif set_type.lower() == "ai":
+        if not util.is_admin_tg_user(og_bakchod):
+            return "❌ Only admins can set this."
+
+        try:
+            value = request[2].lower()
+        except IndexError:
+            return "Please specify on or off - `/set ai on`"
+
+        if value not in ["on", "off"]:
+            return "Please specify on or off - `/set ai on`"
+
+        group = group_dao.get_group_from_update(tg_update)
+        if not group:
+            return "❌ Group not found."
+
+        # Initialize enabled_commands if it doesn't exist
+        if "enabled_commands" not in group.metadata:
+            group.metadata["enabled_commands"] = []
+
+        if value == "on":
+            if "ai" not in group.metadata["enabled_commands"]:
+                group.metadata["enabled_commands"].append("ai")
+            response = "✅ /ai command enabled!"
+        else:
+            if "ai" in group.metadata["enabled_commands"]:
+                group.metadata["enabled_commands"].remove("ai")
+            response = "✅ /ai command disabled!"
+
+        # Reassign to ensure peewee picks up the change
+        group.metadata = group.metadata
+        group.save()
+        return response
+
     else:
         return "❌ Can't set that."
 
