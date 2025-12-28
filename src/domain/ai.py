@@ -20,9 +20,9 @@ AI_PROVIDER = app_config.get(
 )  # "openai", "gemini", or "openrouter"
 
 # Model names
-OPENAI_MODEL = app_config.get("AI", "OPENAI_MODEL", fallback="gpt-4o-mini")
+OPENAI_MODEL = app_config.get("AI", "OPENAI_MODEL", fallback="gpt-5-nano-2025-08-07")
 GEMINI_MODEL = app_config.get("AI", "GEMINI_MODEL", fallback="gemini-2.5-flash")
-OPENROUTER_MODEL = app_config.get("AI", "OPENROUTER_MODEL", fallback="openai/gpt-4o-mini")
+OPENROUTER_MODEL = app_config.get("AI", "OPENROUTER_MODEL", fallback="moonshotai/kimi-k2-0905")
 
 # Initialize clients
 _openai_client: OpenAI | None = None
