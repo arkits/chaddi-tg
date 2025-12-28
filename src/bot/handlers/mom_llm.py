@@ -2,13 +2,12 @@ import traceback
 from os import path
 
 from loguru import logger
-from openai import OpenAI
 from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
 from src.bot.handlers import mom_spacy
-from src.domain import config, dc, util
+from src.domain import ai, config, dc, util
 
 app_config = config.get_config()
 
@@ -17,9 +16,6 @@ BOT_USERNAME = app_config.get("TELEGRAM", "BOT_USERNAME")
 mom_response_blacklist = [BOT_USERNAME]
 
 COMMAND_COST = 200
-
-# Create OpenAI client - Sentry will automatically instrument it via OpenAIIntegration
-client = OpenAI(api_key=app_config.get("OPENAI", "API_KEY"))
 
 MODEL_NAME = "gpt-5"
 
@@ -73,15 +69,14 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         logger.debug("[mom3] prompt={} \n {} \n {}", instructions, input, multi_joke_instructions)
 
-        response = client.responses.create(
-            model=MODEL_NAME,
-            instructions=multi_joke_instructions,
-            input=input,
-            max_tokens=2000,
+        # Use LLMClient wrapper
+        llm_client = ai.get_openai_client(model=MODEL_NAME)
+        llm_response = await llm_client.generate(
+            message_text=f"{multi_joke_instructions}\n\n{input}",
         )
 
         # Parse the jokes from the response
-        output = response.output_text.strip()
+        output = llm_response.text.strip()
         logger.debug("[mom3] raw response: '{}'", output)
 
         # Extract jokes from numbered list
@@ -120,14 +115,12 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         logger.debug("[mom3] selection prompt: {}", selection_prompt)
 
-        selection_response = client.responses.create(
-            model=MODEL_NAME,
-            instructions="You are a comedy expert evaluating jokes. Pick the funniest joke and return ONLY that joke, word for word, with no additional commentary.",
-            input=selection_prompt,
-            max_tokens=2000,
+        # Use LLMClient wrapper (reuse same client)
+        selection_response = await llm_client.generate(
+            message_text=f"You are a comedy expert evaluating jokes. Pick the funniest joke and return ONLY that joke, word for word, with no additional commentary.\n\n{selection_prompt}",
         )
 
-        output_text = selection_response.output_text.strip()
+        output_text = selection_response.text.strip()
 
         logger.info("[mom3] selected joke: '{}'", output_text)
 

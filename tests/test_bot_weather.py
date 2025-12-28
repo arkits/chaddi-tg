@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import requests
@@ -510,14 +510,15 @@ class TestWeather:
     @pytest.mark.anyio
     async def test_generate_funny_description_llm_enabled(self, mock_dc, mock_bakchod_dao):
         """Test _generate_funny_description when LLM is enabled."""
-        mock_client = MagicMock()
-        mock_response = MagicMock()
-        mock_response.choices[0].message.content = "It's brutally sunny outside."
-        mock_client.chat.completions.create.return_value = mock_response
+        from src.domain import ai
+
+        mock_llm_client = MagicMock()
+        mock_llm_response = ai.LLMResponse(text="It's brutally sunny outside.", provider="openai")
+        mock_llm_client.generate = AsyncMock(return_value=mock_llm_response)
 
         with (
             patch("src.bot.handlers.weather.USE_LLM_FOR_DESCRIPTIONS", True),
-            patch("src.bot.handlers.weather.openai_client", mock_client),
+            patch("src.bot.handlers.weather.ai.get_default_client", return_value=mock_llm_client),
         ):
             result = await weather._generate_funny_description("clear sky")
 
@@ -528,12 +529,12 @@ class TestWeather:
     @pytest.mark.anyio
     async def test_generate_funny_description_llm_exception(self, mock_dc, mock_bakchod_dao):
         """Test _generate_funny_description when LLM raises exception."""
-        mock_client = MagicMock()
-        mock_client.chat.completions.create.side_effect = Exception("API error")
+        mock_llm_client = MagicMock()
+        mock_llm_client.generate = AsyncMock(side_effect=Exception("API error"))
 
         with (
             patch("src.bot.handlers.weather.USE_LLM_FOR_DESCRIPTIONS", True),
-            patch("src.bot.handlers.weather.openai_client", mock_client),
+            patch("src.bot.handlers.weather.ai.get_default_client", return_value=mock_llm_client),
         ):
             result = await weather._generate_funny_description("clear sky")
 
@@ -544,10 +545,13 @@ class TestWeather:
     @patch("src.bot.handlers.weather.dc")
     @pytest.mark.anyio
     async def test_generate_funny_description_no_client(self, mock_dc, mock_bakchod_dao):
-        """Test _generate_funny_description when OpenAI client is None."""
+        """Test _generate_funny_description when LLM client raises error."""
+        mock_llm_client = MagicMock()
+        mock_llm_client.generate = AsyncMock(side_effect=ValueError("Client not configured"))
+
         with (
             patch("src.bot.handlers.weather.USE_LLM_FOR_DESCRIPTIONS", True),
-            patch("src.bot.handlers.weather.openai_client", None),
+            patch("src.bot.handlers.weather.ai.get_default_client", return_value=mock_llm_client),
         ):
             result = await weather._generate_funny_description("clear sky")
 

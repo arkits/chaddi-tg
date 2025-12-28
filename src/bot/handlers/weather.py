@@ -3,13 +3,12 @@ import traceback
 
 import requests
 from loguru import logger
-from openai import OpenAI
 from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
 from src.db import bakchod_dao
-from src.domain import config, dc
+from src.domain import ai, config, dc
 
 app_config = config.get_config()
 
@@ -17,13 +16,6 @@ app_config = config.get_config()
 USE_LLM_FOR_DESCRIPTIONS = app_config.getboolean(
     "WEATHER", "USE_LLM_FOR_DESCRIPTIONS", fallback=False
 )
-
-# Initialize OpenAI client for funny descriptions
-# Sentry will automatically instrument it via OpenAIIntegration
-openai_client = None
-if USE_LLM_FOR_DESCRIPTIONS:
-    openai_client = OpenAI(api_key=app_config.get("OPENAI", "API_KEY"))
-OPENAI_MODEL = app_config.get("AI", "OPENAI_MODEL", fallback="gpt-5-nano-2025-08-07")
 
 # OpenWeatherMap API key (will be added to config)
 WEATHER_API_KEY = app_config.get("WEATHER", "API_KEY", fallback=None)
@@ -176,29 +168,19 @@ async def _generate_funny_description(weather_description: str) -> str:
 
     # Try to use LLM if enabled
     try:
-        if openai_client is None:
-            logger.warning("[weather] LLM enabled but OpenAI client not configured, using fallback")
-            return _get_fallback_description(weather_description)
-
         prompt = f"""Convert this weather description into a funny, rude, and sarcastic one-liner. Keep it short (1 sentence max) and make it entertaining.
 
 Weather description: "{weather_description}"
 
 Funny rude description:"""
 
-        response = openai_client.chat.completions.create(
-            model=OPENAI_MODEL,
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are a sarcastic weather reporter who makes rude and funny comments about the weather. Keep responses to one sentence.",
-                },
-                {"role": "user", "content": prompt},
-            ],
-            max_tokens=2000,
+        # Use LLMClient wrapper
+        llm_client = ai.get_default_client()
+        response = await llm_client.generate(
+            message_text=f"You are a sarcastic weather reporter who makes rude and funny comments about the weather. Keep responses to one sentence.\n\n{prompt}",
         )
 
-        funny_desc = response.choices[0].message.content.strip()
+        funny_desc = response.text.strip()
         # Remove quotes if present
         funny_desc = funny_desc.strip('"').strip("'")
         return funny_desc

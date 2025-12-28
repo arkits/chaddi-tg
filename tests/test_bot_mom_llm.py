@@ -5,6 +5,7 @@ from telegram import Chat, Message, Update, User
 from telegram.ext import ContextTypes
 
 from src.bot.handlers import mom_llm
+from src.domain import ai
 
 
 @pytest.fixture
@@ -109,7 +110,7 @@ async def test_handle_success_with_reply_to_message(mock_update, mock_context):
         patch("src.bot.handlers.mom_llm.dc"),
         patch("src.bot.handlers.mom_llm.util") as mock_util,
         patch("src.bot.handlers.mom_llm.mom_spacy") as mock_mom_spacy,
-        patch("src.bot.handlers.mom_llm.client") as mock_client,
+        patch("src.bot.handlers.mom_llm.ai.get_openai_client") as mock_get_client,
         patch("src.bot.handlers.mom_llm.open") as mock_open,
     ):
         mock_util.paywall_user.return_value = True
@@ -128,9 +129,12 @@ async def test_handle_success_with_reply_to_message(mock_update, mock_context):
 
         mock_update.message.reply_to_message = reply_message
 
-        mock_response = MagicMock()
-        mock_response.output_text = "1. Joke 1\n2. Joke 2\n3. Joke 3\n4. Joke 4"
-        mock_client.responses.create.return_value = mock_response
+        mock_llm_client = MagicMock()
+        mock_llm_response = ai.LLMResponse(
+            text="1. Joke 1\n2. Joke 2\n3. Joke 3\n4. Joke 4", provider="openai"
+        )
+        mock_llm_client.generate = AsyncMock(return_value=mock_llm_response)
+        mock_get_client.return_value = mock_llm_client
 
         await mom_llm.handle(mock_update, mock_context)
 
@@ -144,7 +148,7 @@ async def test_handle_success_without_reply_to_message(mock_update, mock_context
         patch("src.bot.handlers.mom_llm.dc"),
         patch("src.bot.handlers.mom_llm.util") as mock_util,
         patch("src.bot.handlers.mom_llm.mom_spacy") as mock_mom_spacy,
-        patch("src.bot.handlers.mom_llm.client") as mock_client,
+        patch("src.bot.handlers.mom_llm.ai.get_openai_client") as mock_get_client,
         patch("src.bot.handlers.mom_llm.open") as mock_open,
     ):
         mock_util.paywall_user.return_value = True
@@ -154,9 +158,12 @@ async def test_handle_success_without_reply_to_message(mock_update, mock_context
 
         mock_update.message.reply_to_message = None
 
-        mock_response = MagicMock()
-        mock_response.output_text = "1. Joke 1\n2. Joke 2\n3. Joke 3\n4. Joke 4"
-        mock_client.responses.create.return_value = mock_response
+        mock_llm_client = MagicMock()
+        mock_llm_response = ai.LLMResponse(
+            text="1. Joke 1\n2. Joke 2\n3. Joke 3\n4. Joke 4", provider="openai"
+        )
+        mock_llm_client.generate = AsyncMock(return_value=mock_llm_response)
+        mock_get_client.return_value = mock_llm_client
 
         sent_message = MagicMock()
         sent_message.edit_text = AsyncMock()
@@ -174,7 +181,7 @@ async def test_handle_parses_numbered_jokes(mock_update, mock_context):
         patch("src.bot.handlers.mom_llm.dc"),
         patch("src.bot.handlers.mom_llm.util") as mock_util,
         patch("src.bot.handlers.mom_llm.mom_spacy") as mock_mom_spacy,
-        patch("src.bot.handlers.mom_llm.client") as mock_client,
+        patch("src.bot.handlers.mom_llm.ai.get_openai_client") as mock_get_client,
         patch("src.bot.handlers.mom_llm.open") as mock_open,
     ):
         mock_util.paywall_user.return_value = True
@@ -192,11 +199,13 @@ async def test_handle_parses_numbered_jokes(mock_update, mock_context):
 
         mock_update.message.reply_to_message = reply_message
 
-        mock_response = MagicMock()
-        mock_response.output_text = "1. First joke\n2. Second joke\n3. Third joke\n4. Fourth joke"
-        mock_response_selection = MagicMock()
-        mock_response_selection.output_text = "First joke"
-        mock_client.responses.create.side_effect = [mock_response, mock_response_selection]
+        mock_llm_client = MagicMock()
+        mock_llm_response1 = ai.LLMResponse(
+            text="1. First joke\n2. Second joke\n3. Third joke\n4. Fourth joke", provider="openai"
+        )
+        mock_llm_response2 = ai.LLMResponse(text="First joke", provider="openai")
+        mock_llm_client.generate = AsyncMock(side_effect=[mock_llm_response1, mock_llm_response2])
+        mock_get_client.return_value = mock_llm_client
 
         sent_message = MagicMock()
         sent_message.edit_text = AsyncMock()
@@ -214,7 +223,7 @@ async def test_handle_fallback_parsing(mock_update, mock_context):
         patch("src.bot.handlers.mom_llm.dc"),
         patch("src.bot.handlers.mom_llm.util") as mock_util,
         patch("src.bot.handlers.mom_llm.mom_spacy") as mock_mom_spacy,
-        patch("src.bot.handlers.mom_llm.client") as mock_client,
+        patch("src.bot.handlers.mom_llm.ai.get_openai_client") as mock_get_client,
         patch("src.bot.handlers.mom_llm.open") as mock_open,
     ):
         mock_util.paywall_user.return_value = True
@@ -232,11 +241,13 @@ async def test_handle_fallback_parsing(mock_update, mock_context):
 
         mock_update.message.reply_to_message = reply_message
 
-        mock_response = MagicMock()
-        mock_response.output_text = "Joke 1\n\nJoke 2\n\nJoke 3\n\nJoke 4"
-        mock_response_selection = MagicMock()
-        mock_response_selection.output_text = "Joke 1"
-        mock_client.responses.create.side_effect = [mock_response, mock_response_selection]
+        mock_llm_client = MagicMock()
+        mock_llm_response1 = ai.LLMResponse(
+            text="Joke 1\n\nJoke 2\n\nJoke 3\n\nJoke 4", provider="openai"
+        )
+        mock_llm_response2 = ai.LLMResponse(text="Joke 1", provider="openai")
+        mock_llm_client.generate = AsyncMock(side_effect=[mock_llm_response1, mock_llm_response2])
+        mock_get_client.return_value = mock_llm_client
 
         sent_message = MagicMock()
         sent_message.edit_text = AsyncMock()
@@ -254,7 +265,7 @@ async def test_handle_uses_entire_response_as_fallback(mock_update, mock_context
         patch("src.bot.handlers.mom_llm.dc"),
         patch("src.bot.handlers.mom_llm.util") as mock_util,
         patch("src.bot.handlers.mom_llm.mom_spacy") as mock_mom_spacy,
-        patch("src.bot.handlers.mom_llm.client") as mock_client,
+        patch("src.bot.handlers.mom_llm.ai.get_openai_client") as mock_get_client,
         patch("src.bot.handlers.mom_llm.open") as mock_open,
     ):
         mock_util.paywall_user.return_value = True
@@ -272,11 +283,11 @@ async def test_handle_uses_entire_response_as_fallback(mock_update, mock_context
 
         mock_update.message.reply_to_message = reply_message
 
-        mock_response = MagicMock()
-        mock_response.output_text = "Single joke without numbering"
-        mock_response_selection = MagicMock()
-        mock_response_selection.output_text = "Single joke without numbering"
-        mock_client.responses.create.side_effect = [mock_response, mock_response_selection]
+        mock_llm_client = MagicMock()
+        mock_llm_response1 = ai.LLMResponse(text="Single joke without numbering", provider="openai")
+        mock_llm_response2 = ai.LLMResponse(text="Single joke without numbering", provider="openai")
+        mock_llm_client.generate = AsyncMock(side_effect=[mock_llm_response1, mock_llm_response2])
+        mock_get_client.return_value = mock_llm_client
 
         sent_message = MagicMock()
         sent_message.edit_text = AsyncMock()
@@ -294,7 +305,7 @@ async def test_handle_picks_funniest_joke(mock_update, mock_context):
         patch("src.bot.handlers.mom_llm.dc"),
         patch("src.bot.handlers.mom_llm.util") as mock_util,
         patch("src.bot.handlers.mom_llm.mom_spacy") as mock_mom_spacy,
-        patch("src.bot.handlers.mom_llm.client") as mock_client,
+        patch("src.bot.handlers.mom_llm.ai.get_openai_client") as mock_get_client,
         patch("src.bot.handlers.mom_llm.open") as mock_open,
     ):
         mock_util.paywall_user.return_value = True
@@ -312,13 +323,13 @@ async def test_handle_picks_funniest_joke(mock_update, mock_context):
 
         mock_update.message.reply_to_message = reply_message
 
-        mock_response = MagicMock()
-        mock_response.output_text = "1. Joke 1\n2. Joke 2\n3. Joke 3\n4. Joke 4"
-
-        mock_selection_response = MagicMock()
-        mock_selection_response.output_text = "Joke 2"
-
-        mock_client.responses.create.side_effect = [mock_response, mock_selection_response]
+        mock_llm_client = MagicMock()
+        mock_llm_response1 = ai.LLMResponse(
+            text="1. Joke 1\n2. Joke 2\n3. Joke 3\n4. Joke 4", provider="openai"
+        )
+        mock_llm_response2 = ai.LLMResponse(text="Joke 2", provider="openai")
+        mock_llm_client.generate = AsyncMock(side_effect=[mock_llm_response1, mock_llm_response2])
+        mock_get_client.return_value = mock_llm_client
 
         sent_message = MagicMock()
         sent_message.edit_text = AsyncMock()
@@ -326,5 +337,5 @@ async def test_handle_picks_funniest_joke(mock_update, mock_context):
 
         await mom_llm.handle(mock_update, mock_context)
 
-        assert mock_client.responses.create.call_count == 2
+        assert mock_llm_client.generate.call_count == 2
         assert sent_message.edit_text.call_count >= 2
