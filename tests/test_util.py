@@ -37,32 +37,32 @@ def test_pretty_print_rokda_large_value():
 
 def test_pretty_time_delta_seconds():
     result = pretty_time_delta(30)
-    assert result == "30ds"
+    assert result == "30s"
 
 
 def test_pretty_time_delta_minutes():
     result = pretty_time_delta(150)
-    assert result == "2dm 30ds"
+    assert result == "2m 30s"
 
 
 def test_pretty_time_delta_hours():
     result = pretty_time_delta(3665)
-    assert result == "1dh 1dm 5ds"
+    assert result == "1h 1m 5s"
 
 
 def test_pretty_time_delta_days():
     result = pretty_time_delta(90061)
-    assert result == "1dd 1dh 1dm 1ds"
+    assert result == "1d 1h 1m 1s"
 
 
 def test_pretty_time_delta_years():
     result = pretty_time_delta(31622461)
-    assert result == "1dy 1dd 0dh 1dm 1ds"
+    assert result == "1y 1d 0h 1m 1s"
 
 
 def test_pretty_time_delta_zero():
     result = pretty_time_delta(0)
-    assert result == "0ds"
+    assert result == "0s"
 
 
 def test_choose_random_element_from_list_single():

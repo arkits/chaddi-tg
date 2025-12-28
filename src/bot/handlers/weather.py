@@ -19,6 +19,7 @@ USE_LLM_FOR_DESCRIPTIONS = app_config.getboolean(
 )
 
 # Initialize OpenAI client for funny descriptions
+# Sentry will automatically instrument it via OpenAIIntegration
 openai_client = None
 if USE_LLM_FOR_DESCRIPTIONS:
     openai_client = OpenAI(api_key=app_config.get("OPENAI", "API_KEY"))
@@ -194,6 +195,7 @@ Funny rude description:"""
                 },
                 {"role": "user", "content": prompt},
             ],
+            max_tokens=2000,
         )
 
         funny_desc = response.choices[0].message.content.strip()

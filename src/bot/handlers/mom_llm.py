@@ -18,6 +18,7 @@ mom_response_blacklist = [BOT_USERNAME]
 
 COMMAND_COST = 200
 
+# Create OpenAI client - Sentry will automatically instrument it via OpenAIIntegration
 client = OpenAI(api_key=app_config.get("OPENAI", "API_KEY"))
 
 MODEL_NAME = "gpt-5"
@@ -73,7 +74,10 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.debug("[mom3] prompt={} \n {} \n {}", instructions, input, multi_joke_instructions)
 
         response = client.responses.create(
-            model=MODEL_NAME, instructions=multi_joke_instructions, input=input
+            model=MODEL_NAME,
+            instructions=multi_joke_instructions,
+            input=input,
+            max_tokens=2000,
         )
 
         # Parse the jokes from the response
@@ -120,6 +124,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             model=MODEL_NAME,
             instructions="You are a comedy expert evaluating jokes. Pick the funniest joke and return ONLY that joke, word for word, with no additional commentary.",
             input=selection_prompt,
+            max_tokens=2000,
         )
 
         output_text = selection_response.output_text.strip()

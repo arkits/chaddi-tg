@@ -8,9 +8,8 @@ import time
 from collections.abc import Awaitable, Callable
 
 from loguru import logger
-from openai import OpenAI
 
-from . import config
+from . import analytics, config
 
 app_config = config.get_config()
 
@@ -26,15 +25,40 @@ OPENAI_MODEL = app_config.get("AI", "OPENAI_MODEL", fallback="gpt-5-nano-2025-08
 GEMINI_MODEL = app_config.get("AI", "GEMINI_MODEL", fallback="gemini-2.5-flash")
 OPENROUTER_MODEL = app_config.get("AI", "OPENROUTER_MODEL", fallback="moonshotai/kimi-k2-0905")
 
-# Initialize clients
-_openai_client: OpenAI | None = None
+# Always import standard OpenAI first to ensure Sentry can instrument it
+from openai import OpenAI as StandardOpenAI  # noqa: E402
+
+# Try to import PostHog's OpenAI wrapper for LLM analytics
+try:
+    from posthog.ai.openai import OpenAI as PostHogOpenAI
+
+    _posthog_available = True
+    _posthog_client = analytics.posthog
+    logger.info("[ai] PostHog LLM analytics enabled")
+except ImportError:
+    PostHogOpenAI = StandardOpenAI  # Fallback to standard OpenAI if PostHog not available
+    _posthog_available = False
+    _posthog_client = None
+    logger.warning("[ai] PostHog AI module not available, using standard OpenAI client")
+
+# Initialize clients with PostHog instrumentation (if available)
+_openai_client = None
 _gemini_client = None
-_openrouter_client: OpenAI | None = None
+_openrouter_client = None
 
 if AI_PROVIDER == "openai":
     try:
-        _openai_client = OpenAI(api_key=app_config.get("OPENAI", "API_KEY"))
-        logger.info(f"[ai] OpenAI client initialized with model {OPENAI_MODEL}")
+        if _posthog_available and _posthog_client:
+            _openai_client = PostHogOpenAI(
+                api_key=app_config.get("OPENAI", "API_KEY"),
+                posthog_client=_posthog_client,
+            )
+            logger.info(
+                f"[ai] OpenAI client initialized with model {OPENAI_MODEL} (PostHog enabled)"
+            )
+        else:
+            _openai_client = PostHogOpenAI(api_key=app_config.get("OPENAI", "API_KEY"))
+            logger.info(f"[ai] OpenAI client initialized with model {OPENAI_MODEL}")
     except Exception as e:
         logger.warning(f"[ai] Failed to initialize OpenAI client: {e}")
 
@@ -49,11 +73,21 @@ if AI_PROVIDER == "gemini":
 
 if AI_PROVIDER == "openrouter":
     try:
-        _openrouter_client = OpenAI(
-            base_url="https://openrouter.ai/api/v1",
-            api_key=app_config.get("OPENROUTER", "API_KEY"),
-        )
-        logger.info(f"[ai] OpenRouter client initialized with model {OPENROUTER_MODEL}")
+        if _posthog_available and _posthog_client:
+            _openrouter_client = PostHogOpenAI(
+                base_url="https://openrouter.ai/api/v1",
+                api_key=app_config.get("OPENROUTER", "API_KEY"),
+                posthog_client=_posthog_client,
+            )
+            logger.info(
+                f"[ai] OpenRouter client initialized with model {OPENROUTER_MODEL} (PostHog enabled)"
+            )
+        else:
+            _openrouter_client = PostHogOpenAI(
+                base_url="https://openrouter.ai/api/v1",
+                api_key=app_config.get("OPENROUTER", "API_KEY"),
+            )
+            logger.info(f"[ai] OpenRouter client initialized with model {OPENROUTER_MODEL}")
     except Exception as e:
         logger.warning(f"[ai] Failed to initialize OpenRouter client: {e}")
 
@@ -197,11 +231,15 @@ class LLMClient:
                 model=self.model,
                 messages=[{"role": "user", "content": content}],
                 stream=True,
+                max_tokens=2000,
             )
             response_text = ""
             for chunk in stream:
-                if chunk.choices[0].delta.content is not None:
-                    response_text += chunk.choices[0].delta.content
+                # Check if choices exist and have at least one element
+                if chunk.choices and len(chunk.choices) > 0:
+                    delta = chunk.choices[0].delta
+                    if delta and delta.content is not None:
+                        response_text += delta.content
             return response_text
 
         response_text = await asyncio.to_thread(stream_openai)
@@ -233,6 +271,7 @@ class LLMClient:
             model=self.model,
             messages=[{"role": "user", "content": content}],
             stream=False,
+            max_tokens=2000,
         )
 
         return response.choices[0].message.content or ""
@@ -265,11 +304,15 @@ class LLMClient:
                 model=self.model,
                 messages=[{"role": "user", "content": content}],
                 stream=True,
+                max_tokens=2000,
             )
             response_text = ""
             for chunk in stream:
-                if chunk.choices[0].delta.content is not None:
-                    response_text += chunk.choices[0].delta.content
+                # Check if choices exist and have at least one element
+                if chunk.choices and len(chunk.choices) > 0:
+                    delta = chunk.choices[0].delta
+                    if delta and delta.content is not None:
+                        response_text += delta.content
             return response_text
 
         response_text = await asyncio.to_thread(stream_openrouter)
@@ -302,6 +345,7 @@ class LLMClient:
             model=self.model,
             messages=[{"role": "user", "content": content}],
             stream=False,
+            max_tokens=2000,
         )
 
         return response.choices[0].message.content or ""
