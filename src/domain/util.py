@@ -120,15 +120,15 @@ def pretty_time_delta(seconds):
     hours, seconds = divmod(seconds, 3600)
     minutes, seconds = divmod(seconds, 60)
     if years > 0:
-        return f"{years}dy {days}dd {hours}dh {minutes}dm {seconds}ds"
+        return f"{years}y {days}d {hours}h {minutes}m {seconds}s"
     elif days > 0:
-        return f"{days}dd {hours}dh {minutes}dm {seconds}ds"
+        return f"{days}d {hours}h {minutes}m {seconds}s"
     elif hours > 0:
-        return f"{hours}dh {minutes}dm {seconds}ds"
+        return f"{hours}h {minutes}m {seconds}s"
     elif minutes > 0:
-        return f"{minutes}dm {seconds}ds"
+        return f"{minutes}m {seconds}s"
     else:
-        return f"{seconds}ds"
+        return f"{seconds}s"
 
 
 def get_random_bakchod_from_group(group_id: str, bakchod_id_to_avoid: str) -> Bakchod:
