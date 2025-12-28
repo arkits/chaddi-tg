@@ -93,6 +93,8 @@ async def run_telegram_bot():
     application.add_handler(CommandHandler("patakaro", handlers.ask.handle))
     application.add_handler(CommandHandler("chatgpt", handlers.ask.handle))
 
+    application.add_handler(CommandHandler("bs", handlers.bs.handle))
+
     application.add_handler(CommandHandler("ai", handlers.ai.handle))
     application.add_handler(CommandHandler("gemini", handlers.ai.handle))
 
@@ -102,6 +104,7 @@ async def run_telegram_bot():
     application.add_handler(CommandHandler("alarm", handlers.remind.handle))
 
     application.add_handler(CommandHandler("weather", handlers.weather.handle))
+    application.add_handler(CommandHandler("jyotish", handlers.jyotish.handle))
 
     # Add message handlers
     application.add_handler(
