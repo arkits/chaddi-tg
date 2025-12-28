@@ -42,7 +42,7 @@ def log_command_usage(command_name: str, update: Update):
             data={"user": user_name, "group": group_name},
         )
 
-        with sentry_sdk.push_scope() as scope:
+        with sentry_sdk.new_scope() as scope:
             scope.set_tag("command", command_name)
             scope.set_tag("module", "dc.log_command_usage")
             scope.set_context(
@@ -128,7 +128,7 @@ def sync_persistence_data(update: Update):
 
     try:
         # Sentry: Add context for sync operation
-        with sentry_sdk.push_scope() as scope:
+        with sentry_sdk.new_scope() as scope:
             scope.set_tag("module", "dc.sync_persistence_data")
             scope.set_context(
                 "telegram",

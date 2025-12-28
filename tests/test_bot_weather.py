@@ -95,10 +95,13 @@ class TestWeather:
         update.message.reply_text.assert_called_once()
         assert "provide a location" in update.message.reply_text.call_args[0][0]
 
+    @patch("src.bot.handlers.weather.requests")
     @patch("src.bot.handlers.weather.bakchod_dao")
     @patch("src.bot.handlers.weather.dc")
     @pytest.mark.anyio
-    async def test_handle_saved_location(self, mock_dc, mock_bakchod_dao, mock_update):
+    async def test_handle_saved_location(
+        self, mock_dc, mock_bakchod_dao, mock_requests, mock_update
+    ):
         """Test weather handler with saved location in metadata."""
         update, context = mock_update
         context.args = None
@@ -108,6 +111,21 @@ class TestWeather:
         mock_bakchod = MagicMock()
         mock_bakchod.metadata = {"last_weather_location": "Delhi"}
         mock_bakchod_dao.get_bakchod_from_update.return_value = mock_bakchod
+
+        sent_message = MagicMock()
+        update.message.reply_text.return_value = sent_message
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "weather": [{"description": "clear sky"}],
+            "main": {"temp": 28.0, "humidity": 60},
+            "wind": {"speed": 4.5},
+            "name": "Delhi",
+            "coord": {"lat": 28.7041, "lon": 77.1025},
+        }
+        mock_requests.get.return_value = mock_response
+        mock_requests.exceptions.HTTPError = Exception
 
         await weather.handle(update, context)
 
@@ -294,11 +312,16 @@ class TestWeather:
         http_error.response = MagicMock()
         http_error.response.status_code = 404
 
-        with patch("src.bot.handlers.weather.WEATHER_API_KEY", "test_key"):
-            with patch("src.bot.handlers.weather.bakchod_dao.get_bakchod_from_update", return_value=mock_bakchod):
-                with patch("src.bot.handlers.weather.dc"):
-                    with patch("src.bot.handlers.weather.requests.get", side_effect=http_error):
-                        await weather.handle(update, context)
+        with (
+            patch("src.bot.handlers.weather.WEATHER_API_KEY", "test_key"),
+            patch(
+                "src.bot.handlers.weather.bakchod_dao.get_bakchod_from_update",
+                return_value=mock_bakchod,
+            ),
+            patch("src.bot.handlers.weather.dc"),
+            patch("src.bot.handlers.weather.requests.get", side_effect=http_error),
+        ):
+            await weather.handle(update, context)
 
         sent_message.edit_text.assert_called_once()
         assert "not found" in sent_message.edit_text.call_args[0][0]
@@ -318,11 +341,16 @@ class TestWeather:
         http_error.response = MagicMock()
         http_error.response.status_code = 500
 
-        with patch("src.bot.handlers.weather.WEATHER_API_KEY", "test_key"):
-            with patch("src.bot.handlers.weather.bakchod_dao.get_bakchod_from_update", return_value=mock_bakchod):
-                with patch("src.bot.handlers.weather.dc"):
-                    with patch("src.bot.handlers.weather.requests.get", side_effect=http_error):
-                        await weather.handle(update, context)
+        with (
+            patch("src.bot.handlers.weather.WEATHER_API_KEY", "test_key"),
+            patch(
+                "src.bot.handlers.weather.bakchod_dao.get_bakchod_from_update",
+                return_value=mock_bakchod,
+            ),
+            patch("src.bot.handlers.weather.dc"),
+            patch("src.bot.handlers.weather.requests.get", side_effect=http_error),
+        ):
+            await weather.handle(update, context)
 
         sent_message.edit_text.assert_called_once()
 
@@ -337,10 +365,17 @@ class TestWeather:
         sent_message = MagicMock()
         update.message.reply_text.return_value = sent_message
 
-        with patch("src.bot.handlers.weather.WEATHER_API_KEY", "test_key"), \
-             patch("src.bot.handlers.weather.bakchod_dao.get_bakchod_from_update", return_value=mock_bakchod), \
-             patch("src.bot.handlers.weather.dc"), \
-             patch("src.bot.handlers.weather.requests.get", side_effect=http_error):
+        request_exception = requests.exceptions.RequestException("Connection error")
+
+        with (
+            patch("src.bot.handlers.weather.WEATHER_API_KEY", "test_key"),
+            patch(
+                "src.bot.handlers.weather.bakchod_dao.get_bakchod_from_update",
+                return_value=mock_bakchod,
+            ),
+            patch("src.bot.handlers.weather.dc"),
+            patch("src.bot.handlers.weather.requests.get", side_effect=request_exception),
+        ):
             await weather.handle(update, context)
 
         sent_message.edit_text.assert_called_once()
@@ -365,11 +400,16 @@ class TestWeather:
             "name": "Test",
         }
 
-        with patch("src.bot.handlers.weather.WEATHER_API_KEY", "test_key"):
-            with patch("src.bot.handlers.weather.bakchod_dao.get_bakchod_from_update", return_value=mock_bakchod):
-                with patch("src.bot.handlers.weather.dc"):
-                    with patch("src.bot.handlers.weather.requests.get", return_value=mock_response):
-                        await weather.handle(update, context)
+        with (
+            patch("src.bot.handlers.weather.WEATHER_API_KEY", "test_key"),
+            patch(
+                "src.bot.handlers.weather.bakchod_dao.get_bakchod_from_update",
+                return_value=mock_bakchod,
+            ),
+            patch("src.bot.handlers.weather.dc"),
+            patch("src.bot.handlers.weather.requests.get", return_value=mock_response),
+        ):
+            await weather.handle(update, context)
 
         sent_message.edit_text.assert_called_once()
 
@@ -387,11 +427,16 @@ class TestWeather:
         mock_response = MagicMock()
         mock_response.json.side_effect = ValueError("Invalid JSON")
 
-        with patch("src.bot.handlers.weather.WEATHER_API_KEY", "test_key"):
-            with patch("src.bot.handlers.weather.bakchod_dao.get_bakchod_from_update", return_value=mock_bakchod):
-                with patch("src.bot.handlers.weather.dc"):
-                    with patch("src.bot.handlers.weather.requests.get", return_value=mock_response):
-                        await weather.handle(update, context)
+        with (
+            patch("src.bot.handlers.weather.WEATHER_API_KEY", "test_key"),
+            patch(
+                "src.bot.handlers.weather.bakchod_dao.get_bakchod_from_update",
+                return_value=mock_bakchod,
+            ),
+            patch("src.bot.handlers.weather.dc"),
+            patch("src.bot.handlers.weather.requests.get", return_value=mock_response),
+        ):
+            await weather.handle(update, context)
 
         sent_message.edit_text.assert_called_once()
 
@@ -400,9 +445,14 @@ class TestWeather:
         """Test weather handler when outer exception occurs."""
         update, context = mock_update
 
-        with patch("src.bot.handlers.weather.bakchod_dao.get_bakchod_from_update", side_effect=Exception("Database error")):
-            with patch("src.bot.handlers.weather.dc") as mock_dc:
-                await weather.handle(update, context)
+        with (
+            patch(
+                "src.bot.handlers.weather.bakchod_dao.get_bakchod_from_update",
+                side_effect=Exception("Database error"),
+            ),
+            patch("src.bot.handlers.weather.dc") as mock_dc,
+        ):
+            await weather.handle(update, context)
 
         mock_dc.log_command_usage.assert_called_once()
         update.message.reply_text.assert_called_once()
@@ -447,9 +497,7 @@ class TestWeather:
     @patch("src.bot.handlers.weather.bakchod_dao")
     @patch("src.bot.handlers.weather.dc")
     @pytest.mark.anyio
-    async def test_generate_funny_description_llm_disabled(
-        self, mock_dc, mock_bakchod_dao
-    ):
+    async def test_generate_funny_description_llm_disabled(self, mock_dc, mock_bakchod_dao):
         """Test _generate_funny_description when LLM is disabled."""
         with patch("src.bot.handlers.weather.USE_LLM_FOR_DESCRIPTIONS", False):
             result = await weather._generate_funny_description("clear sky")
@@ -460,34 +508,34 @@ class TestWeather:
     @patch("src.bot.handlers.weather.bakchod_dao")
     @patch("src.bot.handlers.weather.dc")
     @pytest.mark.anyio
-    async def test_generate_funny_description_llm_enabled(
-        self, mock_dc, mock_bakchod_dao
-    ):
+    async def test_generate_funny_description_llm_enabled(self, mock_dc, mock_bakchod_dao):
         """Test _generate_funny_description when LLM is enabled."""
         mock_client = MagicMock()
         mock_response = MagicMock()
         mock_response.choices[0].message.content = "It's brutally sunny outside."
         mock_client.chat.completions.create.return_value = mock_response
 
-        with patch("src.bot.handlers.weather.USE_LLM_FOR_DESCRIPTIONS", True):
-            with patch("src.bot.handlers.weather.openai_client", mock_client):
-                result = await weather._generate_funny_description("clear sky")
+        with (
+            patch("src.bot.handlers.weather.USE_LLM_FOR_DESCRIPTIONS", True),
+            patch("src.bot.handlers.weather.openai_client", mock_client),
+        ):
+            result = await weather._generate_funny_description("clear sky")
 
         assert "sunny" in result.lower()
 
     @patch("src.bot.handlers.weather.bakchod_dao")
     @patch("src.bot.handlers.weather.dc")
     @pytest.mark.anyio
-    async def test_generate_funny_description_llm_exception(
-        self, mock_dc, mock_bakchod_dao
-    ):
+    async def test_generate_funny_description_llm_exception(self, mock_dc, mock_bakchod_dao):
         """Test _generate_funny_description when LLM raises exception."""
         mock_client = MagicMock()
         mock_client.chat.completions.create.side_effect = Exception("API error")
 
-        with patch("src.bot.handlers.weather.USE_LLM_FOR_DESCRIPTIONS", True):
-            with patch("src.bot.handlers.weather.openai_client", mock_client):
-                result = await weather._generate_funny_description("clear sky")
+        with (
+            patch("src.bot.handlers.weather.USE_LLM_FOR_DESCRIPTIONS", True),
+            patch("src.bot.handlers.weather.openai_client", mock_client),
+        ):
+            result = await weather._generate_funny_description("clear sky")
 
         assert isinstance(result, str)
         assert len(result) > 0
@@ -495,13 +543,13 @@ class TestWeather:
     @patch("src.bot.handlers.weather.bakchod_dao")
     @patch("src.bot.handlers.weather.dc")
     @pytest.mark.anyio
-    async def test_generate_funny_description_no_client(
-        self, mock_dc, mock_bakchod_dao
-    ):
+    async def test_generate_funny_description_no_client(self, mock_dc, mock_bakchod_dao):
         """Test _generate_funny_description when OpenAI client is None."""
-        with patch("src.bot.handlers.weather.USE_LLM_FOR_DESCRIPTIONS", True):
-            with patch("src.bot.handlers.weather.openai_client", None):
-                result = await weather._generate_funny_description("clear sky")
+        with (
+            patch("src.bot.handlers.weather.USE_LLM_FOR_DESCRIPTIONS", True),
+            patch("src.bot.handlers.weather.openai_client", None),
+        ):
+            result = await weather._generate_funny_description("clear sky")
 
         assert isinstance(result, str)
         assert len(result) > 0

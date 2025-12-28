@@ -171,15 +171,13 @@ async def test_handle_no_target_message(mock_update, mock_context):
         mock_update.message.reply_sticker.assert_called_once()
 
 
-@pytest.mark.xfail(reason="Complex mocking of random reply behavior")
-@pytest.mark.xfail(reason="Complex mocking of random reply behavior")
 @pytest.mark.asyncio
 async def test_handle_success_spacy_joke(mock_update, mock_context):
     """Test mom handler with successful spacy joke generation."""
     with (
         patch("src.bot.handlers.mom_spacy.dc"),
         patch("src.bot.handlers.mom_spacy.util") as mock_util,
-        patch("src.bot.handlers.mom_spacy.random") as mock_random,
+        patch("src.bot.handlers.mom_spacy.random.random") as mock_random,
     ):
         mock_util.paywall_user.return_value = True
         mock_random.return_value = 0.8  # >= 0.20 so spacy triggers

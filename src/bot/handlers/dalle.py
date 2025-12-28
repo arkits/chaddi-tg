@@ -20,12 +20,17 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         dc.log_command_usage("dalle", update)
 
-        initiator_id = update.message.from_user.id
+        from_user = update.message.from_user
+        if from_user is None:
+            logger.error("[dalle] from_user was None!")
+            return
+
+        initiator_id = from_user.id
         if initiator_id is None:
             logger.error("[dalle] initiator_id was None!")
             return
 
-        b = bakchod_dao.get_or_create_bakchod_from_tg_user(update.message.from_user)
+        b = bakchod_dao.get_or_create_bakchod_from_tg_user(from_user)
 
         if "dalle" not in b.metadata or not b.metadata["dalle"]:
             logger.info("[dalle] denied request for disabled bakchod={}", b.pretty_name)

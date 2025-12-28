@@ -254,31 +254,22 @@ class LLMClient:
 
         content.append({"type": "text", "text": message_text})
 
-        # Stream response from OpenRouter
-        stream = _openrouter_client.chat.completions.create(
-            model=self.model,
-            messages=[{"role": "user", "content": content}],
-            stream=True,
-        )
+        # Stream response from OpenRouter in thread pool to avoid blocking
+        def stream_openrouter():
+            stream = _openrouter_client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": content}],
+                stream=True,
+            )
+            response_text = ""
+            for chunk in stream:
+                if chunk.choices[0].delta.content is not None:
+                    response_text += chunk.choices[0].delta.content
+            return response_text
 
-        response_text = ""
-        last_update_time = 0
+        response_text = await asyncio.to_thread(stream_openrouter)
 
-        for chunk in stream:
-            if chunk.choices[0].delta.content is not None:
-                response_text += chunk.choices[0].delta.content
-
-                # Call on_chunk callback periodically
-                if on_chunk:
-                    current_time = time.time()
-                    if current_time - last_update_time > update_interval:
-                        try:
-                            await _call_callback(on_chunk, response_text)
-                            last_update_time = current_time
-                        except Exception as e:
-                            logger.warning(f"[ai] Error in on_chunk callback: {e}")
-
-        # Final callback with complete text
+        # Call on_chunk callback with final text
         if on_chunk:
             with contextlib.suppress(Exception):
                 await _call_callback(on_chunk, response_text)

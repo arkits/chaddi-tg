@@ -73,7 +73,7 @@ class TestParseReminderDue:
 
     def test_parse_reminder_due_days(self):
         result = remind.parse_reminder_due(["1", "d"])
-        assert result == 216000
+        assert result == 86400
 
     def test_parse_reminder_due_combined(self):
         result = remind.parse_reminder_due(["1", "h", "30", "m"])

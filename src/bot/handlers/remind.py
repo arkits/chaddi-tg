@@ -213,7 +213,7 @@ def parse_reminder_due(args):
                 digit = digit * 60 * 60
 
             if value_indicator == "day" or value_indicator == "days" or value_indicator == "d":
-                digit = digit * 60 * 60 * 60
+                digit = digit * 24 * 60 * 60
 
             due_seconds = due_seconds + digit
 

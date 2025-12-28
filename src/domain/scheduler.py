@@ -1,4 +1,5 @@
 import datetime
+import html
 import json
 import random
 import time
@@ -6,10 +7,12 @@ import time
 import peewee
 import pytz
 from loguru import logger
+from telegram.constants import ParseMode
 from telegram.ext import ContextTypes, JobQueue
 
 from src.bot.handlers.remind import build_job_name, reminder_handler
 from src.db import Group, Quote, ScheduledJob
+from src.domain import util
 
 
 def reschedule_saved_jobs(job_queue: JobQueue):
@@ -96,14 +99,17 @@ async def daily_post_callback(context: ContextTypes.DEFAULT_TYPE):
 
         message_text = f"🌅 {greeting}\n\n"
         if quote:
-            author_name = (
-                quote.author_bakchod.pretty_name or quote.author_bakchod.username or "Unknown"
+            author_name = util.extract_pretty_name_from_bakchod(quote.author_bakchod) or "Unknown"
+            # Escape HTML entities to prevent parsing errors
+            escaped_quote_text = html.escape(quote.text)
+            escaped_author_name = html.escape(author_name)
+            message_text += (
+                f"💡 <b>Daily Quote:</b>\n<i>{escaped_quote_text}</i>\n- {escaped_author_name}"
             )
-            message_text += f"💡 *Daily Quote:*\n_{quote.text}_\n- {author_name}"
 
         try:
             await context.bot.send_message(
-                chat_id=group.group_id, text=message_text, parse_mode="Markdown"
+                chat_id=group.group_id, text=message_text, parse_mode=ParseMode.HTML
             )
             logger.info(f"Sent daily post to group {group.name} ({group.group_id})")
         except Exception as e:
