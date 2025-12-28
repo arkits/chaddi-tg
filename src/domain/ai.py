@@ -19,6 +19,8 @@ AI_PROVIDER = app_config.get(
     "AI", "PROVIDER", fallback="openai"
 )  # "openai", "gemini", or "openrouter"
 
+logger.info(f"[ai] AI_PROVIDER: {AI_PROVIDER}")
+
 # Model names
 OPENAI_MODEL = app_config.get("AI", "OPENAI_MODEL", fallback="gpt-5-nano-2025-08-07")
 GEMINI_MODEL = app_config.get("AI", "GEMINI_MODEL", fallback="gemini-2.5-flash")
@@ -29,26 +31,29 @@ _openai_client: OpenAI | None = None
 _gemini_client = None
 _openrouter_client: OpenAI | None = None
 
-if AI_PROVIDER == "openai" or app_config.has_option("OPENAI", "API_KEY"):
+if AI_PROVIDER == "openai":
     try:
         _openai_client = OpenAI(api_key=app_config.get("OPENAI", "API_KEY"))
+        logger.info(f"[ai] OpenAI client initialized with model {OPENAI_MODEL}")
     except Exception as e:
         logger.warning(f"[ai] Failed to initialize OpenAI client: {e}")
 
-if AI_PROVIDER == "gemini" or app_config.has_option("GEMINI", "API_KEY"):
+if AI_PROVIDER == "gemini":
     try:
         from google import genai
 
         _gemini_client = genai.Client(api_key=app_config.get("GEMINI", "API_KEY"))
+        logger.info(f"[ai] Gemini client initialized with model {GEMINI_MODEL}")
     except Exception as e:
         logger.warning(f"[ai] Failed to initialize Gemini client: {e}")
 
-if AI_PROVIDER == "openrouter" or app_config.has_option("OPENROUTER", "API_KEY"):
+if AI_PROVIDER == "openrouter":
     try:
         _openrouter_client = OpenAI(
             base_url="https://openrouter.ai/api/v1",
             api_key=app_config.get("OPENROUTER", "API_KEY"),
         )
+        logger.info(f"[ai] OpenRouter client initialized with model {OPENROUTER_MODEL}")
     except Exception as e:
         logger.warning(f"[ai] Failed to initialize OpenRouter client: {e}")
 
