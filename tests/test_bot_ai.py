@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -256,3 +257,69 @@ async def test_handle_command_logging(
     with patch("src.bot.handlers.ai.dc.log_command_usage") as mock_log:
         await ai.handle(mock_update, mock_context)
         mock_log.assert_called_once_with("ai", mock_update)
+
+
+@patch("src.bot.handlers.ai.CommandUsage")
+@patch("src.db.Group")
+def test_build_conversation_messages_without_clear(mock_group_class, mock_command_usage):
+    """Test building conversation messages without AI thread cleared."""
+    # Setup mock group without clear timestamp
+    mock_group = MagicMock()
+    mock_group.metadata = {}
+    mock_group_class.get_by_id.return_value = mock_group
+
+    # Create mock command usages
+    usage1 = MagicMock()
+    usage1.executed_at = datetime.now() - timedelta(hours=2)
+    usage1.metadata = {"user_message": "Message 1", "bot_response": "Response 1"}
+
+    usage2 = MagicMock()
+    usage2.executed_at = datetime.now() - timedelta(hours=1)
+    usage2.metadata = {"user_message": "Message 2", "bot_response": "Response 2"}
+
+    mock_command_usage.select.return_value.where.return_value.where.return_value.where.return_value.order_by.return_value.limit.return_value = [
+        usage2,
+        usage1,
+    ]
+
+    # Build messages
+    result = ai._build_ai_conversation_messages(
+        "123", limit=50, current_user_message="Current message"
+    )
+
+    # Should include all messages
+    assert len(result) == 5  # user1 + assistant1 + user2 + assistant2 + current message
+    assert result[0]["role"] == "user"
+    assert result[0]["content"] == "Message 1"
+    assert result[1]["role"] == "assistant"
+    assert result[1]["content"] == "Response 1"
+    assert result[2]["role"] == "user"
+    assert result[2]["content"] == "Message 2"
+    assert result[3]["role"] == "assistant"
+    assert result[3]["content"] == "Response 2"
+    assert result[4]["role"] == "user"
+    assert result[4]["content"] == "Current message"
+
+
+@patch("src.bot.handlers.ai.CommandUsage")
+@patch("src.db.Group")
+def test_build_conversation_messages_empty_after_clear(mock_group_class, mock_command_usage):
+    """Test building conversation messages when thread was cleared and there are no new messages."""
+    # Setup mock group with clear timestamp
+    mock_group = MagicMock()
+    clear_time = datetime.now() - timedelta(hours=1)
+    mock_group.metadata = {"ai_thread_cleared_at": clear_time.isoformat()}
+    mock_group_class.get_by_id.return_value = mock_group
+
+    # No command usages after the clear timestamp
+    mock_command_usage.select.return_value.where.return_value.where.return_value.where.return_value.where.return_value.order_by.return_value.limit.return_value = []
+
+    # Build messages
+    result = ai._build_ai_conversation_messages(
+        "123", limit=50, current_user_message="Current message"
+    )
+
+    # Should only include current message
+    assert len(result) == 1
+    assert result[0]["role"] == "user"
+    assert result[0]["content"] == "Current message"

@@ -1,5 +1,6 @@
 import contextlib
 import traceback
+from datetime import datetime
 
 from loguru import logger
 from telegram import Update
@@ -252,15 +253,28 @@ def _build_ai_conversation_messages(
         if not group:
             return []
 
+        # Check if AI thread was cleared for this group
+        clear_timestamp = None
+        if group.metadata and "ai_thread_cleared_at" in group.metadata:
+            try:
+                clear_timestamp = datetime.fromisoformat(group.metadata["ai_thread_cleared_at"])
+                logger.debug(f"[ai] Thread cleared at {clear_timestamp} for group {group_id}")
+            except Exception as e:
+                logger.warning(f"[ai] Error parsing clear timestamp: {e}")
+
         # Fetch last N /ai command usages for this group
-        command_usages = (
+        query = (
             CommandUsage.select()
             .where(CommandUsage.command_name == "ai")
             .where(CommandUsage.group == group)
             .where(CommandUsage.metadata.is_null(False))
-            .order_by(CommandUsage.executed_at.desc())
-            .limit(limit)
         )
+
+        # If thread was cleared, only include records after the clear timestamp
+        if clear_timestamp:
+            query = query.where(CommandUsage.executed_at > clear_timestamp)
+
+        command_usages = query.order_by(CommandUsage.executed_at.desc()).limit(limit)
 
         if not command_usages:
             # No history, return current message only

@@ -221,6 +221,49 @@ class TestSetter:
         mock_group.save.assert_called_once()
 
     @patch("src.bot.handlers.setter.dc")
+    @patch("src.bot.handlers.setter.util.is_admin_tg_user", return_value=True)
+    @patch("src.bot.handlers.setter.group_dao.get_group_from_update")
+    @pytest.mark.anyio
+    async def test_handle_set_ai_clear(self, mock_get_group, mock_is_admin, mock_dc, mock_update):
+        """Test setter handler clearing AI conversation thread."""
+        mock_update.message.text = "/set ai clear"
+        mock_group = MagicMock(spec=Group)
+        mock_group.metadata = {}
+        mock_get_group.return_value = mock_group
+
+        await setter.handle(mock_update, MagicMock())
+
+        mock_dc.log_command_usage.assert_called_once_with("set", mock_update)
+        assert "ai_thread_cleared_at" in mock_group.metadata
+        mock_group.save.assert_called_once()
+        call_args = mock_update.message.reply_text.call_args
+        if call_args[0]:
+            assert "cleared" in call_args[0][0]
+        else:
+            assert "cleared" in call_args[1]["text"]
+
+    @patch("src.bot.handlers.setter.dc")
+    @patch("src.bot.handlers.setter.util.is_admin_tg_user", return_value=True)
+    @patch("src.bot.handlers.setter.group_dao.get_group_from_update")
+    @pytest.mark.anyio
+    async def test_handle_set_ai_clear_non_admin(
+        self, mock_get_group, mock_is_admin, mock_dc, mock_update
+    ):
+        """Test setter handler clearing AI thread by non-admin."""
+        mock_is_admin.return_value = False
+        mock_update.message.text = "/set ai clear"
+
+        await setter.handle(mock_update, MagicMock())
+
+        mock_dc.log_command_usage.assert_called_once_with("set", mock_update)
+        mock_get_group.assert_not_called()
+        call_args = mock_update.message.reply_text.call_args
+        if call_args[0]:
+            assert "Only admins" in call_args[0][0]
+        else:
+            assert "Only admins" in call_args[1]["text"]
+
+    @patch("src.bot.handlers.setter.dc")
     @pytest.mark.anyio
     async def test_handle_unknown_set_type(self, mock_dc, mock_update):
         """Test setter handler with unknown set type."""

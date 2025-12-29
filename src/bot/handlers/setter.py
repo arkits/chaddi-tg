@@ -1,3 +1,4 @@
+import datetime
 import math
 
 from loguru import logger
@@ -131,10 +132,22 @@ def parse_request(
         try:
             value = request[2].lower()
         except IndexError:
-            return "Please specify on or off - `/set ai on`"
+            return "Please specify on, off, or clear - `/set ai on`"
+
+        if value == "clear":
+            group = group_dao.get_group_from_update(tg_update)
+            if not group:
+                return "❌ Group not found."
+
+            # Update the AI thread clear timestamp
+            if group.metadata is None:
+                group.metadata = {}
+            group.metadata["ai_thread_cleared_at"] = datetime.datetime.now().isoformat()
+            group.save()
+            return "✅ AI conversation thread cleared!"
 
         if value not in ["on", "off"]:
-            return "Please specify on or off - `/set ai on`"
+            return "Please specify on, off, or clear - `/set ai on`"
 
         group = group_dao.get_group_from_update(tg_update)
         if not group:
