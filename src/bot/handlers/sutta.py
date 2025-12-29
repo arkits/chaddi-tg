@@ -44,13 +44,14 @@ async def update_sutta(context: ContextTypes.DEFAULT_TYPE):
             logger.error("Bakchod not found")
             return
 
-        if b.metadata.get("sutta_ittr") is None:
-            b.metadata["sutta_ittr"] = 0
+        sutta_ittr = util.get_metadata_value(b.metadata, "sutta_ittr")
+        if sutta_ittr is None:
+            b.metadata = util.set_metadata_value(b.metadata, "sutta_ittr", 0)
         else:
-            b.metadata["sutta_ittr"] += 1
+            b.metadata["sutta_ittr"] = sutta_ittr + 1
         b.save()
 
-        ittr = b.metadata["sutta_ittr"]
+        ittr = util.get_metadata_value(b.metadata, "sutta_ittr")
 
         logger.debug("[sutta] handling update_sutta bakchod_id={} ittr={}", bakchod_id, ittr)
 
@@ -78,13 +79,12 @@ async def update_sutta(context: ContextTypes.DEFAULT_TYPE):
 
 
 async def start_sutta(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Check for previously running sutta jobs
     b = Bakchod.get_by_id(update.message.from_user.id)
     if b is None:
         logger.error("Bakchod not found")
         return
 
-    if b.metadata.get("sutta_ittr") is not None:
+    if util.get_metadata_value(b.metadata, "sutta_ittr") is not None:
         logger.error("[sutta] sutta_ittr was not None...")
         await update.message.reply_text(
             "DHUMRAPAN SEHAT KE LIYE HANIKARAK HAI! 💀",

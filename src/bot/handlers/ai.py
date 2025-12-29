@@ -27,9 +27,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
             group = Group.get_by_id(update.effective_chat.id)
             if not group or "ai" not in group.metadata.get("enabled_commands", []):
-                logger.info(
-                    f"[ai] Command disabled for group {update.effective_chat.id}"
-                )
+                logger.info(f"[ai] Command disabled for group {update.effective_chat.id}")
                 await update.message.reply_text(
                     "This command is not enabled for this group.",
                     parse_mode=ParseMode.MARKDOWN,
@@ -68,16 +66,12 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 photo_file = await photo.get_file()
                 image_bytes = await photo_file.download_as_bytearray()
                 image_mime_type = "image/jpeg"
-                logger.info(
-                    f"[ai] Downloaded photo from reply, size={len(image_bytes)} bytes"
-                )
+                logger.info(f"[ai] Downloaded photo from reply, size={len(image_bytes)} bytes")
 
             # Format reply context with reply message author's username
             if reply_context_parts:
                 reply_context = "\n".join(reply_context_parts)
-                reply_username = util.extract_pretty_name_from_tg_user(
-                    reply_message.from_user
-                )
+                reply_username = util.extract_pretty_name_from_tg_user(reply_message.from_user)
                 formatted_reply_context = f"{reply_username}: {reply_context}"
 
         # Check for photo in the current message (only if no image from reply)
@@ -86,9 +80,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             photo_file = await photo.get_file()
             image_bytes = await photo_file.download_as_bytearray()
             image_mime_type = "image/jpeg"
-            logger.info(
-                f"[ai] Downloaded photo from message, size={len(image_bytes)} bytes"
-            )
+            logger.info(f"[ai] Downloaded photo from message, size={len(image_bytes)} bytes")
 
         # Use caption from current message if no text yet
         if not message_text and update.message.caption:
@@ -118,9 +110,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if user_question or message_text:
                 # Use user_question if available, otherwise use message_text
                 user_text = user_question if user_question else message_text
-                current_username = util.extract_pretty_name_from_tg_user(
-                    update.message.from_user
-                )
+                current_username = util.extract_pretty_name_from_tg_user(update.message.from_user)
                 formatted_question = f"{current_username}: {user_text}"
                 formatted_message = f"{formatted_reply_context}\n\n{formatted_question}"
             else:
@@ -197,9 +187,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     except Exception as e:
         logger.error(f"Caught Error in ai.handle - {e} \n {traceback.format_exc()}")
-        await update.message.reply_text(
-            "Something went wrong while processing your request."
-        )
+        await update.message.reply_text("Something went wrong while processing your request.")
 
 
 def _save_ai_conversation(update: Update, user_message: str, bot_response: str):
@@ -242,9 +230,7 @@ def _save_ai_conversation(update: Update, user_message: str, bot_response: str):
             command_usage.save()
             logger.debug(f"[ai] Saved conversation to CommandUsage {command_usage.id}")
         else:
-            logger.warning(
-                "[ai] Could not find recent CommandUsage to save conversation"
-            )
+            logger.warning("[ai] Could not find recent CommandUsage to save conversation")
     except Exception as e:
         logger.warning(f"[ai] Error saving conversation: {e}")
 
@@ -274,12 +260,8 @@ def _build_ai_conversation_messages(
         clear_timestamp = None
         if group.metadata and "ai_thread_cleared_at" in group.metadata:
             try:
-                clear_timestamp = datetime.fromisoformat(
-                    group.metadata["ai_thread_cleared_at"]
-                )
-                logger.debug(
-                    f"[ai] Thread cleared at {clear_timestamp} for group {group_id}"
-                )
+                clear_timestamp = datetime.fromisoformat(group.metadata["ai_thread_cleared_at"])
+                logger.debug(f"[ai] Thread cleared at {clear_timestamp} for group {group_id}")
             except Exception as e:
                 logger.warning(f"[ai] Error parsing clear timestamp: {e}")
 

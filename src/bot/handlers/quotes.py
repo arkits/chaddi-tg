@@ -8,6 +8,7 @@ from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
+from src.bot.handlers import utils as handler_utils
 from src.db import Quote
 from src.db import quote as quote_dao
 from src.domain import config, dc, util
@@ -25,22 +26,11 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         dc.log_command_usage("quotes", update)
 
-        # Extract query...
-        query = update.message.text
-        query = query.split(" ")
-
-        command = None
-
-        try:
-            command = query[1].lower()
-        except Exception:
-            # No second token -> default to random
-            command = "random"
+        command = handler_utils.extract_command_from_text(update.message.text) or "random"
 
         logger.debug("[quotes] command={}", command)
 
         if command == "add":
-            # Ensure the command is used as a reply with text
             if getattr(update.message, "reply_to_message", None) and getattr(
                 update.message.reply_to_message, "text", None
             ):
@@ -49,39 +39,41 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.message.reply_text(text=response, parse_mode=ParseMode.HTML)
 
         elif command == "remove":
-            if util.is_admin_tg_user(update.message.from_user):
-                try:
-                    id_to_remove = query[2]
-                except Exception:
-                    await update.message.reply_text(
-                        text="Please include the Quote ID you want to remove!",
-                        parse_mode=ParseMode.HTML,
-                    )
-                    return
+            if not await handler_utils.check_admin_and_reply(update):
+                return
 
-                response = Quote.delete_by_id(id_to_remove)
+            query_params = handler_utils.extract_query_params(update.message.text)
+            if len(query_params) < 3:
+                await handler_utils.reply_with_error(
+                    update,
+                    "Please include the Quote ID you want to remove!",
+                    ParseMode.HTML,
+                )
+                return
 
-                if response == 1:
-                    response = f"Removed Quote - ID=<code>{id_to_remove}</code>"
-                else:
-                    response = "Arrey isko hatao re..."
+            id_to_remove = query_params[2]
+            response = Quote.delete_by_id(id_to_remove)
 
+            if response == 1:
+                response = f"Removed Quote - ID=<code>{id_to_remove}</code>"
             else:
-                response = "Chal kat re bsdk!"
+                response = "Arrey isko hatao re..."
 
             await update.message.reply_text(text=response, parse_mode=ParseMode.HTML)
 
         elif command == "get":
             response = ""
 
-            try:
-                quote_id = query[2]
-            except Exception:
-                await update.message.reply_text(
-                    text="Please include the Quote ID you want to get!",
-                    parse_mode=ParseMode.HTML,
+            query_params = handler_utils.extract_query_params(update.message.text)
+            if len(query_params) < 3:
+                await handler_utils.reply_with_error(
+                    update,
+                    "Please include the Quote ID you want to get!",
+                    ParseMode.HTML,
                 )
                 return
+
+            quote_id = query_params[2]
 
             try:
                 quote = Quote.get_by_id(quote_id)
@@ -92,7 +84,6 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     await update.message.reply_text(text="Can't run this command here!")
                     return
 
-                # Return a random quote
                 quote = get_random_quote_from_group(group_id)
 
                 if quote is None:

@@ -227,3 +227,79 @@ def extract_magic_word(target_message):
     magic_word = choose_random_element_from_list(tokens_sorted[magic_pos_type])
 
     return magic_word
+
+
+def parse_command_args(text: str) -> list[str]:
+    """
+    Parse command arguments from message text.
+    Returns list of arguments split by spaces.
+    """
+    return text.split(" ")
+
+
+def extract_command_arg(text: str, index: int) -> str | None:
+    """
+    Extract a specific command argument by index.
+    Returns None if index is out of range.
+    """
+    args = parse_command_args(text)
+    try:
+        return args[index]
+    except IndexError:
+        return None
+
+
+def get_metadata_value(metadata: dict | None, key: str, default=None):
+    """
+    Safely get a value from metadata dict with default fallback.
+    """
+    if metadata is None:
+        return default
+    return metadata.get(key, default)
+
+
+def set_metadata_value(metadata: dict | None, key: str, value) -> dict:
+    """
+    Safely set a value in metadata dict, creating dict if None.
+    Returns the updated metadata dict.
+    """
+    if metadata is None:
+        metadata = {}
+    metadata[key] = value
+    return metadata
+
+
+def append_to_metadata_list(metadata: dict | None, key: str, value) -> dict:
+    """
+    Append a value to a list in metadata dict.
+    Creates list if doesn't exist, creates dict if None.
+    Returns the updated metadata dict.
+    """
+    if metadata is None:
+        metadata = {}
+
+    if key not in metadata or metadata[key] is None:
+        metadata[key] = []
+    elif not isinstance(metadata[key], list):
+        metadata[key] = [metadata[key]]
+
+    if value not in metadata[key]:
+        metadata[key].append(value)
+
+    return metadata
+
+
+def remove_from_metadata_list(metadata: dict | None, key: str, value) -> dict | None:
+    """
+    Remove a value from a list in metadata dict.
+    Returns the updated metadata dict or None if metadata was None.
+    """
+    if metadata is None or key not in metadata or metadata[key] is None:
+        return metadata
+
+    if isinstance(metadata[key], list) and value in metadata[key]:
+        metadata[key].remove(value)
+        if not metadata[key]:
+            del metadata[key]
+
+    return metadata

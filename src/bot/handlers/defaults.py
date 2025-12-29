@@ -57,12 +57,9 @@ async def handle_bakchod_metadata_effects(
     try:
         for key in bakchod.metadata:
             if key == "route-messages":
-                rm = bakchod.metadata[key]
-
-                # logger.debug("route-messages metadata was set - {}", rm)
+                rm = util.get_metadata_value(bakchod.metadata, key)
 
                 for route_message_props in rm:
-                    # if the message is posted to the same group, then ignore it
                     if str(route_message_props["to_group"]) == str(update.message.chat_id):
                         logger.trace(
                             "[metadata] route-messages - posted in the same group - {} // {}",
@@ -81,7 +78,11 @@ async def handle_bakchod_metadata_effects(
             if key == "censored":
                 censored_metadata = bakchod.metadata[key]
 
-                if group_id is not None and group_id in censored_metadata["group_ids"]:
+                if (
+                    group_id is not None
+                    and censored_metadata
+                    and group_id in censored_metadata.get("group_ids", [])
+                ):
                     logger.info(
                         "[metadata] censoring {}",
                         util.extract_pretty_name_from_bakchod(bakchod),
@@ -110,7 +111,8 @@ async def handle_bakchod_metadata_effects(
 
                 if (
                     group_id is not None
-                    and group_id in auto_mom_metadata["group_ids"]
+                    and auto_mom_metadata
+                    and group_id in auto_mom_metadata.get("group_ids", [])
                     and random.random() > 0.5
                 ):
                     logger.info(

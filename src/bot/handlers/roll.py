@@ -221,7 +221,7 @@ async def handle_dice_rolls(dice_value, update, context):
             victim_metadata = victim.metadata
 
             if current_roll.rule == "mute_user":
-                censored_modifier = victim_metadata.get("censored") or {}
+                censored_modifier = util.get_metadata_value(victim_metadata, "censored") or {}
                 group_ids = censored_modifier.get("group_ids") or []
                 if group_id not in group_ids:
                     group_ids.append(group_id)
@@ -231,7 +231,7 @@ async def handle_dice_rolls(dice_value, update, context):
                 victim.save()
 
             elif current_roll.rule == "auto_mom":
-                auto_mom_modifier = victim_metadata.get("auto_mom") or {}
+                auto_mom_modifier = util.get_metadata_value(victim_metadata, "auto_mom") or {}
                 group_ids = auto_mom_modifier.get("group_ids") or []
                 if group_id not in group_ids:
                     group_ids.append(group_id)
@@ -476,10 +476,8 @@ def _pretty_roll_rule(roll_rule: str) -> str:
 
 
 async def reset_roll_effects(context: ContextTypes.DEFAULT_TYPE):
-    # Get group_id
     group_id = context.job.data
 
-    # Get relevant roll based on group_id
     roll = roll_dao.get_roll_by_group_id(group_id)
 
     victim = roll.victim
@@ -490,18 +488,17 @@ async def reset_roll_effects(context: ContextTypes.DEFAULT_TYPE):
         group_id,
     )
 
-    # Reset victim's modifiers
     if roll.rule == "mute_user":
-        censored_metadata = victim.metadata["censored"]
-        if censored_metadata is not None:
+        censored_metadata = util.get_metadata_value(victim.metadata, "censored")
+        if censored_metadata and group_id in censored_metadata.get("group_ids", []):
             censored_metadata["group_ids"].remove(group_id)
             victim.metadata["censored"] = censored_metadata
 
             logger.debug("[roll] updated censored_metadata for victim={}", victim)
 
     elif roll.rule == "auto_mom":
-        auto_mom_metadata = victim.metadata["auto_mom"]
-        if auto_mom_metadata is not None:
+        auto_mom_metadata = util.get_metadata_value(victim.metadata, "auto_mom")
+        if auto_mom_metadata and group_id in auto_mom_metadata.get("group_ids", []):
             auto_mom_metadata["group_ids"].remove(group_id)
             victim.metadata["auto_mom"] = auto_mom_metadata
 
@@ -509,7 +506,6 @@ async def reset_roll_effects(context: ContextTypes.DEFAULT_TYPE):
 
     victim.save()
 
-    # Post reset message
     response = (
         f"Roll Modifiers for {util.extract_pretty_name_from_bakchod(victim)} are now removed!"
     )
