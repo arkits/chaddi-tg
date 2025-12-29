@@ -71,7 +71,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_context = "\n".join(reply_context_parts)
                 # If user provided a question, combine it with reply context
                 if user_question:
-                    message_text = f"{reply_context}\n\nQuestion: {user_question}"
+                    message_text = f"{reply_context}\n\n{user_question}"
                 else:
                     message_text = reply_context
 
@@ -104,6 +104,10 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if image_bytes and not message_text:
             message_text = "Describe this image."
 
+        # Format message with username
+        username = util.extract_pretty_name_from_tg_user(update.message.from_user)
+        formatted_message = f"{username}: {message_text}"
+
         # Build conversation history for group chats
         is_group = update.message.chat.type in ("group", "supergroup")
 
@@ -119,7 +123,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             messages = _build_ai_conversation_messages(
                 group_id=str(update.message.chat.id),
                 limit=20,
-                current_user_message=message_text,
+                current_user_message=formatted_message,
             )
             if messages:
                 logger.info(
@@ -128,7 +132,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # If no conversation history, use single message
         if not messages:
-            messages = [{"role": "user", "content": message_text}]
+            messages = [{"role": "user", "content": formatted_message}]
 
         # Define callback for streaming updates
         async def update_message(accumulated_text: str):
@@ -137,8 +141,8 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # System prompt for the AI assistant
         system_prompt = (
-            "You are Chaddi, an AI assistant in a Telegram group. "
-            "Be helpful, friendly, and engaging. "
+            "You are Chaddi, an AI assistant in a Telegram group. You will receive messages from users and you will respond to them. "
+            "Be helpful, slightly edgy, and engaging. "
             "Keep responses concise and appropriate for a group chat setting."
         )
 
@@ -161,7 +165,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Save the conversation to CommandUsage metadata
         try:
-            _save_ai_conversation(update, message_text, response_text)
+            _save_ai_conversation(update, formatted_message, response_text)
         except Exception as e:
             logger.warning(f"[ai] Failed to save conversation: {e}")
 
