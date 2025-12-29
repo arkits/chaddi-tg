@@ -49,6 +49,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Check for reply to message
         reply_message = update.message.reply_to_message
         reply_context_parts = []
+        formatted_reply_context = None
 
         if reply_message:
             # Extract text and caption from reply message
@@ -66,14 +67,11 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 image_mime_type = "image/jpeg"
                 logger.info(f"[ai] Downloaded photo from reply, size={len(image_bytes)} bytes")
 
-            # Combine reply context parts
+            # Format reply context with reply message author's username
             if reply_context_parts:
                 reply_context = "\n".join(reply_context_parts)
-                # If user provided a question, combine it with reply context
-                if user_question:
-                    message_text = f"{reply_context}\n\n{user_question}"
-                else:
-                    message_text = reply_context
+                reply_username = util.extract_pretty_name_from_tg_user(reply_message.from_user)
+                formatted_reply_context = f"{reply_username}: {reply_context}"
 
         # Check for photo in the current message (only if no image from reply)
         if not image_bytes and update.message.photo:
@@ -105,8 +103,22 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             message_text = "Describe this image."
 
         # Format message with username
-        username = util.extract_pretty_name_from_tg_user(update.message.from_user)
-        formatted_message = f"{username}: {message_text}"
+        # If we have a reply context, combine it with the user's question/text (if any)
+        if formatted_reply_context:
+            # User provided additional text (via args or caption)
+            if user_question or message_text:
+                # Use user_question if available, otherwise use message_text
+                user_text = user_question if user_question else message_text
+                current_username = util.extract_pretty_name_from_tg_user(update.message.from_user)
+                formatted_question = f"{current_username}: {user_text}"
+                formatted_message = f"{formatted_reply_context}\n\n{formatted_question}"
+            else:
+                # No user question/text, just use the formatted reply context
+                formatted_message = formatted_reply_context
+        else:
+            # No reply, format current message with current user's username
+            username = util.extract_pretty_name_from_tg_user(update.message.from_user)
+            formatted_message = f"{username}: {message_text}"
 
         # Build conversation history for group chats
         is_group = update.message.chat.type in ("group", "supergroup")
@@ -122,7 +134,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if is_group:
             messages = _build_ai_conversation_messages(
                 group_id=str(update.message.chat.id),
-                limit=20,
+                limit=50,
                 current_user_message=formatted_message,
             )
             if messages:
