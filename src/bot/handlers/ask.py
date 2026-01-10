@@ -56,8 +56,8 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Send initial "Thinking..." message
         sent_message = await update.message.reply_text("ek minute...")
 
-        # Use the unified LLM client (OpenAI for /ask command)
-        llm_client = ai.get_openai_client()
+        # Always use ChatGPT for /ask command
+        llm_client = ai.get_chatgpt_client()
 
         # Define callback for streaming updates
         async def update_message(accumulated_text: str):

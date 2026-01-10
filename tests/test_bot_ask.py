@@ -94,7 +94,7 @@ class TestHandle:
 
             mock_llm_client = MagicMock()
             mock_llm_client.generate_streaming = AsyncMock(return_value="Test response")
-            mock_ai.get_openai_client.return_value = mock_llm_client
+            mock_ai.get_chatgpt_client.return_value = mock_llm_client
 
             await ask.handle(mock_update, mock_context)
 
@@ -124,7 +124,7 @@ class TestHandle:
 
             mock_llm_client = MagicMock()
             mock_llm_client.generate_streaming = AsyncMock(return_value="Test response")
-            mock_ai.get_openai_client.return_value = mock_llm_client
+            mock_ai.get_chatgpt_client.return_value = mock_llm_client
 
             await ask.handle(mock_update, mock_context)
 
@@ -154,7 +154,7 @@ class TestHandle:
 
             mock_llm_client = MagicMock()
             mock_llm_client.generate_streaming = AsyncMock(return_value="Test response")
-            mock_ai.get_openai_client.return_value = mock_llm_client
+            mock_ai.get_chatgpt_client.return_value = mock_llm_client
 
             await ask.handle(mock_update, mock_context)
 
@@ -180,7 +180,7 @@ class TestHandle:
 
             mock_llm_client = MagicMock()
             mock_llm_client.generate_streaming = AsyncMock(return_value="Test response")
-            mock_ai.get_openai_client.return_value = mock_llm_client
+            mock_ai.get_chatgpt_client.return_value = mock_llm_client
 
             await ask.handle(mock_update, mock_context)
 

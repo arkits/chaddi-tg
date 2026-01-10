@@ -54,50 +54,41 @@ _openai_client = None
 _gemini_client = None
 _openrouter_client = None
 
-if AI_PROVIDER == "openai":
+try:
+    _openai_client = PostHogOpenAI(api_key=app_config.get("OPENAI", "API_KEY"))
+    logger.info(f"[ai] OpenAI client initialized with model {OPENAI_MODEL}")
+except Exception as e:
+    logger.debug(f"[ai] Failed to initialize OpenAI client: {e}")
     try:
-        if _posthog_available and _posthog_client:
-            _openai_client = PostHogOpenAI(
-                api_key=app_config.get("OPENAI", "API_KEY"),
-                posthog_client=_posthog_client,
-            )
-            logger.info(
-                f"[ai] OpenAI client initialized with model {OPENAI_MODEL} (PostHog enabled)"
-            )
-        else:
-            _openai_client = PostHogOpenAI(api_key=app_config.get("OPENAI", "API_KEY"))
-            logger.info(f"[ai] OpenAI client initialized with model {OPENAI_MODEL}")
-    except Exception as e:
-        logger.warning(f"[ai] Failed to initialize OpenAI client: {e}")
+        _openai_client = StandardOpenAI(api_key=app_config.get("OPENAI", "API_KEY"))
+        logger.info(f"[ai] OpenAI client initialized (standard) with model {OPENAI_MODEL}")
+    except Exception as e2:
+        logger.debug(f"[ai] Failed to initialize OpenAI client (standard): {e2}")
 
-if AI_PROVIDER == "gemini":
+try:
+    from google import genai
+
+    _gemini_client = genai.Client(api_key=app_config.get("GEMINI", "API_KEY"))
+    logger.info(f"[ai] Gemini client initialized with model {GEMINI_MODEL}")
+except Exception as e:
+    logger.debug(f"[ai] Failed to initialize Gemini client: {e}")
+
+try:
+    _openrouter_client = PostHogOpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=app_config.get("OPENROUTER", "API_KEY"),
+    )
+    logger.info(f"[ai] OpenRouter client initialized with model {OPENROUTER_MODEL}")
+except Exception as e:
+    logger.debug(f"[ai] Failed to initialize OpenRouter client: {e}")
     try:
-        from google import genai
-
-        _gemini_client = genai.Client(api_key=app_config.get("GEMINI", "API_KEY"))
-        logger.info(f"[ai] Gemini client initialized with model {GEMINI_MODEL}")
-    except Exception as e:
-        logger.warning(f"[ai] Failed to initialize Gemini client: {e}")
-
-if AI_PROVIDER == "openrouter":
-    try:
-        if _posthog_available and _posthog_client:
-            _openrouter_client = PostHogOpenAI(
-                base_url="https://openrouter.ai/api/v1",
-                api_key=app_config.get("OPENROUTER", "API_KEY"),
-                posthog_client=_posthog_client,
-            )
-            logger.info(
-                f"[ai] OpenRouter client initialized with model {OPENROUTER_MODEL} (PostHog enabled)"
-            )
-        else:
-            _openrouter_client = PostHogOpenAI(
-                base_url="https://openrouter.ai/api/v1",
-                api_key=app_config.get("OPENROUTER", "API_KEY"),
-            )
-            logger.info(f"[ai] OpenRouter client initialized with model {OPENROUTER_MODEL}")
-    except Exception as e:
-        logger.warning(f"[ai] Failed to initialize OpenRouter client: {e}")
+        _openrouter_client = StandardOpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=app_config.get("OPENROUTER", "API_KEY"),
+        )
+        logger.info(f"[ai] OpenRouter client initialized (standard) with model {OPENROUTER_MODEL}")
+    except Exception as e2:
+        logger.debug(f"[ai] Failed to initialize OpenRouter client (standard): {e2}")
 
 
 class LLMResponse:
@@ -124,6 +115,7 @@ class LLMClient:
         provider: str | None = None,
         model: str | None = None,
         models: list[str] | None = None,
+        _client=None,
     ):
         """
         Initialize LLM client.
@@ -133,8 +125,10 @@ class LLMClient:
             model: Model name. If None, uses configured default for provider.
             models: List of fallback model IDs for OpenRouter. If None, uses configured default.
                     Only used when provider is "openrouter".
+            _client: Optional client override (for internal use).
         """
         self.provider = provider or AI_PROVIDER
+        self._client_override = _client
         if self.provider == "openai":
             self.model = model or OPENAI_MODEL
             self.models = None  # Fallback models not supported for OpenAI
@@ -149,12 +143,13 @@ class LLMClient:
             self.model = model or OPENAI_MODEL
             self.models = None
 
-        if self.provider == "openai" and _openai_client is None:
-            raise ValueError("OpenAI client is not configured.")
-        if self.provider == "gemini" and _gemini_client is None:
-            raise ValueError("Gemini client is not configured.")
-        if self.provider == "openrouter" and _openrouter_client is None:
-            raise ValueError("OpenRouter client is not configured.")
+        if self._client_override is None:
+            if self.provider == "openai" and _openai_client is None:
+                raise ValueError("OpenAI client is not configured.")
+            if self.provider == "gemini" and _gemini_client is None:
+                raise ValueError("Gemini client is not configured.")
+            if self.provider == "openrouter" and _openrouter_client is None:
+                raise ValueError("OpenRouter client is not configured.")
 
     async def generate_streaming(
         self,
@@ -336,7 +331,8 @@ class LLMClient:
 
         # Stream response from OpenAI in thread pool to avoid blocking
         def stream_openai():
-            stream = _openai_client.chat.completions.create(
+            client = self._client_override or _openai_client
+            stream = client.chat.completions.create(
                 model=self.model,
                 messages=formatted_messages,
                 stream=True,
@@ -376,7 +372,8 @@ class LLMClient:
         content.append({"type": "text", "text": message_text})
 
         # Generate response from OpenAI
-        response = _openai_client.chat.completions.create(
+        client = self._client_override or _openai_client
+        response = client.chat.completions.create(
             model=self.model,
             messages=[{"role": "user", "content": content}],
             stream=False,
@@ -631,3 +628,20 @@ def get_openrouter_client(model: str | None = None, models: list[str] | None = N
         LLMClient configured for OpenRouter.
     """
     return LLMClient(provider="openrouter", model=model, models=models)
+
+
+def get_chatgpt_client(model: str | None = None) -> LLMClient:
+    """
+    Get ChatGPT (OpenAI) client - always uses OpenAI regardless of configured provider.
+
+    Args:
+        model: Model name. If None, uses configured OpenAI default model.
+
+    Returns:
+        LLMClient configured for OpenAI.
+    """
+    try:
+        client = PostHogOpenAI(api_key=app_config.get("OPENAI", "API_KEY"))
+    except Exception:
+        client = StandardOpenAI(api_key=app_config.get("OPENAI", "API_KEY"))
+    return LLMClient(provider="openai", model=model or OPENAI_MODEL, _client=client)
