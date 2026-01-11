@@ -277,7 +277,7 @@ class LLMClient:
         messages: list[dict[str, str]] | None = None,
         system_prompt: str | None = None,
         image_bytes: bytes | None = None,
-        on_chunk: Callable[[str], None] | None = None,
+        on_chunk: Callable[[str], None | Awaitable[None]] | None = None,
         update_interval: float = 1.0,
     ) -> str:
         """Generate streaming response from OpenAI."""
@@ -332,6 +332,7 @@ class LLMClient:
         # Stream response from OpenAI in thread pool to avoid blocking
         def stream_openai():
             client = self._client_override or _openai_client
+            assert client is not None, "OpenAI client not configured"
             stream = client.chat.completions.create(
                 model=self.model,
                 messages=formatted_messages,
@@ -373,6 +374,7 @@ class LLMClient:
 
         # Generate response from OpenAI
         client = self._client_override or _openai_client
+        assert client is not None, "OpenAI client not configured"
         response = client.chat.completions.create(
             model=self.model,
             messages=[{"role": "user", "content": content}],
@@ -388,7 +390,7 @@ class LLMClient:
         messages: list[dict[str, str]] | None = None,
         system_prompt: str | None = None,
         image_bytes: bytes | None = None,
-        on_chunk: Callable[[str], None] | None = None,
+        on_chunk: Callable[[str], None | Awaitable[None]] | None = None,
         update_interval: float = 1.0,
     ) -> str:
         """Generate streaming response from OpenRouter (OpenAI-compatible API)."""
@@ -451,7 +453,9 @@ class LLMClient:
             if extra_body:
                 create_kwargs["extra_body"] = extra_body
 
-            stream = _openrouter_client.chat.completions.create(**create_kwargs)
+            client = self._client_override or _openrouter_client
+            assert client is not None, "OpenRouter client not configured"
+            stream = client.chat.completions.create(**create_kwargs)
             response_text = ""
             for chunk in stream:
                 # Check if choices exist and have at least one element
@@ -501,7 +505,9 @@ class LLMClient:
         if extra_body:
             create_kwargs["extra_body"] = extra_body
 
-        response = _openrouter_client.chat.completions.create(**create_kwargs)
+        client = self._client_override or _openrouter_client
+        assert client is not None, "OpenRouter client not configured"
+        response = client.chat.completions.create(**create_kwargs)
 
         return response.choices[0].message.content or ""
 
@@ -530,12 +536,14 @@ class LLMClient:
         contents.append(message_text)
 
         # Generate response
-        response = _gemini_client.models.generate_content(
+        client = self._client_override or _gemini_client
+        assert client is not None, "Gemini client not configured"
+        response = client.models.generate_content(
             model=self.model,
             contents=contents,
         )
 
-        return response.text
+        return response.text or ""
 
     async def _generate_gemini_with_simulation(
         self,
@@ -544,7 +552,7 @@ class LLMClient:
         system_prompt: str | None = None,
         image_bytes: bytes | None = None,
         image_mime_type: str | None = None,
-        on_chunk: Callable[[str], None] | None = None,
+        on_chunk: Callable[[str], None | Awaitable[None]] | None = None,
         update_interval: float = 1.0,
     ) -> str:
         """Generate response from Gemini with simulated streaming via callbacks."""
