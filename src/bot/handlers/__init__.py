@@ -13,6 +13,7 @@ from . import (
     gamble,
     help,
     hi,
+    instagram,
     jyotish,
     mom_llm,
     mom_rake,

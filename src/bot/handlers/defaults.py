@@ -11,7 +11,7 @@ from src.bot.handlers import mom_spacy, roll
 from src.db import EMPTY_JSON, Bakchod, GroupMember, bakchod_dao, group_dao
 from src.domain import dc, rokda, util
 
-from . import antiwordle, bestie, hi, musiclinks
+from . import antiwordle, bestie, hi, instagram, musiclinks
 
 
 async def all(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -39,6 +39,8 @@ async def all(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await antiwordle.handle(update, context)
 
     await musiclinks.handle(update, context)
+
+    await instagram.handle(update, context)
 
 
 async def handle_bakchod_metadata_effects(
