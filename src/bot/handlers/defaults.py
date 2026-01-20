@@ -162,10 +162,16 @@ async def handle_dice_rolls(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def status_update(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    # Handle both message and edited_message updates
+    message = update.message or update.edited_message
+    if message is None:
+        logger.warning("[status_update] Update has no message or edited_message")
+        return
+
     g = group_dao.get_group_from_update(update)
 
     # Handle new_chat_member
-    new_chat_members = update.message.new_chat_members
+    new_chat_members = message.new_chat_members
 
     if new_chat_members is not None:
         for new_member in new_chat_members:
@@ -185,7 +191,7 @@ async def status_update(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
                 GroupMember.create(group=g, bakchod=b)
 
     # Handle left_chat_member
-    left_chat_member = update.message.left_chat_member
+    left_chat_member = message.left_chat_member
 
     if left_chat_member is not None:
         b = bakchod_dao.get_or_create_bakchod_from_tg_user(left_chat_member)

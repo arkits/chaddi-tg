@@ -23,25 +23,35 @@ def get_or_create_group_from_chat(chat: Chat) -> Group:
 def log_group_from_update(update: Update):
     # logger.debug("[log] Building Group based on update={}", update.to_json())
 
+    # Handle both message and edited_message updates
+    message = update.message or update.edited_message
+    if message is None or message.chat is None:
+        logger.warning("[log_group_from_update] Update has no message or edited_message with chat")
+        return
+
     try:
         # Check if Group exists
-        group = Group.get(Group.group_id == update.message.chat.id)
+        group = Group.get(Group.group_id == message.chat.id)
 
         # Update Group details
-        group.name = update.message.chat.title
+        group.name = message.chat.title
         group.updated = datetime.datetime.now()
         group.save()
 
     except DoesNotExist:
         # Create Group from scratch
         group = Group.create(
-            group_id=update.message.chat.id,
-            name=update.message.chat.title,
+            group_id=message.chat.id,
+            name=message.chat.title,
             created=datetime.datetime.now(),
             updated=datetime.datetime.now(),
         )
 
-    bakchod = Bakchod.get_by_id(update.message.from_user.id)
+    if message.from_user is None:
+        logger.warning("[log_group_from_update] Message has no from_user")
+        return
+
+    bakchod = Bakchod.get_by_id(message.from_user.id)
 
     try:
         _groupmember = GroupMember.get(
@@ -56,13 +66,18 @@ def log_group_from_update(update: Update):
 
 
 def get_group_from_update(update: Update) -> Group:
+    # Handle both message and edited_message updates
+    message = update.message or update.edited_message
+    if message is None or message.chat is None:
+        raise ValueError("Update has no message or edited_message with chat")
+
     try:
-        return Group.get(Group.group_id == update.message.chat.id)
+        return Group.get(Group.group_id == message.chat.id)
 
     except DoesNotExist:
         return Group.create(
-            group_id=update.message.chat.id,
-            name=update.message.chat.title,
+            group_id=message.chat.id,
+            name=message.chat.title,
             created=datetime.datetime.now(),
             updated=datetime.datetime.now(),
         )
