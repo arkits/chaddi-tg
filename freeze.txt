@@ -51,7 +51,7 @@ packaging==25.0
 pathlib-abc==0.1.1
 pathy==0.11.0
 peewee==3.18.2
-pillow==11.3.0
+pillow==12.1.1
 preshed==3.0.10
 prometheus-client==0.23.1
 psycopg2==2.9.11
