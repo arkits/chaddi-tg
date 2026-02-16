@@ -60,7 +60,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
 
         try:
-            translated = translator.translate(text=text_to_translate, dest=target_language)
+            translated = await translator.translate(text=text_to_translate, dest=target_language)
             logger.info("[translate] translated={}", translated)
 
             reply_text = f"""
