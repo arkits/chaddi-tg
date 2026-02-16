@@ -171,11 +171,15 @@ def get_group_id_from_update(update: Update):
     try:
         # Handle both message and edited_message updates
         message = update.message or update.edited_message
-        if message is not None and message.chat is not None:
-            if (
-                message.chat.id is not None and message.chat.type == "group"
-            ) or message.chat.type == "supergroup":
-                group_id = message.chat.id
+        if (
+            message is not None
+            and message.chat is not None
+            and (
+                (message.chat.id is not None and message.chat.type == "group")
+                or message.chat.type == "supergroup"
+            )
+        ):
+            group_id = message.chat.id
     except Exception:
         pass
 
