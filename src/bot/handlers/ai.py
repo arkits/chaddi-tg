@@ -173,10 +173,12 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
         # Final update
+        if not response_text or not response_text.strip():
+            response_text = "AI returned an empty response. Please try again."
+
         try:
             await sent_message.edit_text(response_text, parse_mode=ParseMode.MARKDOWN)
         except Exception:
-            # If markdown parsing fails, send without formatting
             await sent_message.edit_text(response_text)
 
         # Save the conversation to CommandUsage metadata

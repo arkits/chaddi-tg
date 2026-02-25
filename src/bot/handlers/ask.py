@@ -56,26 +56,40 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Send initial "Thinking..." message
         sent_message = await update.message.reply_text("ek minute...")
 
-        # Always use ChatGPT for /ask command
-        llm_client = ai.get_chatgpt_client()
+        # Always use OpenRouter for /ask command
+        llm_client = ai.get_openrouter_client()
+
+        # Build messages list
+        messages = [{"role": "user", "content": message}]
 
         # Define callback for streaming updates
         async def update_message(accumulated_text: str):
             with contextlib.suppress(Exception):
                 await sent_message.edit_text(accumulated_text + " ...")
 
+        system_prompt = (
+            "You are Chaddi, an AI assistant in a Telegram group."
+            "You will receive questions from users and you will answer them. "
+            "Be helpful, slightly edgy, and engaging. "
+            "Keep responses concise and appropriate for a group chat setting."
+            "Respond with just the message text in markdown format."
+        )
+
         # Generate response with streaming
         response_text = await llm_client.generate_streaming(
-            message_text=message,
+            messages=messages,
+            system_prompt=system_prompt,
             on_chunk=update_message,
             update_interval=1.0,
         )
 
         # Final update
+        if not response_text or not response_text.strip():
+            response_text = "AI returned an empty response. Please try again."
+
         try:
             await sent_message.edit_text(response_text, parse_mode=ParseMode.MARKDOWN)
         except Exception:
-            # If markdown parsing fails, send without formatting
             await sent_message.edit_text(response_text)
 
     except Exception as e:
