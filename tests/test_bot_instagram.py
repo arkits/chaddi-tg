@@ -143,19 +143,28 @@ async def test_handle_no_media_url(mock_update, mock_context):
 
 @pytest.mark.asyncio
 async def test_handle_exception(mock_update, mock_context):
-    """Test handler exception handling"""
+    """Test handler exception handling - should send error message when media cannot be fetched"""
     mock_update.message.text = "https://www.instagram.com/p/DS4bo50DSXI/"
 
-    with patch("src.bot.handlers.instagram.instaloader.Instaloader") as mock_instaloader_class:
+    with (
+        patch("src.bot.handlers.instagram.instaloader.Instaloader") as mock_instaloader_class,
+        patch("src.bot.handlers.instagram.httpx.AsyncClient") as mock_async_client_class,
+    ):
         mock_loader = MagicMock()
         mock_instaloader_class.return_value = mock_loader
 
         from instaloader import Post
 
         with patch.object(Post, "from_shortcode", side_effect=Exception("Network error")):
+            mock_client = AsyncMock()
+            mock_client.get.side_effect = Exception("API error")
+            mock_async_client_class.return_value.__aenter__.return_value = mock_client
+
             await instagram.handle(mock_update, mock_context)
 
-    assert not mock_update.message.reply_text.called
+    mock_update.message.reply_text.assert_called_once_with(
+        "Could not find media in this Instagram post."
+    )
     assert not mock_update.message.reply_video.called
     assert not mock_update.message.reply_photo.called
 
