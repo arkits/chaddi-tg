@@ -108,7 +108,6 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if not media_url:
         logger.warning("[instagram] could not extract media URL")
-        await update.message.reply_text("Could not find media in this Instagram post.")
         return
 
     try:

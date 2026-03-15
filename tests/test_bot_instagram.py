@@ -136,14 +136,14 @@ async def test_handle_no_media_url(mock_update, mock_context):
         with patch.object(Post, "from_shortcode", return_value=mock_post):
             await instagram.handle(mock_update, mock_context)
 
-    mock_update.message.reply_text.assert_called_once_with(
-        "Could not find media in this Instagram post."
-    )
+    assert not mock_update.message.reply_text.called
+    assert not mock_update.message.reply_video.called
+    assert not mock_update.message.reply_photo.called
 
 
 @pytest.mark.asyncio
 async def test_handle_exception(mock_update, mock_context):
-    """Test handler exception handling - should send error message when media cannot be fetched"""
+    """Test handler exception handling - should not send any message when media cannot be fetched"""
     mock_update.message.text = "https://www.instagram.com/p/DS4bo50DSXI/"
 
     with (
@@ -162,9 +162,7 @@ async def test_handle_exception(mock_update, mock_context):
 
             await instagram.handle(mock_update, mock_context)
 
-    mock_update.message.reply_text.assert_called_once_with(
-        "Could not find media in this Instagram post."
-    )
+    assert not mock_update.message.reply_text.called
     assert not mock_update.message.reply_video.called
     assert not mock_update.message.reply_photo.called
 
