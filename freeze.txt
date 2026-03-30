@@ -58,7 +58,7 @@ psycopg2==2.9.11
 pycparser==2.23
 pydantic==2.12.3
 pydantic-core==2.41.4
-pygments==2.19.2
+pygments==2.20.0
 python-dateutil==2.9.0.post0
 python-dotenv==1.1.1
 python-engineio==4.12.3
