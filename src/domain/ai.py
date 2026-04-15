@@ -26,6 +26,8 @@ GEMINI_MODEL = app_config.get("AI", "GEMINI_MODEL", fallback="gemini-2.5-flash")
 OPENROUTER_MODEL = app_config.get("AI", "OPENROUTER_MODEL", fallback="moonshotai/kimi-k2-0905")
 # Optional fallback models for OpenRouter (comma-separated list)
 OPENROUTER_FALLBACK_MODELS = app_config.get("AI", "OPENROUTER_FALLBACK_MODELS", fallback="")
+# Enable web search server tool for OpenRouter requests
+OPENROUTER_WEB_SEARCH = app_config.getboolean("AI", "OPENROUTER_WEB_SEARCH", fallback=True)
 # Parse fallback models into a list if configured
 _openrouter_fallback_models = (
     [m.strip() for m in OPENROUTER_FALLBACK_MODELS.split(",") if m.strip()]
@@ -444,11 +446,17 @@ class LLMClient:
             if self.models:
                 extra_body["models"] = self.models
 
+            tools = []
+            if OPENROUTER_WEB_SEARCH:
+                tools.append({"type": "openrouter:web_search"})
+            tools.append({"type": "openrouter:datetime"})
+
             create_kwargs = {
                 "model": self.model,
                 "messages": formatted_messages,
                 "stream": True,
                 "max_completion_tokens": 2000,
+                "tools": tools,
             }
             if extra_body:
                 create_kwargs["extra_body"] = extra_body
@@ -504,6 +512,11 @@ class LLMClient:
         }
         if extra_body:
             create_kwargs["extra_body"] = extra_body
+        tools = []
+        if OPENROUTER_WEB_SEARCH:
+            tools.append({"type": "openrouter:web_search"})
+        tools.append({"type": "openrouter:datetime"})
+        create_kwargs["tools"] = tools
 
         client = self._client_override or _openrouter_client
         assert client is not None, "OpenRouter client not configured"

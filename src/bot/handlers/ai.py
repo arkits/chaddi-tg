@@ -153,13 +153,17 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await sent_message.edit_text(accumulated_text + " ...")
 
         # System prompt for the AI assistant
+        current_datetime = datetime.now().strftime("%A, %B %d, %Y %H:%M %Z")
         system_prompt = (
-            "You are Chaddi, an AI assistant in a Telegram group."
+            f"You are Chaddi, an AI assistant in a Telegram group. "
+            f"The current date and time is {current_datetime}. "
             "You will receive messages from users and you will respond to them. "
             "Be helpful, slightly edgy, and engaging. "
-            "Keep responses concise and appropriate for a group chat setting."
+            "Keep responses concise and appropriate for a group chat setting. "
             "You will receive messages from users in the format of `username: message`. "
-            "Respond with just the message text in markdown format; don't prefix your response with `Chaddi:`"
+            "Respond with just the message text in markdown format; don't prefix your response with `Chaddi:`. "
+            "You have access to real-time web search — use it for any question "
+            "about current events, recent news, sports results, or anything time-sensitive."
         )
 
         # Generate response with streaming
