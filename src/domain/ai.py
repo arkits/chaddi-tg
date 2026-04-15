@@ -23,7 +23,7 @@ logger.info(f"[ai] AI_PROVIDER: {AI_PROVIDER}")
 # Model names
 OPENAI_MODEL = app_config.get("AI", "OPENAI_MODEL", fallback="gpt-5-nano-2025-08-07")
 GEMINI_MODEL = app_config.get("AI", "GEMINI_MODEL", fallback="gemini-2.5-flash")
-OPENROUTER_MODEL = app_config.get("AI", "OPENROUTER_MODEL", fallback="moonshotai/kimi-k2-0905")
+OPENROUTER_MODEL = app_config.get("AI", "OPENROUTER_MODEL", fallback="moonshotai/kimi-k2.5")
 # Optional fallback models for OpenRouter (comma-separated list)
 OPENROUTER_FALLBACK_MODELS = app_config.get("AI", "OPENROUTER_FALLBACK_MODELS", fallback="")
 # Enable web search server tool for OpenRouter requests
