@@ -44,7 +44,7 @@ markdown-it-py==3.0.0
 markupsafe==3.0.3
 mdurl==0.1.2
 murmurhash==1.0.13
-nltk==3.9.2
+nltk==3.9.4
 numpy==2.0.2
 openai==2.6.0
 packaging==25.0
