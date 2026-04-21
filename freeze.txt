@@ -60,7 +60,7 @@ pydantic==2.12.3
 pydantic-core==2.41.4
 pygments==2.19.2
 python-dateutil==2.9.0.post0
-python-dotenv==1.1.1
+python-dotenv==1.2.2
 python-engineio==4.12.3
 python-multipart==0.0.22
 python-socketio==5.14.2
