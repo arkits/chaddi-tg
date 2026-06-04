@@ -124,6 +124,11 @@ dependencies = [
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/84/85/57c314a6b35336efbbdc13e5fc9ae13f6b60a0647cfa7c1221178ac6d8ae/brotlicffi-1.2.0.0.tar.gz", hash = "sha256:34345d8d1f9d534fcac2249e57a4c3c8801a33c9942ff9f8574f67a175e17adb", size = 476682, upload-time = "2025-11-21T18:17:57.334Z" }
 wheels = [
+    { url = "https://files.pythonhosted.org/packages/7c/87/ba6298c3d7f8d66ce80d7a487f2a487ebae74a79c6049c7c2990178ce529/brotlicffi-1.2.0.0-cp314-cp314t-macosx_11_0_arm64.whl", hash = "sha256:b13fb476a96f02e477a506423cb5e7bc21e0e3ac4c060c20ba31c44056e38c68", size = 433038, upload-time = "2026-03-05T17:57:37.96Z" },
+    { url = "https://files.pythonhosted.org/packages/00/49/16c7a77d1cae0519953ef0389a11a9c2e2e62e87d04f8e7afbae40124255/brotlicffi-1.2.0.0-cp314-cp314t-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:17db36fb581f7b951635cd6849553a95c6f2f53c1a707817d06eae5aeff5f6af", size = 1541124, upload-time = "2026-03-05T17:57:39.488Z" },
+    { url = "https://files.pythonhosted.org/packages/e8/17/fab2c36ea820e2288f8c1bf562de1b6cd9f30e28d66f1ce2929a4baff6de/brotlicffi-1.2.0.0-cp314-cp314t-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:40190192790489a7b054312163d0ce82b07d1b6e706251036898ce1684ef12e9", size = 1541983, upload-time = "2026-03-05T17:57:41.061Z" },
+    { url = "https://files.pythonhosted.org/packages/78/c9/849a669b3b3bb8ac96005cdef04df4db658c33443a7fc704a6d4a2f07a56/brotlicffi-1.2.0.0-cp314-cp314t-win32.whl", hash = "sha256:a8079e8ecc32ecef728036a1d9b7105991ce6a5385cf51ee8c02297c90fb08c2", size = 349046, upload-time = "2026-03-05T17:57:42.76Z" },
+    { url = "https://files.pythonhosted.org/packages/a4/25/09c0fd21cfc451fa38ad538f4d18d8be566746531f7f27143f63f8c45a9f/brotlicffi-1.2.0.0-cp314-cp314t-win_amd64.whl", hash = "sha256:ca90c4266704ca0a94de8f101b4ec029624273380574e4cf19301acfa46c61a0", size = 385653, upload-time = "2026-03-05T17:57:44.224Z" },
     { url = "https://files.pythonhosted.org/packages/e4/df/a72b284d8c7bef0ed5756b41c2eb7d0219a1dd6ac6762f1c7bdbc31ef3af/brotlicffi-1.2.0.0-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:9458d08a7ccde8e3c0afedbf2c70a8263227a68dea5ab13590593f4c0a4fd5f4", size = 432340, upload-time = "2025-11-21T18:17:42.277Z" },
     { url = "https://files.pythonhosted.org/packages/74/2b/cc55a2d1d6fb4f5d458fba44a3d3f91fb4320aa14145799fd3a996af0686/brotlicffi-1.2.0.0-cp38-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:84e3d0020cf1bd8b8131f4a07819edee9f283721566fe044a20ec792ca8fd8b7", size = 1534002, upload-time = "2025-11-21T18:17:43.746Z" },
     { url = "https://files.pythonhosted.org/packages/e4/9c/d51486bf366fc7d6735f0e46b5b96ca58dc005b250263525a1eea3cd5d21/brotlicffi-1.2.0.0-cp38-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:33cfb408d0cff64cd50bef268c0fed397c46fbb53944aa37264148614a62e990", size = 1536547, upload-time = "2025-11-21T18:17:45.729Z" },
@@ -305,7 +310,7 @@ requires-dist = [
     { name = "shortuuid", specifier = ">=1.0.13" },
     { name = "spacy", specifier = ">=3.8.7" },
     { name = "spacy-legacy", specifier = ">=3.0.12" },
-    { name = "starlette", specifier = ">=0.48.0" },
+    { name = "starlette", specifier = ">=1.0.1" },
     { name = "starlette-exporter", specifier = ">=0.23.0" },
     { name = "typer", specifier = ">=0.21.0" },
     { name = "tzlocal", specifier = ">=5.3.1" },
@@ -506,17 +511,18 @@ wheels = [
 
 [[package]]
 name = "fastapi"
-version = "0.127.1"
+version = "0.136.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "annotated-doc" },
     { name = "pydantic" },
     { name = "starlette" },
     { name = "typing-extensions" },
+    { name = "typing-inspection" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/96/8a/6b9ba6eb8ff3817caae83120495965d9e70afb4d6348cb120e464ee199f4/fastapi-0.127.1.tar.gz", hash = "sha256:946a87ee5d931883b562b6bada787d6c8178becee2683cb3f9b980d593206359", size = 391876, upload-time = "2025-12-26T13:04:47.075Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/81/2d/ff8d91d7b564d464629a0fd50a4489c97fcb836ac230bf3a7269232a9b1f/fastapi-0.136.3.tar.gz", hash = "sha256:e487fae93ad408e6f47641ee4dfe389864fd7bec92e547ea8498fc13f43e83ab", size = 396410, upload-time = "2026-05-23T18:53:15.192Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d2/f3/a6858d147ed2645c095d11dc2440f94a5f1cd8f4df888e3377e6b5281a0f/fastapi-0.127.1-py3-none-any.whl", hash = "sha256:31d670a4f9373cc6d7994420f98e4dc46ea693145207abc39696746c83a44430", size = 112332, upload-time = "2025-12-26T13:04:45.329Z" },
+    { url = "https://files.pythonhosted.org/packages/e0/82/45359b62a067409bd929ae8a56b8ed13e5a8c8a61194b3c236920999ab83/fastapi-0.136.3-py3-none-any.whl", hash = "sha256:3d2a69bdf04b7e9f3afa292c3bc7a98816bbfafa10bc9b45f3f3700d2f761620", size = 117481, upload-time = "2026-05-23T18:53:16.924Z" },
 ]
 
 [[package]]
@@ -1905,14 +1911,14 @@ wheels = [
 
 [[package]]
 name = "starlette"
-version = "0.50.0"
+version = "1.0.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ba/b8/73a0e6a6e079a9d9cfa64113d771e421640b6f679a52eeb9b32f72d871a1/starlette-0.50.0.tar.gz", hash = "sha256:a2a17b22203254bcbc2e1f926d2d55f3f9497f769416b3190768befe598fa3ca", size = 2646985, upload-time = "2025-11-01T15:25:27.516Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/08/a3/84e821cc54b4ab50ae6dbc6ac3800a651b65ec35f045cc73785380654057/starlette-1.0.1.tar.gz", hash = "sha256:512399c5f1de7fac99c88572212ded9ddeddef2fb32afa82d724000e88b38f4f", size = 2659596, upload-time = "2026-05-21T21:58:58.433Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d9/52/1064f510b141bd54025f9b55105e26d1fa970b9be67ad766380a3c9b74b0/starlette-0.50.0-py3-none-any.whl", hash = "sha256:9e5391843ec9b6e472eed1365a78c8098cfceb7a74bfd4d6b1c0c0095efb3bca", size = 74033, upload-time = "2025-11-01T15:25:25.461Z" },
+    { url = "https://files.pythonhosted.org/packages/ec/e1/b2df4bc09a1e51ff664c1e17018a4274b42e5e9352e4a478ea540512dc88/starlette-1.0.1-py3-none-any.whl", hash = "sha256:7c0e69b2ee1c848bd54669d908500117a3ee13de603a21427e5c6fc1adf98dcd", size = 72802, upload-time = "2026-05-21T21:58:56.551Z" },
 ]
 
 [[package]]

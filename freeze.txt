@@ -85,7 +85,7 @@ spacy==3.8.7
 spacy-legacy==3.0.12
 spacy-loggers==1.0.5
 srsly==2.5.1
-starlette==0.48.0
+starlette==1.0.1
 starlette-exporter==0.23.0
 thinc==8.3.6
 tornado==6.5.2
