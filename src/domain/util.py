@@ -124,9 +124,10 @@ def fetch_random_unsplash_photo_path(
         "Authorization": f"Client-ID {UNSPLASH_ACCESS_KEY}",
         "Accept-Version": "v1",
     }
+    orientation = "squarish" if width == height else "landscape"
     params = {
         "query": query,
-        "orientation": "landscape",
+        "orientation": orientation,
     }
 
     logger.info(

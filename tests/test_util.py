@@ -265,7 +265,7 @@ def test_fetch_random_unsplash_photo_path_success(mock_get, mock_acquire):
     mock_acquire.return_value = "resources/external/test.jpg"
 
     with patch("src.domain.util.UNSPLASH_ACCESS_KEY", "test-access-key"):
-        result = fetch_random_unsplash_photo_path(1280, 720, query="nature,water,india")
+        result = fetch_random_unsplash_photo_path(1280, 1280, query="nature,water,india")
 
     assert result == "resources/external/test.jpg"
     assert mock_get.call_count == 2
@@ -274,11 +274,11 @@ def test_fetch_random_unsplash_photo_path_success(mock_get, mock_acquire):
     assert random_photo_call.args[0] == "https://api.unsplash.com/photos/random"
     assert random_photo_call.kwargs["params"] == {
         "query": "nature,water,india",
-        "orientation": "landscape",
+        "orientation": "squarish",
     }
     assert random_photo_call.kwargs["headers"]["Authorization"] == "Client-ID test-access-key"
 
     mock_acquire.assert_called_once_with(
-        "https://images.unsplash.com/photo-123?ixid=abc&w=1280&h=720&fit=crop&fm=jpg",
+        "https://images.unsplash.com/photo-123?ixid=abc&w=1280&h=1280&fit=crop&fm=jpg",
         mock_acquire.call_args.args[1],
     )

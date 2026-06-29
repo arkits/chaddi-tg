@@ -4,16 +4,31 @@ import pytest
 from PIL import Image, ImageDraw, ImageFont
 
 from src.bot.handlers.tynm import (
+    FONT_POOL_GREETING,
+    POSTER_HEIGHT,
+    POSTER_LAYOUTS,
+    POSTER_SIZE,
+    POSTER_WIDTH,
     add_decorative_elements,
     add_fancy_border,
+    add_poster_bottom_banner,
+    add_poster_decorations,
     add_thank_you_text,
+    apply_modi_layout,
     build_file_path,
+    choose_poster_layout,
+    create_saffron_gradient,
+    draw_centered_multiline_in_box,
     draw_firework,
     draw_flower,
     extract_reply_text,
     generate_wrapped_caption,
+    get_poster_caption_font_size,
     handle,
+    load_font_from_pool,
+    make_circular_portrait,
     measure_text,
+    pick_distinct_tynm_images,
     place_image,
 )
 
@@ -211,6 +226,79 @@ class TestAddDecorativeElements:
         img = Image.new("RGB", (1000, 800), color=(255, 255, 255))
         result = add_decorative_elements(img)
         assert result.size == (1000, 800)
+
+
+class TestPosterHelpers:
+    """Tests for poster-style tynm helpers."""
+
+    def test_poster_is_square(self):
+        assert POSTER_WIDTH == POSTER_HEIGHT == POSTER_SIZE == 1280
+
+    def test_create_saffron_gradient_size(self):
+        result = create_saffron_gradient(POSTER_WIDTH, POSTER_HEIGHT)
+        assert result.mode == "RGBA"
+        assert result.size == (POSTER_WIDTH, POSTER_HEIGHT)
+
+    def test_choose_poster_layout(self):
+        layout = choose_poster_layout()
+        assert layout in POSTER_LAYOUTS
+
+    def test_apply_modi_layout(self):
+        img = create_saffron_gradient(POSTER_WIDTH, POSTER_HEIGHT)
+        foreground_modi = Image.new("RGBA", (200, 400), color=(255, 0, 0, 255))
+        watermark_modi = Image.new("RGBA", (180, 360), color=(0, 255, 0, 255))
+        layout = POSTER_LAYOUTS[0]
+        result = apply_modi_layout(img, foreground_modi, watermark_modi, layout)
+        assert result.size == (POSTER_WIDTH, POSTER_HEIGHT)
+
+    def test_pick_distinct_tynm_images(self):
+        files = ["a.png", "b.png", "c.png"]
+        result = pick_distinct_tynm_images(files, 2)
+        assert len(result) == 2
+        assert result[0] != result[1]
+
+    def test_pick_distinct_tynm_images_single_file_fallback(self):
+        result = pick_distinct_tynm_images(["only.png"], 2)
+        assert result == ["only.png", "only.png"]
+
+    def test_load_font_from_pool(self):
+        font = load_font_from_pool(FONT_POOL_GREETING, 32)
+        assert font is not None
+
+    def test_draw_centered_multiline_in_box(self):
+        img = create_saffron_gradient(POSTER_WIDTH, POSTER_HEIGHT)
+        draw = ImageDraw.Draw(img)
+        font = ImageFont.load_default()
+        draw_centered_multiline_in_box(
+            draw,
+            (100, 100, 500, 300),
+            "centered\nmessage",
+            font,
+            (255, 255, 255),
+        )
+        assert img.size == (POSTER_WIDTH, POSTER_HEIGHT)
+
+    def test_get_poster_caption_font_size(self):
+        assert get_poster_caption_font_size(2) == 58
+        assert get_poster_caption_font_size(5) == 44
+        assert get_poster_caption_font_size(11) == 28
+
+    def test_make_circular_portrait(self):
+        profile = Image.new("RGB", (300, 400), color=(100, 150, 200))
+        result = make_circular_portrait(profile, 120)
+        assert result.mode == "RGBA"
+        assert result.size[0] == result.size[1]
+
+    def test_add_poster_bottom_banner(self):
+        img = create_saffron_gradient(POSTER_WIDTH, POSTER_HEIGHT)
+        result = add_poster_bottom_banner(img, "~ testuser", "01/01/2026, 08:00 AM", "Test Group")
+        assert result.size == (POSTER_WIDTH, POSTER_HEIGHT)
+
+    def test_add_poster_decorations(self):
+        img = create_saffron_gradient(POSTER_WIDTH, POSTER_HEIGHT)
+        result = add_poster_decorations(img)
+        assert result.mode == "RGBA"
+        assert result.size == (POSTER_WIDTH, POSTER_HEIGHT)
 
 
 class TestPlaceImage:
