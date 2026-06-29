@@ -1,7 +1,7 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 
 from src.bot.handlers.tynm import (
     add_decorative_elements,
@@ -10,10 +10,52 @@ from src.bot.handlers.tynm import (
     build_file_path,
     draw_firework,
     draw_flower,
+    extract_reply_text,
     generate_wrapped_caption,
     handle,
+    measure_text,
     place_image,
 )
+
+
+class TestExtractReplyText:
+    """Tests for extract_reply_text function."""
+
+    def test_extracts_text(self):
+        reply = MagicMock()
+        reply.text = "https://github.com/arkits/chaddi-tg"
+        reply.caption = None
+        assert extract_reply_text(reply) == "https://github.com/arkits/chaddi-tg"
+
+    def test_extracts_caption_when_no_text(self):
+        reply = MagicMock()
+        reply.text = None
+        reply.caption = "caption text"
+        assert extract_reply_text(reply) == "caption text"
+
+    def test_prefers_text_over_caption(self):
+        reply = MagicMock()
+        reply.text = "message text"
+        reply.caption = "caption text"
+        assert extract_reply_text(reply) == "message text"
+
+    def test_returns_none_when_empty(self):
+        reply = MagicMock()
+        reply.text = None
+        reply.caption = None
+        assert extract_reply_text(reply) is None
+
+
+class TestMeasureText:
+    """Tests for measure_text function."""
+
+    def test_measure_text_returns_dimensions(self):
+        img = Image.new("RGBA", (100, 100))
+        draw = ImageDraw.Draw(img)
+        font = ImageFont.load_default()
+        width, height = measure_text(draw, "hello", font)
+        assert width > 0
+        assert height > 0
 
 
 class TestGenerateWrappedCaption:
@@ -296,6 +338,29 @@ class TestHandle:
         await handle(mock_update, mock_context)
         mock_update.message.reply_text.assert_called_once_with(
             "No TYNM images available. Please contact admin."
+        )
+
+    @pytest.mark.asyncio
+    @patch("src.bot.handlers.tynm.os.path.exists")
+    @patch("src.bot.handlers.tynm.os.listdir")
+    @patch("src.bot.handlers.tynm.Image.open")
+    @patch("src.bot.handlers.tynm.util.choose_random_element_from_list")
+    async def test_handle_unsupported_reply_type(
+        self, mock_choose, mock_open, mock_listdir, mock_exists, mock_update, mock_context
+    ):
+        mock_exists.return_value = True
+        mock_listdir.return_value = ["test.png"]
+        mock_choose.return_value = "test.png"
+        mock_open.return_value = Image.new("RGBA", (100, 100), color=(255, 255, 255, 255))
+
+        reply_message = mock_update.message.reply_to_message
+        reply_message.text = None
+        reply_message.caption = None
+        reply_message.photo = None
+
+        await handle(mock_update, mock_context)
+        mock_update.message.reply_text.assert_called_once_with(
+            "Please reply to a photo or text message with `/tynm`"
         )
 
     @pytest.mark.asyncio

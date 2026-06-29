@@ -21,6 +21,21 @@ PNG_EXTENSION = ".png"
 NM_IMG_LOCATIONS = ["bottom_right", "bottom_left", "top_right", "top_left", "center"]
 
 
+def extract_reply_text(reply_message) -> str | None:
+    if reply_message.text:
+        return reply_message.text
+    if reply_message.caption:
+        return reply_message.caption
+    return None
+
+
+def measure_text(
+    draw: ImageDraw.ImageDraw, text: str, font: ImageFont.FreeTypeFont
+) -> tuple[int, int]:
+    bbox = draw.textbbox((0, 0), text, font=font)
+    return bbox[2] - bbox[0], bbox[3] - bbox[1]
+
+
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         dc.log_command_usage("tynm", update)
@@ -68,8 +83,11 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("Failed to load image. Please try again later.")
             return
 
+        reply_message = update.message.reply_to_message
+        reply_text = extract_reply_text(reply_message)
+
         # Handle photo message
-        if getattr(update.message.reply_to_message, "photo", None):
+        if getattr(reply_message, "photo", None):
             try:
                 file = await acquire_file(update, context)
 
@@ -109,11 +127,11 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
                 await update.message.reply_text("Failed to process photo. Please try again.")
 
-        # Handle text message
-        elif update.message.reply_to_message.text:
+        # Handle text or captioned reply (e.g. reply to a URL or message with /tynm)
+        elif reply_text:
             unsplash_photo_path = None
 
-            text = update.message.reply_to_message.text
+            text = reply_text
 
             # variables for image size
             x1 = 1280
@@ -148,11 +166,9 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             # Add user profile picture background
             try:
                 # User profile picture composition
-                user_id = update.message.reply_to_message.from_user.id
+                user_id = reply_message.from_user.id
                 user_profile_photo_path = path.join(EXTERNAL_DIR, str(user_id) + ".webp")
-                user_profile_photos = (
-                    await update.message.reply_to_message.from_user.get_profile_photos(limit=1)
-                )
+                user_profile_photos = await reply_message.from_user.get_profile_photos(limit=1)
 
                 if not user_profile_photos or not getattr(user_profile_photos, "photos", None):
                     raise ValueError("No profile photo available for the user")
@@ -248,19 +264,18 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 font_username_size,
             )
 
-            _caption_w, caption_h = draw.textsize(caption, font=font_caption)
+            _caption_w, caption_h = measure_text(draw, caption, font_caption)
 
             # Generate the username
-            username = "~ " + util.extract_pretty_name_from_tg_user(
-                update.message.reply_to_message.from_user
-            )
-            _username_w, username_h = draw.textsize(username, font=font_username)
+            username = "~ " + util.extract_pretty_name_from_tg_user(reply_message.from_user)
+            _username_w, username_h = measure_text(draw, username, font=font_username)
 
             # Generate the timestamp of the message
-            timestamp = util.normalize_datetime(update.message.reply_to_message.date)
+            timestamp = util.normalize_datetime(reply_message.date)
             timestamp_str = timestamp.strftime("%d/%m/%Y, %I:%M %p")
-            timestamp_str += f"\n {update.message.reply_to_message.chat.title}"
-            _timestamp_w, timestamp_h = draw.textsize(timestamp_str, font=font_subtitle)
+            if reply_message.chat.title:
+                timestamp_str += f"\n {reply_message.chat.title}"
+            _timestamp_w, timestamp_h = measure_text(draw, timestamp_str, font=font_subtitle)
 
             # Calculate the position of the caption
             caption_x, caption_y = (
@@ -315,7 +330,13 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
 
             util.delete_file(img_path)
-            util.delete_file(unsplash_photo_path)
+            if unsplash_photo_path:
+                util.delete_file(unsplash_photo_path)
+
+        else:
+            await update.message.reply_text(
+                "Please reply to a photo or text message with `/tynm`",
+            )
 
         return
 
@@ -517,13 +538,7 @@ def add_thank_you_text(img: Image) -> Image:
         font = ImageFont.load_default()
 
     # Get text dimensions
-    try:
-        bbox = draw.textbbox((0, 0), text, font=font)
-        text_width = bbox[2] - bbox[0]
-        text_height = bbox[3] - bbox[1]
-    except AttributeError:
-        # Fallback for older PIL versions
-        text_width, text_height = draw.textsize(text, font=font)
+    text_width, text_height = measure_text(draw, text, font)
 
     # Position text at bottom center with padding
     text_x = (img_width - text_width) // 2
