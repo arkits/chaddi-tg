@@ -3,7 +3,6 @@ import os
 import random
 import textwrap
 import traceback
-import uuid
 from os import path
 
 from loguru import logger
@@ -141,20 +140,14 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             # Add unsplash background
             try:
-                # Download image from unsplash
-                unsplash_img_url = (
-                    f"https://source.unsplash.com/random/{x1}x{y1}/?nature,water,india"
-                )
+                unsplash_photo_path = util.fetch_random_unsplash_photo_path(x1, y1)
+                if unsplash_photo_path:
+                    unsplash_photo = Image.open(unsplash_photo_path).resize((x1, y1))
 
-                unsplash_photo_path = util.acquire_external_resource(
-                    unsplash_img_url, f"{uuid.uuid4()}.jpg"
-                )
-                unsplash_photo = Image.open(unsplash_photo_path).resize((x1, y1))
+                    unsplash_photo_holder = Image.new("RGBA", (x1, y1), color=(0, 0, 0))
+                    unsplash_photo_holder.paste(unsplash_photo, (0, 0))
 
-                unsplash_photo_holder = Image.new("RGBA", (x1, y1), color=(0, 0, 0))
-                unsplash_photo_holder.paste(unsplash_photo, (0, 0))
-
-                img = Image.blend(img, unsplash_photo_holder, 0.1)
+                    img = Image.blend(img, unsplash_photo_holder, 0.1)
 
             except Exception as e:
                 logger.warning(

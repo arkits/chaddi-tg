@@ -1,6 +1,7 @@
 import json
 import os
 import random
+import uuid
 from datetime import datetime
 
 import en_core_web_sm
@@ -25,6 +26,8 @@ RESOURCES_DIR = "resources/"
 
 IST_TIMEZONE = pytz.timezone("Asia/Kolkata")
 UTC_TIMEZONE = pytz.timezone("UTC")
+UNSPLASH_RANDOM_PHOTO_URL = "https://api.unsplash.com/photos/random"
+UNSPLASH_ACCESS_KEY = app_config.get("UNSPLASH", "ACCESS_KEY", fallback=None)
 
 # Read verbLookupTable on startup
 with open("resources/verb-past-lookup.json") as verb_past_lookup_file:
@@ -101,6 +104,58 @@ def acquire_external_resource(resource_url, resource_name):
         )
 
     return resource_path
+
+
+def build_unsplash_image_url(raw_url: str, width: int, height: int) -> str:
+    separator = "&" if "?" in raw_url else "?"
+    return f"{raw_url}{separator}w={width}&h={height}&fit=crop&fm=jpg"
+
+
+def fetch_random_unsplash_photo_path(
+    width: int,
+    height: int,
+    query: str = "nature,water,india",
+) -> str | None:
+    if not UNSPLASH_ACCESS_KEY or UNSPLASH_ACCESS_KEY == "YOUR_UNSPLASH_ACCESS_KEY":
+        logger.warning("[fetch_random_unsplash_photo_path] Unsplash ACCESS_KEY not configured")
+        return None
+
+    headers = {
+        "Authorization": f"Client-ID {UNSPLASH_ACCESS_KEY}",
+        "Accept-Version": "v1",
+    }
+    params = {
+        "query": query,
+        "orientation": "landscape",
+    }
+
+    logger.info(
+        "[fetch_random_unsplash_photo_path] fetching random photo query={} size={}x{}",
+        query,
+        width,
+        height,
+    )
+    response = requests.get(
+        UNSPLASH_RANDOM_PHOTO_URL,
+        params=params,
+        headers=headers,
+        timeout=30,
+    )
+    response.raise_for_status()
+    photo = response.json()
+
+    image_url = build_unsplash_image_url(photo["urls"]["raw"], width, height)
+    download_location = photo.get("links", {}).get("download_location")
+    if download_location:
+        try:
+            requests.get(download_location, headers=headers, timeout=10)
+        except Exception as e:
+            logger.warning(
+                "[fetch_random_unsplash_photo_path] failed to track Unsplash download e={}",
+                e,
+            )
+
+    return acquire_external_resource(image_url, f"{uuid.uuid4()}.jpg")
 
 
 def choose_random_element_from_list(input_list):
@@ -187,10 +242,8 @@ def get_group_id_from_update(update: Update):
 
 
 def normalize_datetime(dt: datetime):
-    if dt.tzinfo is None:
-        dt = UTC_TIMEZONE.localize(dt)
-
-    return IST_TIMEZONE.normalize(dt)
+    dt = UTC_TIMEZONE.localize(dt) if dt.tzinfo is None else dt.astimezone(UTC_TIMEZONE)
+    return dt.astimezone(IST_TIMEZONE)
 
 
 def extract_magic_word(target_message):

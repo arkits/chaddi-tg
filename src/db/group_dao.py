@@ -92,7 +92,7 @@ def get_group_by_id(group_id: str) -> Group:
 
 
 def get_all_groupmembers_by_group_id(group_id: str):
-    groupmembers = GroupMember.select().limit(100).where(GroupMember.group_id == group_id).execute()
+    groupmembers = GroupMember.select().where(GroupMember.group_id == group_id).limit(100).execute()
 
     return groupmembers
 

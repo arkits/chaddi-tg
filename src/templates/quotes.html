@@ -1,9 +1,0 @@
-{% extends "base.html" %} {% block title %}Quotes{% endblock %} {% block head %}
-{{ super() }} {% endblock %} {% block content %}
-<div class="container-lg">
-  <h1>{{quotes_count | tonumber_pretty}} Quotes</h1>
-
-  {% with quotes=quotes %} {% include "partials/quotes_list.html" %} {% endwith
-  %}
-</div>
-{% endblock %}

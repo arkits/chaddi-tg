@@ -139,19 +139,10 @@ def generate_pretty_quote(quote: Quote):
 
 
 def get_random_quote_from_group(group_id: str) -> Quote:
-    all_quotes_in_group = Quote.select().where(Quote.quoted_in_group == group_id).execute()
+    count = Quote.select().where(Quote.quoted_in_group == group_id).count()
 
-    all_quotes = []
-
-    if len(all_quotes_in_group) > 0:
-        for quote in all_quotes_in_group:
-            all_quotes.append(quote)
-
-        random.shuffle(all_quotes)
-
-        random_quote = random.choice(all_quotes)
-
-        return random_quote
-
-    else:
+    if count == 0:
         return None
+
+    offset = random.randint(0, count - 1)
+    return Quote.select().where(Quote.quoted_in_group == group_id).offset(offset).limit(1).first()

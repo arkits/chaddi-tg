@@ -68,6 +68,7 @@ exclude = [
     "__pycache__",
     "build",
     "dist",
+    "frontend/node_modules",
 ]
 
 # Set line length to 100 characters

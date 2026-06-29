@@ -146,9 +146,18 @@ class TestQuotes:
         mock_quote_obj.quote_id = 1
         mock_quote_obj.text = "Test quote"
 
-        mock_query = MagicMock()
-        mock_query.execute.return_value = [mock_quote_obj]
-        mock_quote.select.return_value.where.return_value = mock_query
+        mock_count_query = MagicMock()
+        mock_count_query.count.return_value = 5
+
+        mock_select_query = MagicMock()
+        mock_select_query.where.return_value = mock_count_query
+
+        mock_quote.select.return_value = mock_select_query
+
+        mock_quote.select.return_value.where.return_value.count.return_value = 5
+        mock_quote.select.return_value.where.return_value.offset.return_value.first.return_value = (
+            mock_quote_obj
+        )
 
         result = quotes.get_random_quote_from_group("-1001234567890")
 
@@ -157,9 +166,7 @@ class TestQuotes:
     @patch("src.bot.handlers.quotes.Quote")
     def test_get_random_quote_from_group_empty(self, mock_quote):
         """Test get_random_quote_from_group with no quotes."""
-        mock_query = MagicMock()
-        mock_query.execute.return_value = []
-        mock_quote.select.return_value.where.return_value = mock_query
+        mock_quote.select.return_value.where.return_value.count.return_value = 0
 
         result = quotes.get_random_quote_from_group("-1001234567890")
 

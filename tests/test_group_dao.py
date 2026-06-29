@@ -65,7 +65,7 @@ class TestGroupDao:
         mock_member2 = MagicMock()
         mock_members = [mock_member1, mock_member2]
 
-        mock_groupmember.select.return_value.limit.return_value.where.return_value.execute.return_value = mock_members
+        mock_groupmember.select.return_value.where.return_value.limit.return_value.execute.return_value = mock_members
 
         result = group_dao.get_all_groupmembers_by_group_id("test_group_id")
 
