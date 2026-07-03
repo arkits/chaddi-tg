@@ -125,6 +125,10 @@ POSTER_LAYOUTS = [
 
 MESSAGE_BOX_MARGIN_X = 120
 MESSAGE_BOX_TOP = 300
+MESSAGE_BOX_BOTTOM_FOR_BOTTOM_MODI = 860
+POSTER_CAPTION_MIN_FONT_SIZE = 30
+POSTER_CAPTION_MAX_FONT_SIZE = 92
+PRAYER_HANDS_REACTION = "🙏"
 
 
 def extract_reply_text(reply_message) -> str | None:
@@ -145,6 +149,7 @@ def measure_text(
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         dc.log_command_usage("tynm", update)
+        await react_to_tynm_invocation(update.message)
 
         if update.message.reply_to_message is None:
             await update.message.reply_text("Please reply to a message with `/tynm`")
@@ -324,6 +329,20 @@ def choose_poster_layout() -> PosterLayout:
     layout = random.choice(POSTER_LAYOUTS)
     logger.info("Selected poster layout={}", layout.name)
     return layout
+
+
+def choose_text_poster_layout() -> PosterLayout:
+    layouts = [layout for layout in POSTER_LAYOUTS if layout.modi_location != "center"]
+    layout = random.choice(layouts)
+    logger.info("Selected text poster layout={}", layout.name)
+    return layout
+
+
+async def react_to_tynm_invocation(message) -> None:
+    try:
+        await message.set_reaction(PRAYER_HANDS_REACTION)
+    except Exception as e:
+        logger.warning("[tynm] unable to react to invocation message e={}", e)
 
 
 def apply_modi_layout(
@@ -647,6 +666,116 @@ def get_poster_caption_font_size(line_count: int) -> int:
     return 28
 
 
+def split_long_word_to_width(
+    draw: ImageDraw.ImageDraw,
+    word: str,
+    font: ImageFont.FreeTypeFont,
+    max_width: int,
+) -> list[str]:
+    chunks: list[str] = []
+    current = ""
+
+    for char in word:
+        candidate = current + char
+        candidate_width, _candidate_height = measure_text(draw, candidate, font)
+        if candidate_width <= max_width or not current:
+            current = candidate
+            continue
+
+        chunks.append(current)
+        current = char
+
+    if current:
+        chunks.append(current)
+
+    return chunks
+
+
+def wrap_text_to_width(
+    draw: ImageDraw.ImageDraw,
+    text: str,
+    font: ImageFont.FreeTypeFont,
+    max_width: int,
+) -> str:
+    wrapped_lines: list[str] = []
+
+    for paragraph in text.strip().splitlines():
+        words = paragraph.split()
+        if not words:
+            continue
+
+        current_line = ""
+        for word in words:
+            candidate = f"{current_line} {word}".strip()
+            candidate_width, _candidate_height = measure_text(draw, candidate, font)
+            if candidate_width <= max_width:
+                current_line = candidate
+                continue
+
+            if current_line:
+                wrapped_lines.append(current_line)
+
+            word_width, _word_height = measure_text(draw, word, font)
+            if word_width <= max_width:
+                current_line = word
+                continue
+
+            word_chunks = split_long_word_to_width(draw, word, font, max_width)
+            wrapped_lines.extend(word_chunks[:-1])
+            current_line = word_chunks[-1] if word_chunks else ""
+
+        if current_line:
+            wrapped_lines.append(current_line)
+
+    return "\n".join(wrapped_lines)
+
+
+def fit_caption_to_box(
+    draw: ImageDraw.ImageDraw,
+    text: str,
+    font_name: str,
+    box: tuple[int, int, int, int],
+) -> tuple[ImageFont.FreeTypeFont, str, int]:
+    x0, y0, x1, y1 = box
+    max_width = x1 - x0
+    max_height = y1 - y0
+
+    for font_size in range(POSTER_CAPTION_MAX_FONT_SIZE, POSTER_CAPTION_MIN_FONT_SIZE - 1, -2):
+        font = load_font(font_name, font_size)
+        line_spacing = max(8, int(font_size * 0.18))
+        wrapped_text = wrap_text_to_width(draw, text, font, max_width)
+        text_width, text_height = measure_multiline_text(
+            draw,
+            wrapped_text,
+            font,
+            line_spacing,
+        )
+
+        if text_width <= max_width and text_height <= max_height:
+            return font, wrapped_text, line_spacing
+
+    font = load_font(font_name, POSTER_CAPTION_MIN_FONT_SIZE)
+    line_spacing = max(8, int(POSTER_CAPTION_MIN_FONT_SIZE * 0.18))
+    return font, wrap_text_to_width(draw, text, font, max_width), line_spacing
+
+
+def get_text_poster_message_area(
+    layout: PosterLayout,
+    width: int,
+    content_height: int,
+) -> tuple[int, int, int, int]:
+    message_bottom = content_height - 50
+    if layout.modi_location in ("bottom_left", "bottom_right"):
+        message_bottom = min(message_bottom, MESSAGE_BOX_BOTTOM_FOR_BOTTOM_MODI)
+
+    return (
+        MESSAGE_BOX_MARGIN_X,
+        MESSAGE_BOX_TOP,
+        width - MESSAGE_BOX_MARGIN_X,
+        message_bottom,
+    )
+
+
 def add_poster_bottom_banner(
     img: Image.Image,
     username: str,
@@ -733,7 +862,7 @@ async def compose_text_reply_poster(
     unsplash_photo_path = None
     width, height = POSTER_WIDTH, POSTER_HEIGHT
     content_height = height - BANNER_HEIGHT
-    layout = choose_poster_layout()
+    layout = choose_text_poster_layout()
 
     img = create_saffron_gradient(width, height)
     img = add_lotus_watermark(img)
@@ -752,15 +881,7 @@ async def compose_text_reply_poster(
     img = apply_modi_layout(img, foreground_modi, watermark_modi, layout)
 
     draw = ImageDraw.Draw(img)
-    caption = generate_wrapped_caption(text)
-    line_count = len([line for line in caption.split("\n") if line.strip()])
-    logger.info("number_of_lines={}", line_count)
-
     greeting_font = load_font_from_pool(FONT_POOL_GREETING, 58)
-    caption_font = load_font_from_pool(
-        FONT_POOL_CAPTION,
-        get_poster_caption_font_size(line_count),
-    )
     center_x = width // 2
     greeting_y = 90
 
@@ -785,19 +906,23 @@ async def compose_text_reply_poster(
         outline_width=2,
     )
 
-    message_area = (
-        MESSAGE_BOX_MARGIN_X,
-        MESSAGE_BOX_TOP,
-        width - MESSAGE_BOX_MARGIN_X,
-        content_height - 50,
+    message_area = get_text_poster_message_area(layout, width, content_height)
+    caption_font, caption, caption_line_spacing = fit_caption_to_box(
+        draw,
+        text,
+        pick_font(FONT_POOL_CAPTION),
+        message_area,
     )
+    line_count = len([line for line in caption.split("\n") if line.strip()])
+    logger.info("number_of_lines={} caption_font_size={}", line_count, caption_font.size)
+
     draw_centered_multiline_in_box(
         draw,
         message_area,
         caption.strip(),
         caption_font,
         GOLD,
-        line_spacing=12,
+        line_spacing=caption_line_spacing,
         outline=SAFFRON_DEEP,
         outline_width=3,
     )

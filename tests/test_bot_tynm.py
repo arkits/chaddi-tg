@@ -17,19 +17,23 @@ from src.bot.handlers.tynm import (
     apply_modi_layout,
     build_file_path,
     choose_poster_layout,
+    choose_text_poster_layout,
     create_saffron_gradient,
     draw_centered_multiline_in_box,
     draw_firework,
     draw_flower,
     extract_reply_text,
+    fit_caption_to_box,
     generate_wrapped_caption,
     get_poster_caption_font_size,
+    get_text_poster_message_area,
     handle,
     load_font_from_pool,
     make_circular_portrait,
     measure_text,
     pick_distinct_tynm_images,
     place_image,
+    wrap_text_to_width,
 )
 
 
@@ -243,6 +247,12 @@ class TestPosterHelpers:
         layout = choose_poster_layout()
         assert layout in POSTER_LAYOUTS
 
+    def test_choose_text_poster_layout_avoids_center_modi(self):
+        for _ in range(25):
+            layout = choose_text_poster_layout()
+            assert layout in POSTER_LAYOUTS
+            assert layout.modi_location != "center"
+
     def test_apply_modi_layout(self):
         img = create_saffron_gradient(POSTER_WIDTH, POSTER_HEIGHT)
         foreground_modi = Image.new("RGBA", (200, 400), color=(255, 0, 0, 255))
@@ -282,6 +292,53 @@ class TestPosterHelpers:
         assert get_poster_caption_font_size(2) == 58
         assert get_poster_caption_font_size(5) == 44
         assert get_poster_caption_font_size(11) == 28
+
+    def test_wrap_text_to_width_keeps_lines_inside_width(self):
+        img = create_saffron_gradient(POSTER_WIDTH, POSTER_HEIGHT)
+        draw = ImageDraw.Draw(img)
+        font = load_font_from_pool(FONT_POOL_GREETING, 40)
+        wrapped = wrap_text_to_width(
+            draw,
+            "this is a generated poster caption that should wrap across multiple lines",
+            font,
+            320,
+        )
+
+        for line in wrapped.split("\n"):
+            line_width, _line_height = measure_text(draw, line, font)
+            assert line_width <= 320
+
+    def test_fit_caption_to_box_uses_larger_font_for_short_text(self):
+        img = create_saffron_gradient(POSTER_WIDTH, POSTER_HEIGHT)
+        draw = ImageDraw.Draw(img)
+        box = (120, 300, POSTER_WIDTH - 120, POSTER_HEIGHT - 200)
+
+        font, caption, line_spacing = fit_caption_to_box(
+            draw,
+            "chhappe thode nuts",
+            "BebasNeue-Regular.ttf",
+            box,
+        )
+        text_width, text_height = measure_text(draw, caption, font)
+
+        assert font.size > get_poster_caption_font_size(1)
+        assert line_spacing > 0
+        assert text_width <= box[2] - box[0]
+        assert text_height <= box[3] - box[1]
+
+    def test_get_text_poster_message_area_reserves_bottom_modi_space(self):
+        layout = POSTER_LAYOUTS[1]
+        area = get_text_poster_message_area(layout, POSTER_WIDTH, POSTER_HEIGHT - 150)
+
+        assert layout.modi_location == "bottom_right"
+        assert area == (120, 300, 1160, 860)
+
+    def test_get_text_poster_message_area_uses_more_space_for_top_modi(self):
+        layout = POSTER_LAYOUTS[2]
+        area = get_text_poster_message_area(layout, POSTER_WIDTH, POSTER_HEIGHT - 150)
+
+        assert layout.modi_location == "top_right"
+        assert area == (120, 300, 1160, 1080)
 
     def test_make_circular_portrait(self):
         profile = Image.new("RGB", (300, 400), color=(100, 150, 200))
@@ -382,6 +439,7 @@ class TestHandle:
         update.message = MagicMock()
         update.message.reply_to_message = MagicMock()
         update.message.reply_text = AsyncMock()
+        update.message.set_reaction = AsyncMock()
         return update
 
     @pytest.fixture
@@ -399,6 +457,7 @@ class TestHandle:
     async def test_handle_no_reply_to_message(self, mock_update, mock_context):
         mock_update.message.reply_to_message = None
         await handle(mock_update, mock_context)
+        mock_update.message.set_reaction.assert_called_once_with("🙏")
         mock_update.message.reply_text.assert_called_once_with(
             "Please reply to a message with `/tynm`"
         )
