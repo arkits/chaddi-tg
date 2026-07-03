@@ -61,7 +61,7 @@ pydantic-core==2.41.4
 pygments==2.20.0
 python-dateutil==2.9.0.post0
 python-dotenv==1.2.2
-python-engineio==4.12.3
+python-engineio==4.13.2
 python-multipart==0.0.27
 python-socketio==5.14.2
 python-telegram-bot==13.2
