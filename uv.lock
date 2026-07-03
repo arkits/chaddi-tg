@@ -298,7 +298,7 @@ requires-dist = [
     { name = "pydantic-core", specifier = ">=2.41.4" },
     { name = "python-dateutil", specifier = ">=2.9.0.post0" },
     { name = "python-dotenv", specifier = ">=1.2.2" },
-    { name = "python-engineio", specifier = ">=4.12.3" },
+    { name = "python-engineio", specifier = ">=4.13.2" },
     { name = "python-multipart", specifier = ">=0.0.27" },
     { name = "python-socketio", specifier = ">=5.16.2" },
     { name = "python-telegram-bot", extras = ["job-queue"], specifier = ">=22.5" },
