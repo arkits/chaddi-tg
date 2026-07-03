@@ -15,8 +15,10 @@ if [ -d "chaddi-tg" ]; then
     cd chaddi-tg
     echo ""
 
-    echo ">>> git pulling latest from remote"
-    git pull
+    echo ">>> fetching latest from remote"
+    git fetch origin
+    git reset --hard origin/master
+    git clean -fd -- frontend
     echo ""
 
     echo ">>> building frontend"

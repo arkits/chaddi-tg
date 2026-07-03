@@ -132,3 +132,5 @@ scripts/deploy-constants.sh
 src/resources/mlai/*
 src/resources/external/*
 node_modules/
+*.tsbuildinfo
+frontend/package-lock.json
