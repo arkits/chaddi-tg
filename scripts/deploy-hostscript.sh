@@ -19,6 +19,21 @@ if [ -d "chaddi-tg" ]; then
     git pull
     echo ""
 
+    echo ">>> building frontend"
+    cd frontend
+    if command -v bun >/dev/null 2>&1; then
+        bun install --frozen-lockfile
+        bun run build
+    elif command -v npm >/dev/null 2>&1; then
+        npm install
+        npm run build
+    else
+        echo "ERROR: bun or npm is required to build the frontend"
+        exit 4
+    fi
+    cd ..
+    echo ""
+
     echo ">>> triggering kill-chaddi.sh"
     cd scripts
     ./kill-chaddi.sh
