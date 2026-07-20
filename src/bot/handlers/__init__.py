@@ -34,5 +34,6 @@ from . import (
     version,
     weather,
     webm,
+    x_links,
     ytdl,
 )

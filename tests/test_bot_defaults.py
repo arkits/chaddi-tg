@@ -58,6 +58,7 @@ async def test_all_syncs_persistence_data(mock_update, mock_context):
         patch("src.bot.handlers.defaults.bakchod_dao") as mock_bakchod_dao,
         patch("src.bot.handlers.defaults.antiwordle") as mock_antiwordle,
         patch("src.bot.handlers.defaults.musiclinks") as mock_musiclinks,
+        patch("src.bot.handlers.defaults.x_links") as mock_x_links,
         patch("src.bot.handlers.defaults.handle_bakchod_metadata_effects"),
         patch("src.bot.handlers.defaults.handle_dice_rolls"),
         patch("src.bot.handlers.defaults.handle_message_matching"),
@@ -69,10 +70,12 @@ async def test_all_syncs_persistence_data(mock_update, mock_context):
 
         mock_antiwordle.handle = AsyncMock()
         mock_musiclinks.handle = AsyncMock()
+        mock_x_links.handle = AsyncMock()
 
         await defaults.all(mock_update, mock_context)
 
         mock_dc.sync_persistence_data.assert_called_once_with(mock_update)
+        mock_x_links.handle.assert_awaited_once_with(mock_update, mock_context)
 
 
 @pytest.mark.asyncio
@@ -95,6 +98,7 @@ async def test_all_rewards_rokda(mock_update, mock_context):
         patch("src.bot.handlers.defaults.bakchod_dao") as mock_bakchod_dao,
         patch("src.bot.handlers.defaults.antiwordle") as mock_antiwordle,
         patch("src.bot.handlers.defaults.musiclinks") as mock_musiclinks,
+        patch("src.bot.handlers.defaults.x_links") as mock_x_links,
         patch("src.bot.handlers.defaults.handle_bakchod_metadata_effects"),
         patch("src.bot.handlers.defaults.handle_dice_rolls"),
         patch("src.bot.handlers.defaults.handle_message_matching"),
@@ -106,6 +110,7 @@ async def test_all_rewards_rokda(mock_update, mock_context):
 
         mock_antiwordle.handle = AsyncMock()
         mock_musiclinks.handle = AsyncMock()
+        mock_x_links.handle = AsyncMock()
 
         await defaults.all(mock_update, mock_context)
 
