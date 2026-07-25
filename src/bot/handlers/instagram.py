@@ -25,7 +25,10 @@ async def download_media_via_instaloader(shortcode: str) -> tuple[str | None, st
         media_url = post.video_url if post.is_video else post.url
         return media_url, caption
     except Exception as e:
-        logger.error(f"[instagram] instaloader error: {e}")
+        # Instagram's anonymous GraphQL access is rate-limited almost
+        # unconditionally in production, so this fails routinely and is
+        # expected to be handled by the download_media_via_api fallback.
+        logger.warning(f"[instagram] instaloader error: {e}")
         return None, None
 
 
