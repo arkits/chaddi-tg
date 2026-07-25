@@ -47,12 +47,25 @@ if [ -d "chaddi-tg" ]; then
     echo ">>> starting new chaddi-tg"
     ./run-prod.sh
 
-    PID=$(ps -eaf | grep "chaddi.py" | grep -v grep | awk '{print $2}')
+    PID=$(ps -eaf | grep "chaddi.py" | grep -v grep | awk '{print $2}' || true)
     echo ">>> PID of chaddi-tg: $PID"
 
     PORT=5100
-    PID_PORT=$(lsof -t -i:$PORT)
+    echo ">>> waiting for chaddi-tg to bind to port $PORT"
+    PID_PORT=""
+    for i in $(seq 1 10); do
+        PID_PORT=$(lsof -t -i:$PORT || true)
+        if [ -n "$PID_PORT" ]; then
+            break
+        fi
+        sleep 1
+    done
     echo ">>> PID of server on port $PORT: $PID_PORT"
+
+    if [ -z "$PID_PORT" ]; then
+        echo "ERROR: chaddi-tg did not bind to port $PORT after starting"
+        exit 4
+    fi
 
     echo ">>> done starting new chaddi-tg"
 
