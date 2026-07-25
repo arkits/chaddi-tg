@@ -235,6 +235,7 @@ dependencies = [
     { name = "opentelemetry-sdk" },
     { name = "peewee" },
     { name = "pillow" },
+    { name = "pilmoji" },
     { name = "posthog" },
     { name = "preshed" },
     { name = "prometheus-client" },
@@ -289,6 +290,7 @@ requires-dist = [
     { name = "opentelemetry-sdk", specifier = ">=1.39.1" },
     { name = "peewee", specifier = ">=3.18.2" },
     { name = "pillow", specifier = ">=12.2.0" },
+    { name = "pilmoji", specifier = ">=2.0.5" },
     { name = "posthog", specifier = ">=7.4.2" },
     { name = "preshed", specifier = ">=3.0.10" },
     { name = "prometheus-client", specifier = ">=0.23.1" },
@@ -490,6 +492,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/fc/f8/98eea607f65de6527f8a2e8885fc8015d3e6f5775df186e443e0964a11c3/distro-1.9.0.tar.gz", hash = "sha256:2fa77c6fd8940f116ee1d6b94a2f90b13b5ea8d019b98bc8bafdcabcdd9bdbed", size = 60722, upload-time = "2023-12-24T09:54:32.31Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/12/b3/231ffd4ab1fc9d679809f356cebee130ac7daa00d6d6f3206dd4fd137e9e/distro-1.9.0-py3-none-any.whl", hash = "sha256:7bffd925d65168f85027d8da9af6bddab658135b840670a223589bc0c8ef02b2", size = 20277, upload-time = "2023-12-24T09:54:30.421Z" },
+]
+
+[[package]]
+name = "emoji"
+version = "2.15.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/a2/78/0d2db9382c92a163d7095fc08efff7800880f830a152cfced40161e7638d/emoji-2.15.0.tar.gz", hash = "sha256:eae4ab7d86456a70a00a985125a03263a5eac54cd55e51d7e184b1ed3b6757e4", size = 615483, upload-time = "2025-09-21T12:13:02.755Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e1/5e/4b5aaaabddfacfe36ba7768817bd1f71a7a810a43705e531f3ae4c690767/emoji-2.15.0-py3-none-any.whl", hash = "sha256:205296793d66a89d88af4688fa57fd6496732eb48917a87175a023c8138995eb", size = 608433, upload-time = "2025-09-21T12:13:01.197Z" },
 ]
 
 [[package]]
@@ -1274,6 +1285,19 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/c9/e4/4b64a97d71b2a83158134abbb2f5bd3f8a2ea691361282f010998f339ec7/pillow-12.2.0-cp314-cp314t-win32.whl", hash = "sha256:6bb77b2dcb06b20f9f4b4a8454caa581cd4dd0643a08bacf821216a16d9c8354", size = 6482084, upload-time = "2026-04-01T14:45:47.568Z" },
     { url = "https://files.pythonhosted.org/packages/ba/13/306d275efd3a3453f72114b7431c877d10b1154014c1ebbedd067770d629/pillow-12.2.0-cp314-cp314t-win_amd64.whl", hash = "sha256:6562ace0d3fb5f20ed7290f1f929cae41b25ae29528f2af1722966a0a02e2aa1", size = 7225152, upload-time = "2026-04-01T14:45:50.032Z" },
     { url = "https://files.pythonhosted.org/packages/ff/6e/cf826fae916b8658848d7b9f38d88da6396895c676e8086fc0988073aaf8/pillow-12.2.0-cp314-cp314t-win_arm64.whl", hash = "sha256:aa88ccfe4e32d362816319ed727a004423aab09c5cea43c01a4b435643fa34eb", size = 2556579, upload-time = "2026-04-01T14:45:52.529Z" },
+]
+
+[[package]]
+name = "pilmoji"
+version = "2.0.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "emoji" },
+    { name = "pillow" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/05/75/e5430da7a99ea66c9b93cdbd66372a010022398887eb3f8fcccb866010ee/pilmoji-2.0.5.tar.gz", hash = "sha256:e038532c97b79b3d55c29f5a6c2b6b627105b8cd1db0c1d2271402b3e4e9be18", size = 11889, upload-time = "2026-01-06T01:33:20.637Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/24/09/2dcc3fa1e0627f95143b61cc2c8a13042f5dcd7e11d1e12b0ba5e205aeca/pilmoji-2.0.5-py3-none-any.whl", hash = "sha256:856ddf827d42d8c8d2a1f879fdc1ae318ffb72435c4adc934be6d3e48376173d", size = 11740, upload-time = "2026-01-29T17:25:35.378Z" },
 ]
 
 [[package]]

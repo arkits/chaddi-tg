@@ -55,6 +55,7 @@ dependencies = [
     "opentelemetry-exporter-otlp>=1.39.1",
     "typer>=0.21.0",
     "instaloader>=4.11",
+    "pilmoji>=2.0.5",
 ]
 
 [tool.ruff]

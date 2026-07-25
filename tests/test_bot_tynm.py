@@ -1,7 +1,8 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageFont
+from pilmoji import Pilmoji
 
 from src.bot.handlers.tynm import (
     FONT_POOL_GREETING,
@@ -70,9 +71,9 @@ class TestMeasureText:
 
     def test_measure_text_returns_dimensions(self):
         img = Image.new("RGBA", (100, 100))
-        draw = ImageDraw.Draw(img)
         font = ImageFont.load_default()
-        width, height = measure_text(draw, "hello", font)
+        with Pilmoji(img) as pilmoji:
+            width, height = measure_text(pilmoji, "hello", font)
         assert width > 0
         assert height > 0
 
@@ -277,15 +278,15 @@ class TestPosterHelpers:
 
     def test_draw_centered_multiline_in_box(self):
         img = create_saffron_gradient(POSTER_WIDTH, POSTER_HEIGHT)
-        draw = ImageDraw.Draw(img)
         font = ImageFont.load_default()
-        draw_centered_multiline_in_box(
-            draw,
-            (100, 100, 500, 300),
-            "centered\nmessage",
-            font,
-            (255, 255, 255),
-        )
+        with Pilmoji(img) as pilmoji:
+            draw_centered_multiline_in_box(
+                pilmoji,
+                (100, 100, 500, 300),
+                "centered\nmessage",
+                font,
+                (255, 255, 255),
+            )
         assert img.size == (POSTER_WIDTH, POSTER_HEIGHT)
 
     def test_get_poster_caption_font_size(self):
@@ -295,31 +296,31 @@ class TestPosterHelpers:
 
     def test_wrap_text_to_width_keeps_lines_inside_width(self):
         img = create_saffron_gradient(POSTER_WIDTH, POSTER_HEIGHT)
-        draw = ImageDraw.Draw(img)
         font = load_font_from_pool(FONT_POOL_GREETING, 40)
-        wrapped = wrap_text_to_width(
-            draw,
-            "this is a generated poster caption that should wrap across multiple lines",
-            font,
-            320,
-        )
+        with Pilmoji(img) as pilmoji:
+            wrapped = wrap_text_to_width(
+                pilmoji,
+                "this is a generated poster caption that should wrap across multiple lines",
+                font,
+                320,
+            )
 
-        for line in wrapped.split("\n"):
-            line_width, _line_height = measure_text(draw, line, font)
-            assert line_width <= 320
+            for line in wrapped.split("\n"):
+                line_width, _line_height = measure_text(pilmoji, line, font)
+                assert line_width <= 320
 
     def test_fit_caption_to_box_uses_larger_font_for_short_text(self):
         img = create_saffron_gradient(POSTER_WIDTH, POSTER_HEIGHT)
-        draw = ImageDraw.Draw(img)
         box = (120, 300, POSTER_WIDTH - 120, POSTER_HEIGHT - 200)
 
-        font, caption, line_spacing = fit_caption_to_box(
-            draw,
-            "chhappe thode nuts",
-            "BebasNeue-Regular.ttf",
-            box,
-        )
-        text_width, text_height = measure_text(draw, caption, font)
+        with Pilmoji(img) as pilmoji:
+            font, caption, line_spacing = fit_caption_to_box(
+                pilmoji,
+                "chhappe thode nuts",
+                "BebasNeue-Regular.ttf",
+                box,
+            )
+            text_width, text_height = measure_text(pilmoji, caption, font)
 
         assert font.size > get_poster_caption_font_size(1)
         assert line_spacing > 0
@@ -348,7 +349,10 @@ class TestPosterHelpers:
 
     def test_add_poster_bottom_banner(self):
         img = create_saffron_gradient(POSTER_WIDTH, POSTER_HEIGHT)
-        result = add_poster_bottom_banner(img, "~ testuser", "01/01/2026, 08:00 AM", "Test Group")
+        with Pilmoji(img) as pilmoji:
+            result = add_poster_bottom_banner(
+                pilmoji, img, "~ testuser", "01/01/2026, 08:00 AM", "Test Group"
+            )
         assert result.size == (POSTER_WIDTH, POSTER_HEIGHT)
 
     def test_add_poster_decorations(self):

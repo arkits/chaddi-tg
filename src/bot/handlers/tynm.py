@@ -9,6 +9,7 @@ from os import path
 
 from loguru import logger
 from PIL import Image, ImageDraw, ImageFont, ImageOps
+from pilmoji import Pilmoji
 from telegram import Update
 from telegram.ext import ContextTypes
 
@@ -139,11 +140,8 @@ def extract_reply_text(reply_message) -> str | None:
     return None
 
 
-def measure_text(
-    draw: ImageDraw.ImageDraw, text: str, font: ImageFont.FreeTypeFont
-) -> tuple[int, int]:
-    bbox = draw.textbbox((0, 0), text, font=font)
-    return bbox[2] - bbox[0], bbox[3] - bbox[1]
+def measure_text(pilmoji: Pilmoji, text: str, font: ImageFont.FreeTypeFont) -> tuple[int, int]:
+    return pilmoji.getsize(text, font=font)
 
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -461,7 +459,7 @@ def paste_with_opacity(
 
 
 def draw_text_with_outline(
-    draw: ImageDraw.ImageDraw,
+    pilmoji: Pilmoji,
     position: tuple[int, int],
     text: str,
     font: ImageFont.FreeTypeFont,
@@ -469,16 +467,18 @@ def draw_text_with_outline(
     outline: tuple[int, int, int] = DARK_BROWN,
     outline_width: int = 2,
 ) -> None:
-    x, y = position
-    for dx in range(-outline_width, outline_width + 1):
-        for dy in range(-outline_width, outline_width + 1):
-            if dx or dy:
-                draw.text((x + dx, y + dy), text, font=font, fill=outline)
-    draw.text(position, text, font=font, fill=fill)
+    pilmoji.text(
+        position,
+        text,
+        fill=fill,
+        font=font,
+        stroke_width=outline_width,
+        stroke_fill=outline,
+    )
 
 
 def draw_multiline_text_with_outline(
-    draw: ImageDraw.ImageDraw,
+    pilmoji: Pilmoji,
     position: tuple[int, int],
     text: str,
     font: ImageFont.FreeTypeFont,
@@ -494,16 +494,16 @@ def draw_multiline_text_with_outline(
         if not line:
             continue
         draw_text_with_outline(
-            draw, (x, y + total_height), line, font, fill, outline, outline_width
+            pilmoji, (x, y + total_height), line, font, fill, outline, outline_width
         )
-        _line_w, line_h = measure_text(draw, line, font)
+        _line_w, line_h = measure_text(pilmoji, line, font)
         total_height += line_h + line_spacing
 
     return max(total_height - line_spacing, 0)
 
 
 def measure_multiline_text(
-    draw: ImageDraw.ImageDraw,
+    pilmoji: Pilmoji,
     text: str,
     font: ImageFont.FreeTypeFont,
     line_spacing: int = 10,
@@ -515,7 +515,7 @@ def measure_multiline_text(
     max_width = 0
     total_height = 0
     for index, line in enumerate(lines):
-        line_width, line_height = measure_text(draw, line, font)
+        line_width, line_height = measure_text(pilmoji, line, font)
         max_width = max(max_width, line_width)
         total_height += line_height
         if index < len(lines) - 1:
@@ -525,7 +525,7 @@ def measure_multiline_text(
 
 
 def draw_centered_text_with_outline(
-    draw: ImageDraw.ImageDraw,
+    pilmoji: Pilmoji,
     center_x: int,
     y: int,
     text: str,
@@ -534,9 +534,9 @@ def draw_centered_text_with_outline(
     outline: tuple[int, int, int] = DARK_BROWN,
     outline_width: int = 2,
 ) -> None:
-    text_width, _text_height = measure_text(draw, text, font)
+    text_width, _text_height = measure_text(pilmoji, text, font)
     draw_text_with_outline(
-        draw,
+        pilmoji,
         (center_x - text_width // 2, y),
         text,
         font,
@@ -547,7 +547,7 @@ def draw_centered_text_with_outline(
 
 
 def draw_centered_multiline_in_box(
-    draw: ImageDraw.ImageDraw,
+    pilmoji: Pilmoji,
     box: tuple[int, int, int, int],
     text: str,
     font: ImageFont.FreeTypeFont,
@@ -561,14 +561,14 @@ def draw_centered_multiline_in_box(
     if not lines:
         return
 
-    _total_width, total_height = measure_multiline_text(draw, text, font, line_spacing)
+    _total_width, total_height = measure_multiline_text(pilmoji, text, font, line_spacing)
     center_x = (x0 + x1) // 2
     current_y = y0 + max((y1 - y0 - total_height) // 2, 0)
 
     for line in lines:
-        line_width, line_height = measure_text(draw, line, font)
+        line_width, line_height = measure_text(pilmoji, line, font)
         draw_text_with_outline(
-            draw,
+            pilmoji,
             (center_x - line_width // 2, current_y),
             line,
             font,
@@ -667,7 +667,7 @@ def get_poster_caption_font_size(line_count: int) -> int:
 
 
 def split_long_word_to_width(
-    draw: ImageDraw.ImageDraw,
+    pilmoji: Pilmoji,
     word: str,
     font: ImageFont.FreeTypeFont,
     max_width: int,
@@ -677,7 +677,7 @@ def split_long_word_to_width(
 
     for char in word:
         candidate = current + char
-        candidate_width, _candidate_height = measure_text(draw, candidate, font)
+        candidate_width, _candidate_height = measure_text(pilmoji, candidate, font)
         if candidate_width <= max_width or not current:
             current = candidate
             continue
@@ -692,7 +692,7 @@ def split_long_word_to_width(
 
 
 def wrap_text_to_width(
-    draw: ImageDraw.ImageDraw,
+    pilmoji: Pilmoji,
     text: str,
     font: ImageFont.FreeTypeFont,
     max_width: int,
@@ -707,7 +707,7 @@ def wrap_text_to_width(
         current_line = ""
         for word in words:
             candidate = f"{current_line} {word}".strip()
-            candidate_width, _candidate_height = measure_text(draw, candidate, font)
+            candidate_width, _candidate_height = measure_text(pilmoji, candidate, font)
             if candidate_width <= max_width:
                 current_line = candidate
                 continue
@@ -715,12 +715,12 @@ def wrap_text_to_width(
             if current_line:
                 wrapped_lines.append(current_line)
 
-            word_width, _word_height = measure_text(draw, word, font)
+            word_width, _word_height = measure_text(pilmoji, word, font)
             if word_width <= max_width:
                 current_line = word
                 continue
 
-            word_chunks = split_long_word_to_width(draw, word, font, max_width)
+            word_chunks = split_long_word_to_width(pilmoji, word, font, max_width)
             wrapped_lines.extend(word_chunks[:-1])
             current_line = word_chunks[-1] if word_chunks else ""
 
@@ -731,7 +731,7 @@ def wrap_text_to_width(
 
 
 def fit_caption_to_box(
-    draw: ImageDraw.ImageDraw,
+    pilmoji: Pilmoji,
     text: str,
     font_name: str,
     box: tuple[int, int, int, int],
@@ -743,9 +743,9 @@ def fit_caption_to_box(
     for font_size in range(POSTER_CAPTION_MAX_FONT_SIZE, POSTER_CAPTION_MIN_FONT_SIZE - 1, -2):
         font = load_font(font_name, font_size)
         line_spacing = max(8, int(font_size * 0.18))
-        wrapped_text = wrap_text_to_width(draw, text, font, max_width)
+        wrapped_text = wrap_text_to_width(pilmoji, text, font, max_width)
         text_width, text_height = measure_multiline_text(
-            draw,
+            pilmoji,
             wrapped_text,
             font,
             line_spacing,
@@ -756,7 +756,7 @@ def fit_caption_to_box(
 
     font = load_font(font_name, POSTER_CAPTION_MIN_FONT_SIZE)
     line_spacing = max(8, int(POSTER_CAPTION_MIN_FONT_SIZE * 0.18))
-    return font, wrap_text_to_width(draw, text, font, max_width), line_spacing
+    return font, wrap_text_to_width(pilmoji, text, font, max_width), line_spacing
 
 
 def get_text_poster_message_area(
@@ -777,12 +777,13 @@ def get_text_poster_message_area(
 
 
 def add_poster_bottom_banner(
+    pilmoji: Pilmoji,
     img: Image.Image,
     username: str,
     timestamp_str: str,
     chat_title: str | None,
 ) -> Image.Image:
-    draw = ImageDraw.Draw(img)
+    draw = pilmoji.draw
     banner_top = POSTER_HEIGHT - BANNER_HEIGHT
 
     draw.rectangle([0, banner_top, POSTER_WIDTH, POSTER_HEIGHT], fill=WHITE)
@@ -793,14 +794,14 @@ def add_poster_bottom_banner(
     name_font = load_font_from_pool(FONT_POOL_BANNER, 54)
     meta_font = load_font(FONT_META, 22)
     display_name = username.removeprefix("~ ").strip()
-    draw.text((130, banner_top + 18), display_name, font=name_font, fill=SAFFRON_DARK)
+    pilmoji.text((130, banner_top + 18), display_name, font=name_font, fill=SAFFRON_DARK)
 
     meta_lines = [timestamp_str]
     if chat_title:
         meta_lines.append(chat_title)
     meta_y = banner_top + 72
     for line in meta_lines:
-        draw.text((132, meta_y), line, font=meta_font, fill=(90, 60, 30))
+        pilmoji.text((132, meta_y), line, font=meta_font, fill=(90, 60, 30))
         meta_y += 26
 
     return img
@@ -880,64 +881,65 @@ async def compose_text_reply_poster(
 
     img = apply_modi_layout(img, foreground_modi, watermark_modi, layout)
 
-    draw = ImageDraw.Draw(img)
-    greeting_font = load_font_from_pool(FONT_POOL_GREETING, 58)
-    center_x = width // 2
-    greeting_y = 90
+    with Pilmoji(img) as pilmoji:
+        greeting_font = load_font_from_pool(FONT_POOL_GREETING, 58)
+        center_x = width // 2
+        greeting_y = 90
 
-    draw_centered_text_with_outline(
-        draw,
-        center_x,
-        greeting_y,
-        "thank you modi ji!",
-        greeting_font,
-        WHITE,
-        outline=SAFFRON_DEEP,
-        outline_width=3,
-    )
-    draw_centered_text_with_outline(
-        draw,
-        center_x,
-        greeting_y + 62,
-        "heartfelt wishes!",
-        load_font_from_pool(FONT_POOL_SUBGREETING, 44),
-        GOLD_LIGHT,
-        outline=SAFFRON_DEEP,
-        outline_width=2,
-    )
+        draw_centered_text_with_outline(
+            pilmoji,
+            center_x,
+            greeting_y,
+            "thank you modi ji!",
+            greeting_font,
+            WHITE,
+            outline=SAFFRON_DEEP,
+            outline_width=3,
+        )
+        draw_centered_text_with_outline(
+            pilmoji,
+            center_x,
+            greeting_y + 62,
+            "heartfelt wishes!",
+            load_font_from_pool(FONT_POOL_SUBGREETING, 44),
+            GOLD_LIGHT,
+            outline=SAFFRON_DEEP,
+            outline_width=2,
+        )
 
-    message_area = get_text_poster_message_area(layout, width, content_height)
-    caption_font, caption, caption_line_spacing = fit_caption_to_box(
-        draw,
-        text,
-        pick_font(FONT_POOL_CAPTION),
-        message_area,
-    )
-    line_count = len([line for line in caption.split("\n") if line.strip()])
-    logger.info("number_of_lines={} caption_font_size={}", line_count, caption_font.size)
+        message_area = get_text_poster_message_area(layout, width, content_height)
+        caption_font, caption, caption_line_spacing = fit_caption_to_box(
+            pilmoji,
+            text,
+            pick_font(FONT_POOL_CAPTION),
+            message_area,
+        )
+        line_count = len([line for line in caption.split("\n") if line.strip()])
+        logger.info("number_of_lines={} caption_font_size={}", line_count, caption_font.size)
 
-    draw_centered_multiline_in_box(
-        draw,
-        message_area,
-        caption.strip(),
-        caption_font,
-        GOLD,
-        line_spacing=caption_line_spacing,
-        outline=SAFFRON_DEEP,
-        outline_width=3,
-    )
+        draw_centered_multiline_in_box(
+            pilmoji,
+            message_area,
+            caption.strip(),
+            caption_font,
+            GOLD,
+            line_spacing=caption_line_spacing,
+            outline=SAFFRON_DEEP,
+            outline_width=3,
+        )
 
-    timestamp = util.normalize_datetime(reply_message.date)
-    draw_date_badge(draw, timestamp, (width - 110, 30))
+        timestamp = util.normalize_datetime(reply_message.date)
+        draw_date_badge(pilmoji.draw, timestamp, (width - 110, 30))
 
-    profile_portrait = await fetch_user_profile_portrait(context, reply_message.from_user)
-    if profile_portrait is not None:
-        paste_framed_portrait(img, profile_portrait, layout, content_height)
+        profile_portrait = await fetch_user_profile_portrait(context, reply_message.from_user)
+        if profile_portrait is not None:
+            paste_framed_portrait(img, profile_portrait, layout, content_height)
 
-    username = "~ " + util.extract_pretty_name_from_tg_user(reply_message.from_user)
-    timestamp_str = timestamp.strftime("%d/%m/%Y, %I:%M %p")
-    chat_title = reply_message.chat.title if reply_message.chat else None
-    img = add_poster_bottom_banner(img, username, timestamp_str, chat_title)
+        username = "~ " + util.extract_pretty_name_from_tg_user(reply_message.from_user)
+        timestamp_str = timestamp.strftime("%d/%m/%Y, %I:%M %p")
+        chat_title = reply_message.chat.title if reply_message.chat else None
+        img = add_poster_bottom_banner(pilmoji, img, username, timestamp_str, chat_title)
+
     img = add_poster_decorations(img)
 
     return img, unsplash_photo_path
@@ -1096,7 +1098,6 @@ def add_fancy_border(img: Image) -> Image:
 
 def add_thank_you_text(img: Image) -> Image:
     """Add 'thank you modi ji!' text to the image."""
-    draw = ImageDraw.Draw(img)
     img_width, img_height = img.size
 
     # Text to display
@@ -1110,27 +1111,23 @@ def add_thank_you_text(img: Image) -> Image:
         logger.warning("Failed to load poster font, using default. e={}", e)
         font = ImageFont.load_default()
 
-    # Get text dimensions
-    text_width, text_height = measure_text(draw, text, font)
+    with Pilmoji(img) as pilmoji:
+        # Get text dimensions
+        text_width, text_height = measure_text(pilmoji, text, font)
 
-    # Position text at bottom center with padding
-    text_x = (img_width - text_width) // 2
-    text_y = img_height - text_height - 30
+        # Position text at bottom center with padding
+        text_x = (img_width - text_width) // 2
+        text_y = img_height - text_height - 30
 
-    # Draw text with outline (shadow effect)
-    outline_width = 3
-    for adj in range(-outline_width, outline_width + 1):
-        for adj2 in range(-outline_width, outline_width + 1):
-            if adj != 0 or adj2 != 0:
-                draw.text(
-                    (text_x + adj, text_y + adj2),
-                    text,
-                    font=font,
-                    fill=(0, 0, 0),
-                )
-
-    # Draw main text in saffron/orange color
-    draw.text((text_x, text_y), text, font=font, fill=(255, 153, 51))
+        draw_text_with_outline(
+            pilmoji,
+            (text_x, text_y),
+            text,
+            font,
+            fill=(255, 153, 51),
+            outline=(0, 0, 0),
+            outline_width=3,
+        )
 
     return img
 
