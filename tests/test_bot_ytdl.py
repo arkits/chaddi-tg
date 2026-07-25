@@ -30,7 +30,7 @@ async def test_handle_success(mock_update, mock_context):
     mock_update.message.reply_text = AsyncMock(return_value=mock_message)
     mock_update.message.chat_id = 12345
 
-    # Mock youtube-dl
+    # Mock yt-dlp
     with patch("src.bot.handlers.ytdl.ydl") as mock_ydl:
         mock_ydl.extract_info.return_value = {
             "id": "test123",

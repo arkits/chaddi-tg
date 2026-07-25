@@ -2,7 +2,7 @@ import multiprocessing
 import os
 import traceback
 
-import youtube_dl
+import yt_dlp
 from loguru import logger
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -18,7 +18,7 @@ YTDL_OPTS = {
     "merge_output_format": "mp4",
 }
 
-ydl = youtube_dl.YoutubeDL(YTDL_OPTS)
+ydl = yt_dlp.YoutubeDL(YTDL_OPTS)
 
 
 async def handle(
@@ -34,7 +34,7 @@ async def handle(
         video_url = message_params[1]
         logger.info("[ytdl] video_url={}", video_url)
 
-        message = await update.message.reply_text("Downloading video via youtube-dl (^◡^)")
+        message = await update.message.reply_text("Downloading video via yt-dlp (^◡^)")
 
         try:
             video_info = ydl.extract_info(video_url, download=False)
