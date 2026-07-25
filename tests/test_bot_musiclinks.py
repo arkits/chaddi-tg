@@ -371,6 +371,30 @@ async def test_handle_reply_with_correct_format(mock_async_client, mock_update, 
 
 @pytest.mark.asyncio
 @patch("src.bot.handlers.musiclinks.httpx.AsyncClient")
+async def test_handle_sets_explicit_timeout(mock_async_client, mock_update, mock_context):
+    """AsyncClient must be constructed with an explicit timeout so a slow
+    song.link response doesn't fall back to httpx's 5s default and time out."""
+    mock_update.message.text = "https://open.spotify.com/track/123"
+
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "linksByPlatform": {"spotify": {"url": "https://open.spotify.com/track/123"}}
+    }
+
+    mock_client = AsyncMock()
+    mock_client.get.return_value = mock_response
+    mock_async_client.return_value.__aenter__.return_value = mock_client
+
+    await musiclinks.handle(mock_update, mock_context)
+
+    _, kwargs = mock_async_client.call_args
+    assert kwargs.get("timeout") is not None
+    assert kwargs["timeout"] > 5.0
+
+
+@pytest.mark.asyncio
+@patch("src.bot.handlers.musiclinks.httpx.AsyncClient")
 async def test_handle_platform_with_missing_url(mock_async_client, mock_update, mock_context):
     """Test handler when platform exists but URL is missing"""
     mock_update.message.text = "https://open.spotify.com/track/123"

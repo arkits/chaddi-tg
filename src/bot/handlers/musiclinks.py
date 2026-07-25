@@ -26,7 +26,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info(f"[music] detected music link: {url}")
 
     try:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=15.0) as client:
             response = await client.get(f"https://api.song.link/v1-alpha.1/links?url={url}")
 
             if response.status_code != 200:
