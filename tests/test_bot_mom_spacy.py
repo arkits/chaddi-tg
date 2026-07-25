@@ -310,7 +310,7 @@ def test_joke_mom_with_verb():
 def test_joke_mom_with_adjective():
     """Test joke_mom function with adjective."""
     with (
-        patch("src.bot.handlers.mom_spacy.get_verb", return_value=0),
+        patch("src.bot.handlers.mom_spacy.get_verb", return_value=None),
         patch("src.bot.handlers.mom_spacy.get_pos", return_value="nice"),
         patch("src.bot.handlers.mom_spacy.random") as mock_random,
     ):
@@ -325,12 +325,12 @@ def test_joke_mom_with_adjective():
 def test_joke_mom_with_propn():
     """Test joke_mom function with proper noun."""
     with (
-        patch("src.bot.handlers.mom_spacy.get_verb", return_value=0),
+        patch("src.bot.handlers.mom_spacy.get_verb", return_value=None),
         patch("src.bot.handlers.mom_spacy.get_pos") as mock_get_pos,
         patch("src.bot.handlers.mom_spacy.get_verb_past", return_value="tested"),
         patch("src.bot.handlers.mom_spacy.random") as mock_random,
     ):
-        mock_get_pos.side_effect = lambda x, y: 0 if y == "ADJ" else "Test"
+        mock_get_pos.side_effect = lambda x, y: None if y == "ADJ" else "Test"
         mock_random.return_value = 0.8  # Don't flip
 
         result = mom_spacy.joke_mom("Test message", "Protagonist", force=True)
@@ -379,23 +379,91 @@ def test_get_verb():
         assert result == "tested"
 
 
-def test_get_verb_no_verb():
-    """Test get_verb function when no verb found."""
+def test_get_verb_noun_with_verb_form():
+    """A noun that has a real verb form is used as the verb."""
     with (
         patch("src.bot.handlers.mom_spacy.util") as mock_util,
-        patch("src.bot.handlers.mom_spacy.get_verb_past", return_value="tested"),
-        patch("src.bot.handlers.mom_spacy.get_pos") as mock_get_pos,
+        patch("src.bot.handlers.mom_spacy.lookup_verb_past", return_value="tested"),
+        patch("src.bot.handlers.mom_spacy.get_pos", return_value="test"),
     ):
         mock_nlp = MagicMock()
         mock_token = MagicMock()
         mock_token.pos_ = "NOUN"
         mock_nlp.return_value = [mock_token]
         mock_util.get_nlp.return_value = mock_nlp
-        mock_get_pos.return_value = "test"
 
         result = mom_spacy.get_verb("User test message")
 
         assert result == "tested"
+
+
+def test_get_verb_noun_without_verb_form():
+    """A noun with no verb form must not be turned into a fake verb."""
+    with (
+        patch("src.bot.handlers.mom_spacy.util") as mock_util,
+        patch("src.bot.handlers.mom_spacy.lookup_verb_past", return_value=None),
+        patch("src.bot.handlers.mom_spacy.get_pos", return_value="table"),
+    ):
+        mock_nlp = MagicMock()
+        mock_token = MagicMock()
+        mock_token.pos_ = "NOUN"
+        mock_nlp.return_value = [mock_token]
+        mock_util.get_nlp.return_value = mock_nlp
+
+        result = mom_spacy.get_verb("the table message")
+
+        assert result is None
+
+
+def test_get_verb_skips_boring_verbs():
+    """Verbs like 'be' and 'need' don't make a joke and should be ignored."""
+    with patch("src.bot.handlers.mom_spacy.util") as mock_util:
+        mock_nlp = MagicMock()
+
+        boring = MagicMock()
+        boring.pos_ = "VERB"
+        boring.lemma_ = "need"
+        boring.children = []
+
+        interesting = MagicMock()
+        interesting.pos_ = "VERB"
+        interesting.lemma_ = "roast"
+        interesting.children = []
+
+        mock_nlp.return_value = [boring, interesting]
+        mock_util.get_nlp.return_value = mock_nlp
+        mock_util.get_verb_past_lookup.return_value = [{"roast": "roasted"}]
+
+        result = mom_spacy.get_verb("I need to roast that")
+
+        assert result == "roasted"
+
+
+def test_get_verb_prefers_transitive():
+    """A verb that already takes an object beats an intransitive one."""
+    with patch("src.bot.handlers.mom_spacy.util") as mock_util:
+        mock_nlp = MagicMock()
+
+        child = MagicMock()
+        child.dep_ = "dobj"
+
+        transitive = MagicMock()
+        transitive.pos_ = "VERB"
+        transitive.lemma_ = "roast"
+        transitive.children = [child]
+
+        intransitive = MagicMock()
+        intransitive.pos_ = "VERB"
+        intransitive.lemma_ = "sleep"
+        intransitive.children = []
+
+        mock_nlp.return_value = [intransitive, transitive]
+        mock_util.get_nlp.return_value = mock_nlp
+        mock_util.get_verb_past_lookup.return_value = [{"roast": "roasted", "sleep": "slept"}]
+
+        # run it a few times - the intransitive verb must never win
+        for _ in range(10):
+            assert mom_spacy.get_verb("I sleep and roast him") == "roasted"
 
 
 def test_get_verb_past_from_lookup():
@@ -433,9 +501,111 @@ def test_get_verb_past_default():
     with patch("src.bot.handlers.mom_spacy.util") as mock_util:
         mock_util.get_verb_past_lookup.return_value = {}
 
-        result = mom_spacy.get_verb_past("run")
+        result = mom_spacy.get_verb_past("yeet")
 
-        assert result == "runed"
+        assert result == "yeeted"
+
+
+@pytest.mark.parametrize(
+    "verb,expected",
+    [
+        ("stan", "stanned"),  # single-syllable CVC doubles
+        ("chat", "chatted"),
+        ("carry", "carried"),  # consonant + y
+        ("stay", "stayed"),  # vowel + y
+        ("vibe", "vibed"),
+        ("yeet", "yeeted"),  # not CVC, no doubling
+        ("visit", "visited"),  # multi-syllable, no doubling
+    ],
+)
+def test_regular_past_morphology(verb, expected):
+    """Verbs missing from the lookup table still get a plausible past tense."""
+    assert mom_spacy.regular_past(verb) == expected
+
+
+@pytest.mark.asyncio
+async def test_handle_protected_reply_does_not_crash(mock_update, mock_context):
+    """The rare 'protected' branch must send a real message, not blow up on a User object."""
+    with (
+        patch("src.bot.handlers.mom_spacy.dc"),
+        patch("src.bot.handlers.mom_spacy.util") as mock_util,
+        patch("src.bot.handlers.mom_spacy.random.random", return_value=0.0),
+    ):
+        mock_util.paywall_user.return_value = True
+        mock_util.extract_pretty_name_from_tg_user.return_value = "@replyuser"
+
+        reply_user = MagicMock(spec=User)
+        reply_user.id = 789012
+        reply_user.username = "replyuser"
+
+        reply_message = MagicMock(spec=Message)
+        reply_message.from_user = reply_user
+        reply_message.text = "Test message"
+
+        mock_update.message.reply_to_message = reply_message
+
+        with patch.object(mom_spacy, "generate_response", return_value="joke"):
+            await mom_spacy.handle(mock_update, mock_context)
+
+        # random.random() == 0.0 is not > 0.01, so we take the protected branch
+        mock_update.message.reply_text.assert_called_once()
+        assert "Nazar Raksha Kavach" in mock_update.message.reply_text.call_args[0][0]
+
+
+def test_rake_joke_returns_none_for_stopword_only_message():
+    """rake finds no phrases in an all-stopword message - must not raise IndexError."""
+    assert mom_spacy.rake_joke("what is it", "@user") is None
+
+
+def test_generate_response_falls_back_when_rake_fails():
+    """A message rake can't handle still produces a joke via spacy."""
+    with patch("src.bot.handlers.mom_spacy.random.random", return_value=0.0):
+        # random < 0.20 picks the rake path, which returns None for this message
+        response = mom_spacy.generate_response("what is it", "@user", chat_id=None)
+
+        assert response is not None
+        assert response != ""
+
+
+def test_generate_response_avoids_repeating_itself():
+    """The same message twice in a chat shouldn't give the exact same punchline."""
+    mom_spacy.recent_jokes.pop(-1, None)
+
+    seen = set()
+    for _ in range(5):
+        seen.add(mom_spacy.generate_response("he roasted the chai", "@user", chat_id=-1))
+
+    mom_spacy.recent_jokes.pop(-1, None)
+
+    assert len(seen) > 1
+
+
+@pytest.mark.parametrize(
+    "raw,expected",
+    [
+        ("check https://x.com/foo out", "check out"),
+        ("@someone is wrong", "is wrong"),
+        ("/mom@chaddi_bot hello", "hello"),
+        ("   ", None),
+    ],
+)
+def test_clean_sentence(raw, expected):
+    """URLs, mentions and commands are stripped before we tag parts of speech."""
+    assert mom_spacy.clean_sentence(raw) == expected
+
+
+def test_joke_mom_ignores_urls():
+    """A URL must never end up as the verb in the punchline."""
+    result = mom_spacy.joke_mom("https://x.com/foo", "@user", force=True)
+
+    assert "http" not in result
+
+
+def test_joke_mom_short_message_falls_back():
+    """One-word messages give a canned reply rather than a nonsense joke."""
+    result = mom_spacy.joke_mom("lmao", "@user", force=True)
+
+    assert "your mom last night" not in result
 
 
 def test_random_reply():

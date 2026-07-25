@@ -1,6 +1,8 @@
 import json
 import random
+import re
 import traceback
+from collections import defaultdict, deque
 
 from loguru import logger
 from rake_nltk import Rake
@@ -22,6 +24,41 @@ rake = Rake()
 
 with open("resources/preposition-to-verb-map.json") as f:
     preposition_to_verb_map = json.loads(f.read())
+
+# Verbs that are grammatically fine but comedically dead - "@bakchod needed your mom
+# last night" is not a joke. Filtered out before we pick a verb to build the joke on.
+BORING_VERBS = {
+    "be",
+    "have",
+    "do",
+    "get",
+    "go",
+    "say",
+    "tell",
+    "know",
+    "think",
+    "want",
+    "need",
+    "let",
+    "use",
+    "come",
+    "seem",
+    "look",
+    "mean",
+}
+
+# Things that tokenize as nouns/proper-nouns but read as garbage in a punchline
+URL_PATTERN = re.compile(r"https?://\S+|www\.\S+")
+MENTION_PATTERN = re.compile(r"@\w+")
+COMMAND_PATTERN = re.compile(r"(?:^|\s)/\w+(?:@\w+)?")
+
+# A joke needs something to chew on - one-word replies just produce noise
+MIN_JOKEABLE_WORDS = 2
+
+# Remember the last few punchlines per chat so /mom doesn't repeat itself
+RECENT_JOKE_MEMORY = 5
+MAX_GENERATION_ATTEMPTS = 3
+recent_jokes = defaultdict(lambda: deque(maxlen=RECENT_JOKE_MEMORY))
 
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -95,27 +132,15 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_sticker(sticker=sticker_to_send)
             return
 
-        # Generate the response
-        if random.random() < 0.20:
-            logger.info(
-                "[mom] generating response with rake - protagonist='{}' message='{}'",
-                protagonist,
-                message,
-            )
-            response = rake_joke(message, protagonist)
-        else:
-            logger.info(
-                "[mom] generating response with spacy - protagonist='{}' message='{}'",
-                protagonist,
-                message,
-            )
-            response = spacy_joke(message, protagonist)
+        response = generate_response(message, protagonist, update.message.chat_id)
 
         if random.random() > 0.01:
             await update.message.reply_to_message.reply_text(response)
         else:
             # User has chance to get protected
-            await update.message.reply_text(recipient + " is protected by a 👁️ Nazar Raksha Kavach")
+            await update.message.reply_text(
+                f"{util.extract_pretty_name_from_tg_user(recipient)} is protected by a 👁️ Nazar Raksha Kavach"
+            )
 
         return
 
@@ -126,6 +151,42 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             traceback.format_exc(),
         )
         return
+
+
+def generate_response(message, protagonist, chat_id=None):
+    """Generate a punchline, rerolling if we just told the same one in this chat."""
+
+    response = None
+
+    for _ in range(MAX_GENERATION_ATTEMPTS):
+        response = None
+
+        if random.random() < 0.20:
+            logger.info(
+                "[mom] generating response with rake - protagonist='{}' message='{}'",
+                protagonist,
+                message,
+            )
+            response = rake_joke(message, protagonist)
+
+        # rake_joke returns None when it can't find a usable phrase - fall through
+        if response is None:
+            logger.info(
+                "[mom] generating response with spacy - protagonist='{}' message='{}'",
+                protagonist,
+                message,
+            )
+            response = spacy_joke(message, protagonist)
+
+        if chat_id is None or response not in recent_jokes[chat_id]:
+            break
+
+        logger.debug("[mom] response='{}' was a repeat, rerolling", response)
+
+    if chat_id is not None:
+        recent_jokes[chat_id].append(response)
+
+    return response
 
 
 def extract_target_message(update: Update):
@@ -143,13 +204,47 @@ def extract_target_message(update: Update):
     return target_message
 
 
+def clean_sentence(sentence):
+    """Strip out the bits that spaCy happily tags but that read as garbage in a joke."""
+
+    if sentence is None:
+        return None
+
+    cleaned = URL_PATTERN.sub(" ", sentence)
+    cleaned = MENTION_PATTERN.sub(" ", cleaned)
+    cleaned = COMMAND_PATTERN.sub(" ", cleaned)
+    cleaned = " ".join(cleaned.split())
+
+    return cleaned if cleaned else None
+
+
+def is_wordlike(text):
+    """True if the token could plausibly sit in an English sentence (no emoji, no digits)."""
+
+    return len(text) > 1 and re.search(r"[a-zA-Z]", text) is not None
+
+
 def rake_joke(message, protagonist):
+    message = clean_sentence(message)
+    if message is None:
+        return None
+
     # Extract a phrase from the message
     rake.extract_keywords_from_text(message)
-    phrase = rake.get_ranked_phrases()[0]
+    phrases = rake.get_ranked_phrases()
+
+    # Messages made entirely of stopwords give us nothing to work with
+    if not phrases:
+        logger.info("[mom] rake found no phrases in message='{}'", message)
+        return None
+
+    # Long phrases drown the punchline - keep it snappy
+    phrase = " ".join(phrases[0].split()[:4])
 
     # Extract a random verb from the phrase
     random_verb = util.extract_magic_word(phrase)
+    if random_verb is None:
+        return None
 
     # Derive a preposition that goes along
     if random_verb in preposition_to_verb_map:
@@ -161,7 +256,12 @@ def rake_joke(message, protagonist):
     # Extract a random preposition
     preposition = random.choice(prepositions)
 
-    return f"{protagonist} {phrase} {preposition} your mom last night"
+    # If the magic word is a genuine verb, let it carry the joke. Otherwise keep the
+    # raw phrase - past-tensing a noun just invents words like "dayed".
+    verb_past = lookup_verb_past(random_verb.lower())
+    subject = verb_past if verb_past is not None else phrase
+
+    return f"{protagonist} {subject} {preposition} your mom last night"
 
 
 def spacy_joke(message, protagonist):
@@ -177,77 +277,142 @@ def joke_mom(sentence, protagonist, force=False):
         # flip the joke occasionally
         target, protagonist = protagonist, target
 
-    # extract parts of speech and generate insults
-    if sentence is not None:
-        verb = get_verb(sentence)
-        if verb != 0:
-            return f"{protagonist} {verb} {target} last night"
-        else:
-            adjective = get_pos(sentence, "ADJ")
-            if adjective != 0:
-                return f"{protagonist} is nice but you are {adjective}"
-            else:
-                propn = get_pos(sentence, "PROPN")
-                if propn != 0:
-                    past = get_verb_past(propn)
-                    return f"{protagonist} {past} {target} last night"
-                else:
-                    return random_reply(protagonist)
-    else:
+    if sentence is None:
         return f"{protagonist}, kripaya aapna aadhaar link kare"
 
+    sentence = clean_sentence(sentence)
 
-# return the first relevant part of speech tag
+    # Nothing survived cleaning, or the message was too thin to joke about
+    if sentence is None or len(sentence.split()) < MIN_JOKEABLE_WORDS:
+        return random_reply(protagonist)
+
+    # extract parts of speech and generate insults
+    verb = get_verb(sentence)
+    if verb is not None:
+        return f"{protagonist} {verb} {target} last night"
+
+    adjective = get_pos(sentence, "ADJ")
+    if adjective is not None:
+        # works whether the adjective is a compliment or an insult
+        return f"{protagonist} is {adjective}, {target} told me"
+
+    propn = get_pos(sentence, "PROPN")
+    if propn is not None:
+        past = get_verb_past(propn.lower())
+        return f"{protagonist} {past} {target} last night"
+
+    return random_reply(protagonist)
+
+
+# return a random relevant part of speech tag
 def get_pos(sentence, pos):
     doc = util.get_nlp()(sentence)
-    for token in doc:
-        if token.pos_ == pos:
-            return token.text
-    return 0
+
+    candidates = [token.text for token in doc if token.pos_ == pos and is_wordlike(token.text)]
+
+    if not candidates:
+        return None
+
+    return random.choice(candidates)
 
 
-# return a random verb from the sentence
+def has_object(token):
+    """True if the verb already takes a direct object, i.e. it's transitive."""
+
+    try:
+        return any(child.dep_ in ("dobj", "obj", "dative") for child in token.children)
+    except TypeError:
+        return False
+
+
+# return a verb from the sentence, preferring ones that make the joke work
 def get_verb(sentence):
     doc = util.get_nlp()(sentence)
 
-    verbs = []
+    transitive = []
+    other = []
 
     for token in doc:
-        if token.pos_ == "VERB":
-            verbs.append(str(token.lemma_))
+        if token.pos_ != "VERB":
+            continue
+
+        lemma = str(token.lemma_).lower()
+
+        # "@bakchod was your mom last night" isn't a joke
+        if lemma in BORING_VERBS or not is_wordlike(lemma):
+            continue
+
+        if has_object(token):
+            transitive.append(lemma)
+        else:
+            other.append(lemma)
+
+    # "X <verb>'d your mom" only works for verbs that can take an object -
+    # intransitives give us "@bakchod went your mom last night"
+    verbs = transitive or other
 
     if verbs:
-        verb_past = get_verb_past(random.choice(verbs))
-        return verb_past
+        return get_verb_past(random.choice(verbs))
 
-    else:
-        noun = get_pos(sentence, "NOUN")
+    noun = get_pos(sentence, "NOUN")
 
-        if noun:
-            # see if the noun has a verb form
-            verb_form_past = get_verb_past(noun)
+    if noun is not None:
+        # only use the noun if it genuinely has a verb form, otherwise we end up
+        # inventing words like "tableed"
+        known_past = lookup_verb_past(noun.lower())
+        if known_past is not None:
+            return known_past
 
-            if verb_form_past != -1:
-                return verb_form_past
+    return None
 
-    return 0
+
+def lookup_verb_past(verb):
+    """Look the verb up in the irregular-past table, returning None if it isn't a verb."""
+
+    verb_past_lookup = util.get_verb_past_lookup()
+
+    # the resource file wraps the map in a single-element list
+    if isinstance(verb_past_lookup, list):
+        verb_past_lookup = verb_past_lookup[0] if verb_past_lookup else {}
+
+    return verb_past_lookup.get(verb)
 
 
 # return simple past form of verb
 def get_verb_past(verb):
-    verb_past_lookup = util.get_verb_past_lookup()
+    verb = verb.lower()
 
-    try:
-        verb_past = verb_past_lookup[0][verb]
-    except KeyError:
-        if verb.endswith("ed"):
-            verb_past = verb
-        elif verb.endswith("e"):
-            verb_past = verb + "d"
-        else:
-            verb_past = verb + "ed"
+    known_past = lookup_verb_past(verb)
+    if known_past is not None:
+        return known_past
 
-    return verb_past
+    return regular_past(verb)
+
+
+def regular_past(verb):
+    """Best-effort regular past tense for verbs missing from the lookup table."""
+
+    if verb.endswith("ed"):
+        return verb
+
+    if verb.endswith("e"):
+        return verb + "d"
+
+    # carry -> carried, but stay -> stayed
+    if verb.endswith("y") and len(verb) > 2 and verb[-2] not in "aeiou":
+        return verb[:-1] + "ied"
+
+    # single-syllable CVC doubles the final consonant: stan -> stanned
+    if (
+        len(verb) > 2
+        and verb[-1] not in "aeiouwxy"
+        and verb[-2] in "aeiou"
+        and verb[-3] not in "aeiou"
+        and len(re.findall(r"[aeiou]+", verb)) == 1
+    ):
+        return verb + verb[-1] + "ed"
+
+    return verb + "ed"
 
 
 def random_reply(protagonist):
@@ -260,6 +425,4 @@ def random_reply(protagonist):
         "bhaak bsdk",
     ]
 
-    random_int = random.randint(0, len(replies) - 1)
-
-    return replies[random_int]
+    return random.choice(replies)

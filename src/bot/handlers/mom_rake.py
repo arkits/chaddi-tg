@@ -42,6 +42,9 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         response = mom_spacy.rake_joke(message, protagonist)
+        if response is None:
+            # rake couldn't find a usable phrase - fall back to the spacy joke
+            response = mom_spacy.spacy_joke(message, protagonist)
 
         logger.info("[mom2] returning response='{}'", response)
 
