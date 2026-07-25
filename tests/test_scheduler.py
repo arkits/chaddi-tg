@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from telegram.constants import ParseMode
+from telegram.error import BadRequest, Forbidden
 
 from src.domain import scheduler
 
@@ -213,6 +214,31 @@ class TestScheduler:
         await scheduler.daily_post_callback(mock_context)
 
         assert mock_context.bot.send_message.called
+
+    @pytest.mark.parametrize("error_cls,error_arg", [(BadRequest, "Chat not found"), (Forbidden, "Bot was kicked")])
+    @patch("src.domain.scheduler.util")
+    @patch("src.domain.scheduler.Group")
+    @patch("src.domain.scheduler.Quote")
+    @pytest.mark.anyio
+    async def test_daily_post_callback_disables_group_on_unreachable_chat(
+        self, mock_quote_class, mock_group_class, mock_util, error_cls, error_arg
+    ):
+        """Test that an unreachable chat (kicked/deleted) disables good_morning for that group."""
+        mock_group = MagicMock()
+        mock_group.group_id = "test_group_id"
+        mock_group.name = "Test Group"
+        mock_group.metadata = {"good_morning_enabled": True}
+        mock_group_class.select.return_value = [mock_group]
+
+        mock_quote_class.select.return_value.order_by.return_value.limit.return_value.first.return_value = None
+
+        mock_context = MagicMock()
+        mock_context.bot.send_message.side_effect = error_cls(error_arg)
+
+        await scheduler.daily_post_callback(mock_context)
+
+        assert mock_group.metadata["good_morning_enabled"] is False
+        assert mock_group.save.called
 
     def test_schedule_daily_posts(self, mock_job_queue):
         """Test scheduling daily good morning posts."""

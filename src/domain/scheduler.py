@@ -8,6 +8,7 @@ import peewee
 import pytz
 from loguru import logger
 from telegram.constants import ParseMode
+from telegram.error import BadRequest, Forbidden
 from telegram.ext import ContextTypes, JobQueue
 
 from src.bot.handlers.remind import build_job_name, reminder_handler
@@ -112,6 +113,15 @@ async def daily_post_callback(context: ContextTypes.DEFAULT_TYPE):
                 chat_id=group.group_id, text=message_text, parse_mode=ParseMode.HTML
             )
             logger.info(f"Sent daily post to group {group.name} ({group.group_id})")
+        except (BadRequest, Forbidden) as e:
+            # The bot is no longer able to reach this chat (kicked, chat deleted, etc.).
+            # Disable the job for this group so it doesn't fail again every day.
+            logger.warning(
+                f"Disabling good_morning for group {group.name} ({group.group_id}) "
+                f"after unrecoverable send failure: {e}"
+            )
+            group.metadata["good_morning_enabled"] = False
+            group.save()
         except Exception as e:
             logger.error(f"Failed to send daily post to group {group.name}: {e}")
 
