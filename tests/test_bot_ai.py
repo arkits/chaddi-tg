@@ -129,6 +129,102 @@ async def test_handle_with_args(
 @patch("src.bot.handlers.ai.ai")
 @patch("src.bot.handlers.ai.Group")
 @patch("src.bot.handlers.ai.util.paywall_user")
+async def test_handle_question_param(
+    mock_paywall, mock_group_class, mock_ai_module, mock_update, mock_context, mock_llm_client
+):
+    """The question param is used when there are no command args (the mention path)"""
+    mock_paywall.return_value = True
+    mock_update.effective_user.id = 123
+    mock_update.effective_chat.id = 456
+    mock_update.message.from_user.username = "arkits"
+
+    mock_group = MagicMock()
+    mock_group.metadata = {"enabled_commands": ["ai"]}
+    mock_group_class.get_by_id.return_value = mock_group
+
+    mock_context.args = None
+    mock_update.message.reply_to_message = None
+    mock_update.message.photo = None
+    mock_update.message.caption = None
+
+    mock_ai_module.get_default_client.return_value = mock_llm_client
+
+    sent_message = AsyncMock()
+    sent_message.edit_text = AsyncMock()
+    mock_update.message.reply_text = AsyncMock(return_value=sent_message)
+
+    await ai.handle(mock_update, mock_context, question="how much is 10000 divided by 12")
+
+    messages = mock_llm_client.generate_streaming.call_args.kwargs["messages"]
+    assert messages[-1]["content"] == "@arkits: how much is 10000 divided by 12"
+
+
+@pytest.mark.asyncio
+@patch("src.bot.handlers.ai.Group")
+@patch("src.bot.handlers.ai.util.paywall_user")
+async def test_handle_quiet_skips_paywall_reply(
+    mock_paywall, mock_group_class, mock_update, mock_context
+):
+    """quiet=True suppresses the not-enough-rokda reply"""
+    mock_paywall.return_value = False
+    mock_update.effective_user.id = 123
+    mock_update.effective_chat.id = 456
+    mock_context.args = None
+
+    await ai.handle(mock_update, mock_context, question="hello", quiet=True)
+
+    assert not mock_update.message.reply_text.called
+
+
+@pytest.mark.asyncio
+@patch("src.bot.handlers.ai.Group")
+@patch("src.bot.handlers.ai.util.paywall_user")
+async def test_handle_quiet_skips_disabled_group_reply(
+    mock_paywall, mock_group_class, mock_update, mock_context
+):
+    """quiet=True suppresses the command-not-enabled reply"""
+    mock_paywall.return_value = True
+    mock_update.effective_user.id = 123
+    mock_update.effective_chat.id = 456
+    mock_context.args = None
+
+    mock_group = MagicMock()
+    mock_group.metadata = {}
+    mock_group_class.get_by_id.return_value = mock_group
+
+    await ai.handle(mock_update, mock_context, question="hello", quiet=True)
+
+    assert not mock_update.message.reply_text.called
+
+
+@pytest.mark.asyncio
+@patch("src.bot.handlers.ai.Group")
+@patch("src.bot.handlers.ai.util.paywall_user")
+async def test_handle_quiet_skips_empty_question_reply(
+    mock_paywall, mock_group_class, mock_update, mock_context
+):
+    """quiet=True suppresses the please-provide-a-question reply for a bare mention"""
+    mock_paywall.return_value = True
+    mock_update.effective_user.id = 123
+    mock_update.effective_chat.id = 456
+    mock_context.args = None
+    mock_update.message.reply_to_message = None
+    mock_update.message.photo = None
+    mock_update.message.caption = None
+
+    mock_group = MagicMock()
+    mock_group.metadata = {"enabled_commands": ["ai"]}
+    mock_group_class.get_by_id.return_value = mock_group
+
+    await ai.handle(mock_update, mock_context, question=None, quiet=True)
+
+    assert not mock_update.message.reply_text.called
+
+
+@pytest.mark.asyncio
+@patch("src.bot.handlers.ai.ai")
+@patch("src.bot.handlers.ai.Group")
+@patch("src.bot.handlers.ai.util.paywall_user")
 async def test_handle_reply_without_args(
     mock_paywall, mock_group_class, mock_ai_module, mock_update, mock_context, mock_llm_client
 ):

@@ -13,11 +13,31 @@ from src.domain import ai, dc, util
 COMMAND_COST = 200
 
 
-async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    question: str | None = None,
+    quiet: bool = False,
+):
+    """
+    Handle an AI request.
+
+    Args:
+        update: The Telegram update
+        context: The Telegram context
+        question: The user's question. Defaults to the command args - pass this
+            explicitly when invoking from a non-command message (eg. a mention).
+        quiet: Skip the "not enough ₹okda" / "not enabled" / "provide a question"
+            replies and bail out silently. Used by the mention path, where the
+            user didn't explicitly invoke a command.
+    """
     try:
         dc.log_command_usage("ai", update)
 
         if not util.paywall_user(update.effective_user.id, COMMAND_COST):
+            if quiet:
+                logger.info(f"[ai] Not enough ₹okda for user {update.effective_user.id}")
+                return
             await update.message.reply_text(
                 f"Sorry! You don't have enough ₹okda! Each `/ai` costs {COMMAND_COST} ₹okda.",
                 parse_mode=ParseMode.MARKDOWN,
@@ -28,6 +48,8 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             group = Group.get_by_id(update.effective_chat.id)
             if not group or "ai" not in group.metadata.get("enabled_commands", []):
                 logger.info(f"[ai] Command disabled for group {update.effective_chat.id}")
+                if quiet:
+                    return
                 await update.message.reply_text(
                     "This command is not enabled for this group.",
                     parse_mode=ParseMode.MARKDOWN,
@@ -42,9 +64,9 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         image_bytes = None
         image_mime_type = None
 
-        # Check for text in command args
-        user_question = None
-        if context.args:
+        # Check for text passed in directly, otherwise fall back to command args
+        user_question = question
+        if not user_question and context.args:
             user_question = " ".join(context.args)
 
         # Check for reply to message
@@ -83,7 +105,8 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             logger.info(f"[ai] Downloaded photo from message, size={len(image_bytes)} bytes")
 
         # Use caption from current message if no text yet
-        if not message_text and update.message.caption:
+        # (skipped when the caller passed the question in - it already parsed the caption)
+        if not message_text and question is None and update.message.caption:
             # Remove the /ai command from caption
             caption = update.message.caption
             message_text = caption[3:].strip() if caption.startswith("/ai") else caption
@@ -93,6 +116,9 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             message_text = user_question
 
         if not message_text and not image_bytes and not formatted_reply_context:
+            if quiet:
+                logger.info("[ai] Nothing to respond to, skipping")
+                return
             await update.message.reply_text(
                 "Please provide a question, reply to a message, or send an image with `/ai`.",
                 parse_mode=ParseMode.MARKDOWN,

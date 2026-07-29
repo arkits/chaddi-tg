@@ -62,6 +62,7 @@ async def test_all_syncs_persistence_data(mock_update, mock_context):
         patch("src.bot.handlers.defaults.handle_bakchod_metadata_effects"),
         patch("src.bot.handlers.defaults.handle_dice_rolls"),
         patch("src.bot.handlers.defaults.handle_message_matching"),
+        patch("src.bot.handlers.defaults.handle_bot_mention"),
     ):
         mock_bakchod = MagicMock()
         mock_bakchod.rokda = 100
@@ -102,6 +103,7 @@ async def test_all_rewards_rokda(mock_update, mock_context):
         patch("src.bot.handlers.defaults.handle_bakchod_metadata_effects"),
         patch("src.bot.handlers.defaults.handle_dice_rolls"),
         patch("src.bot.handlers.defaults.handle_message_matching"),
+        patch("src.bot.handlers.defaults.handle_bot_mention"),
     ):
         mock_bakchod = MagicMock()
         mock_bakchod.rokda = 100
@@ -232,6 +234,161 @@ async def test_handle_message_matching_bestie(mock_update, mock_context):
         await defaults.handle_message_matching(mock_update, mock_context)
 
         mock_bestie.handle.assert_called_once_with(mock_update, mock_context, log_to_dc=False)
+
+
+@pytest.fixture
+def bot_username():
+    """Pin the configured bot username for mention tests."""
+    with patch("src.bot.handlers.defaults.BOT_USERNAME", "chaddibot"):
+        yield
+
+
+def make_mention_message(text, mention="@ChaddiBot", entity_type="mention", is_bot=False):
+    """Build a mock message whose text contains a bot mention entity."""
+    user = MagicMock(spec=User)
+    user.is_bot = is_bot
+    user.username = "testuser"
+
+    message = MagicMock(spec=Message)
+    message.text = text
+    message.caption = None
+    message.caption_entities = ()
+    message.from_user = user
+
+    entity = MagicMock()
+    entity.type = entity_type
+    if entity_type == "text_mention":
+        mentioned_user = MagicMock(spec=User)
+        mentioned_user.username = "ChaddiBot"
+        entity.user = mentioned_user
+    else:
+        entity.user = None
+    message.entities = (entity,)
+    message.parse_entity.return_value = mention
+
+    return message
+
+
+@pytest.mark.asyncio
+async def test_handle_bot_mention_routes_to_ai(mock_update, mock_context, bot_username):
+    """Mentioning the bot routes the message to the AI handler, mention stripped."""
+    with patch("src.bot.handlers.defaults.ai") as mock_ai:
+        mock_ai.handle = AsyncMock()
+        mock_update.message = make_mention_message("@ChaddiBot how much is 10000 divided by 12")
+
+        await defaults.handle_bot_mention(mock_update, mock_context)
+
+        mock_ai.handle.assert_awaited_once_with(
+            mock_update,
+            mock_context,
+            question="how much is 10000 divided by 12",
+            quiet=True,
+        )
+
+
+@pytest.mark.asyncio
+async def test_handle_bot_mention_text_mention_entity(mock_update, mock_context, bot_username):
+    """A text_mention entity pointing at the bot also routes to the AI handler."""
+    with patch("src.bot.handlers.defaults.ai") as mock_ai:
+        mock_ai.handle = AsyncMock()
+        mock_update.message = make_mention_message(
+            "Chaddi what is this", mention="Chaddi", entity_type="text_mention"
+        )
+
+        await defaults.handle_bot_mention(mock_update, mock_context)
+
+        mock_ai.handle.assert_awaited_once_with(
+            mock_update, mock_context, question="what is this", quiet=True
+        )
+
+
+@pytest.mark.asyncio
+async def test_handle_bot_mention_bare_mention(mock_update, mock_context, bot_username):
+    """A bare mention with no question passes question=None (reply may still supply context)."""
+    with patch("src.bot.handlers.defaults.ai") as mock_ai:
+        mock_ai.handle = AsyncMock()
+        mock_update.message = make_mention_message("@ChaddiBot")
+
+        await defaults.handle_bot_mention(mock_update, mock_context)
+
+        mock_ai.handle.assert_awaited_once_with(
+            mock_update, mock_context, question=None, quiet=True
+        )
+
+
+@pytest.mark.asyncio
+async def test_handle_bot_mention_uses_runtime_username(mock_update, mock_context, bot_username):
+    """The username Telegram reports wins over a stale BOT_USERNAME config value."""
+    with patch("src.bot.handlers.defaults.ai") as mock_ai:
+        mock_ai.handle = AsyncMock()
+        mock_context.bot.username = "SomeOtherBot"
+        mock_update.message = make_mention_message(
+            "@SomeOtherBot hello there", mention="@SomeOtherBot"
+        )
+
+        await defaults.handle_bot_mention(mock_update, mock_context)
+
+        mock_ai.handle.assert_awaited_once_with(
+            mock_update, mock_context, question="hello there", quiet=True
+        )
+
+
+@pytest.mark.asyncio
+async def test_handle_bot_mention_other_user_mentioned(mock_update, mock_context, bot_username):
+    """Mentioning someone else does not route to the AI handler."""
+    with patch("src.bot.handlers.defaults.ai") as mock_ai:
+        mock_ai.handle = AsyncMock()
+        mock_update.message = make_mention_message("@someoneelse hello", mention="@someoneelse")
+
+        await defaults.handle_bot_mention(mock_update, mock_context)
+
+        assert not mock_ai.handle.called
+
+
+@pytest.mark.asyncio
+async def test_handle_bot_mention_no_entities(mock_update, mock_context, bot_username):
+    """Plain text mentioning the bot's name without an entity does not fire."""
+    with patch("src.bot.handlers.defaults.ai") as mock_ai:
+        mock_ai.handle = AsyncMock()
+        message = make_mention_message("chaddibot is being dumb again")
+        message.entities = ()
+        mock_update.message = message
+
+        await defaults.handle_bot_mention(mock_update, mock_context)
+
+        assert not mock_ai.handle.called
+
+
+@pytest.mark.asyncio
+async def test_handle_bot_mention_ignores_bots(mock_update, mock_context, bot_username):
+    """Mentions from other bots are ignored, to avoid bot-to-bot loops."""
+    with patch("src.bot.handlers.defaults.ai") as mock_ai:
+        mock_ai.handle = AsyncMock()
+        mock_update.message = make_mention_message("@ChaddiBot hello", is_bot=True)
+
+        await defaults.handle_bot_mention(mock_update, mock_context)
+
+        assert not mock_ai.handle.called
+
+
+@pytest.mark.asyncio
+async def test_handle_bot_mention_caption(mock_update, mock_context, bot_username):
+    """A mention in a photo caption routes to the AI handler."""
+    with patch("src.bot.handlers.defaults.ai") as mock_ai:
+        mock_ai.handle = AsyncMock()
+        message = make_mention_message("@ChaddiBot what is this")
+        message.text = None
+        message.caption = "@ChaddiBot what is this"
+        message.caption_entities = message.entities
+        message.entities = ()
+        message.parse_caption_entity.return_value = "@ChaddiBot"
+        mock_update.message = message
+
+        await defaults.handle_bot_mention(mock_update, mock_context)
+
+        mock_ai.handle.assert_awaited_once_with(
+            mock_update, mock_context, question="what is this", quiet=True
+        )
 
 
 @pytest.mark.asyncio

@@ -9,9 +9,14 @@ from telegram.ext import ContextTypes
 
 from src.bot.handlers import mom_spacy, roll
 from src.db import EMPTY_JSON, Bakchod, GroupMember, bakchod_dao, group_dao
-from src.domain import dc, rokda, util
+from src.domain import config, dc, rokda, util
 
-from . import antiwordle, bestie, hi, instagram, musiclinks, x_links
+from . import ai, antiwordle, bestie, hi, instagram, musiclinks, x_links
+
+app_config = config.get_config()
+
+# Config values are sometimes quoted - normalize to a bare lowercase username
+BOT_USERNAME = app_config.get("TELEGRAM", "BOT_USERNAME").strip().strip("\"'").lstrip("@").lower()
 
 
 async def all(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -35,6 +40,8 @@ async def all(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await handle_dice_rolls(update, context)
 
     await handle_message_matching(update, context)
+
+    await handle_bot_mention(update, context)
 
     await antiwordle.handle(update, context)
 
@@ -147,6 +154,86 @@ async def handle_message_matching(update: Update, context: ContextTypes.DEFAULT_
         # Handle bestie messages
         if "bestie" in message_text.lower():
             await bestie.handle(update, context, log_to_dc=False)
+
+    return
+
+
+def extract_bot_mention_question(message, bot_username: str | None = None) -> str | None:
+    """
+    Check if the bot was @mentioned in a message, and if so return the message
+    text with the mention removed - ie. the question being asked of the bot.
+
+    Returns None if the bot wasn't mentioned. Returns an empty string if it was
+    mentioned with nothing else (eg. a bare "@ChaddiBot").
+    """
+    bot_username = bot_username or BOT_USERNAME
+
+    text = message.text or message.caption
+    if not text:
+        return None
+
+    entities = message.entities or message.caption_entities
+    if not entities:
+        return None
+
+    for entity in entities:
+        mention_text = None
+
+        if entity.type == "mention":
+            # Parse via the Message helper - entity offsets are in UTF-16 units
+            parsed = (
+                message.parse_entity(entity)
+                if message.text
+                else message.parse_caption_entity(entity)
+            )
+            if parsed.lstrip("@").lower() == bot_username:
+                mention_text = parsed
+        elif entity.type == "text_mention" and entity.user is not None:
+            username = entity.user.username
+            if username and username.lower() == bot_username:
+                mention_text = (
+                    message.parse_entity(entity)
+                    if message.text
+                    else message.parse_caption_entity(entity)
+                )
+
+        if mention_text is not None:
+            return text.replace(mention_text, "", 1).strip()
+
+    return None
+
+
+async def handle_bot_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Route messages that @mention the bot to the AI handler.
+
+    The mention is stripped out and the rest of the message becomes the
+    question. Replies are handled by ai.handle, so mentioning the bot while
+    replying to a message asks about that message.
+    """
+    try:
+        message = update.message
+
+        if message.from_user is not None and message.from_user.is_bot:
+            return
+
+        # Prefer the username Telegram reports over the configured one - a stale
+        # BOT_USERNAME would otherwise make mentions silently stop working
+        bot_username = getattr(context.bot, "username", None)
+        if isinstance(bot_username, str) and bot_username:
+            bot_username = bot_username.lstrip("@").lower()
+        else:
+            bot_username = BOT_USERNAME
+
+        question = extract_bot_mention_question(message, bot_username)
+        if question is None:
+            return
+
+        logger.info(f"[defaults] Bot mentioned, routing to ai - question='{question}'")
+
+        await ai.handle(update, context, question=question or None, quiet=True)
+    except Exception as e:
+        logger.error("Caught Exception in handle_bot_mention - e={}", e)
 
     return
 
