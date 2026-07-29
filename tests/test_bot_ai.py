@@ -129,6 +129,93 @@ async def test_handle_with_args(
 @patch("src.bot.handlers.ai.ai")
 @patch("src.bot.handlers.ai.Group")
 @patch("src.bot.handlers.ai.util.paywall_user")
+async def test_handle_reply_without_args(
+    mock_paywall, mock_group_class, mock_ai_module, mock_update, mock_context, mock_llm_client
+):
+    """Bare `/ai` replying to a text message should use the replied-to message as the question"""
+    mock_paywall.return_value = True
+    mock_update.effective_user.id = 123
+    mock_update.effective_chat.id = 456
+
+    mock_group = MagicMock()
+    mock_group.metadata = {"enabled_commands": ["ai"]}
+    mock_group_class.get_by_id.return_value = mock_group
+
+    mock_context.args = None
+    mock_update.message.photo = None
+    mock_update.message.caption = None
+
+    reply_user = MagicMock(spec=User)
+    reply_user.username = "minji"
+    reply_message = MagicMock(spec=Message)
+    reply_message.text = "What's the consensus on tongue cleaners?"
+    reply_message.caption = None
+    reply_message.photo = None
+    reply_message.from_user = reply_user
+    mock_update.message.reply_to_message = reply_message
+
+    mock_ai_module.get_default_client.return_value = mock_llm_client
+
+    sent_message = AsyncMock()
+    sent_message.edit_text = AsyncMock()
+    mock_update.message.reply_text = AsyncMock(return_value=sent_message)
+
+    await ai.handle(mock_update, mock_context)
+
+    mock_llm_client.generate_streaming.assert_called_once()
+    messages = mock_llm_client.generate_streaming.call_args.kwargs["messages"]
+    assert messages[-1]["content"] == "@minji: What's the consensus on tongue cleaners?"
+
+
+@pytest.mark.asyncio
+@patch("src.bot.handlers.ai.ai")
+@patch("src.bot.handlers.ai.Group")
+@patch("src.bot.handlers.ai.util.paywall_user")
+async def test_handle_reply_with_args(
+    mock_paywall, mock_group_class, mock_ai_module, mock_update, mock_context, mock_llm_client
+):
+    """`/ai <question>` replying to a message should include both the reply and the question"""
+    mock_paywall.return_value = True
+    mock_update.effective_user.id = 123
+    mock_update.effective_chat.id = 456
+
+    mock_group = MagicMock()
+    mock_group.metadata = {"enabled_commands": ["ai"]}
+    mock_group_class.get_by_id.return_value = mock_group
+
+    mock_context.args = ["is", "this", "true?"]
+    mock_update.message.photo = None
+    mock_update.message.caption = None
+    mock_update.message.from_user.username = "arkits"
+
+    reply_user = MagicMock(spec=User)
+    reply_user.username = "minji"
+    reply_message = MagicMock(spec=Message)
+    reply_message.text = "Tongue cleaners are useless"
+    reply_message.caption = None
+    reply_message.photo = None
+    reply_message.from_user = reply_user
+    mock_update.message.reply_to_message = reply_message
+
+    mock_ai_module.get_default_client.return_value = mock_llm_client
+
+    sent_message = AsyncMock()
+    sent_message.edit_text = AsyncMock()
+    mock_update.message.reply_text = AsyncMock(return_value=sent_message)
+
+    await ai.handle(mock_update, mock_context)
+
+    mock_llm_client.generate_streaming.assert_called_once()
+    messages = mock_llm_client.generate_streaming.call_args.kwargs["messages"]
+    assert messages[-1]["content"] == (
+        "@minji: Tongue cleaners are useless\n\n@arkits: is this true?"
+    )
+
+
+@pytest.mark.asyncio
+@patch("src.bot.handlers.ai.ai")
+@patch("src.bot.handlers.ai.Group")
+@patch("src.bot.handlers.ai.util.paywall_user")
 async def test_handle_markdown_parse_error(
     mock_paywall, mock_group_class, mock_ai_module, mock_update, mock_context, mock_llm_client
 ):

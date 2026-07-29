@@ -92,7 +92,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not message_text and user_question:
             message_text = user_question
 
-        if not message_text and not image_bytes:
+        if not message_text and not image_bytes and not formatted_reply_context:
             await update.message.reply_text(
                 "Please provide a question, reply to a message, or send an image with `/ai`.",
                 parse_mode=ParseMode.MARKDOWN,
