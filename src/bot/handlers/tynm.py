@@ -64,7 +64,6 @@ class PosterLayout:
     name: str
     modi_location: str
     modi_scale: float
-    watermark_position: tuple[int, int]
     watermark_size: tuple[int, int]
     watermark_opacity: float
     portrait_corner: str
@@ -76,7 +75,6 @@ POSTER_LAYOUTS = [
         name="classic_left",
         modi_location="bottom_left",
         modi_scale=2.1,
-        watermark_position=(-60, -30),
         watermark_size=(560, 560),
         watermark_opacity=0.22,
         portrait_corner="bottom_right",
@@ -86,7 +84,6 @@ POSTER_LAYOUTS = [
         name="right_honour",
         modi_location="bottom_right",
         modi_scale=2.0,
-        watermark_position=(780, -20),
         watermark_size=(540, 540),
         watermark_opacity=0.2,
         portrait_corner="bottom_left",
@@ -96,7 +93,6 @@ POSTER_LAYOUTS = [
         name="top_salute",
         modi_location="top_right",
         modi_scale=2.35,
-        watermark_position=(700, 40),
         watermark_size=(500, 500),
         watermark_opacity=0.18,
         portrait_corner="bottom_left",
@@ -106,7 +102,6 @@ POSTER_LAYOUTS = [
         name="left_tower",
         modi_location="top_left",
         modi_scale=2.25,
-        watermark_position=(-80, 20),
         watermark_size=(520, 520),
         watermark_opacity=0.2,
         portrait_corner="bottom_right",
@@ -116,13 +111,22 @@ POSTER_LAYOUTS = [
         name="center_presence",
         modi_location="center",
         modi_scale=3.1,
-        watermark_position=(180, 120),
         watermark_size=(720, 720),
         watermark_opacity=0.14,
         portrait_corner="bottom_right",
         portrait_size=180,
     ),
 ]
+
+PLACEMENT_LOCATIONS = ("bottom_right", "bottom_left", "top_right", "top_left", "center")
+MIRRORED_PLACEMENT_LOCATIONS = ("bottom_left", "top_left")
+# Watermark candidates are anchored on a 3x3 grid of the space the foreground modi leaves free,
+# then jittered, so the two modis never land in the same spot twice in a row.
+WATERMARK_ANCHOR_FRACTIONS = (0.0, 0.5, 1.0)
+WATERMARK_JITTER_FRACTION = 0.04
+WATERMARK_BLEED_FRACTION = 0.05
+WATERMARK_MAX_CANVAS_FRACTION = 0.45
+WATERMARK_SHRINK_FACTORS = (1.0, 0.8, 0.65, 0.5)
 
 MESSAGE_BOX_MARGIN_X = 120
 MESSAGE_BOX_TOP = 300
@@ -343,25 +347,174 @@ async def react_to_tynm_invocation(message) -> None:
         logger.warning("[tynm] unable to react to invocation message e={}", e)
 
 
+def as_rgba(img: Image.Image) -> Image.Image:
+    return img.convert("RGBA") if img.mode != "RGBA" else img.copy()
+
+
+def box_at(origin: tuple[int, int], size: tuple[int, int]) -> tuple[int, int, int, int]:
+    x, y = origin
+    width, height = size
+    return (x, y, x + width, y + height)
+
+
+def boxes_overlap_area(first: tuple[int, ...], second: tuple[int, ...]) -> int:
+    overlap_width = min(first[2], second[2]) - max(first[0], second[0])
+    overlap_height = min(first[3], second[3]) - max(first[1], second[1])
+
+    if overlap_width <= 0 or overlap_height <= 0:
+        return 0
+
+    return overlap_width * overlap_height
+
+
+def compute_placement_origin(
+    canvas_size: tuple[int, int],
+    placement_size: tuple[int, int],
+    location: str,
+) -> tuple[int, int] | None:
+    canvas_width, canvas_height = canvas_size
+    placement_width, placement_height = placement_size
+
+    origins = {
+        "bottom_right": (canvas_width - placement_width, canvas_height - placement_height),
+        "bottom_left": (0, canvas_height - placement_height),
+        "top_right": (canvas_width - placement_width, 0),
+        "top_left": (0, 0),
+        "center": ((canvas_width - placement_width) // 2, (canvas_height - placement_height) // 2),
+    }
+
+    return origins.get(location)
+
+
+def resize_placement_image(
+    placement_img: Image.Image,
+    canvas_size: tuple[int, int],
+    scale: float,
+) -> Image.Image:
+    canvas_width, canvas_height = canvas_size
+    return ImageOps.contain(
+        placement_img,
+        (max(int(canvas_width / scale), 1), max(int(canvas_height / scale), 1)),
+        Image.LANCZOS,
+    )
+
+
+def paste_placement(
+    src_img: Image.Image,
+    placement_img: Image.Image,
+    location: str,
+) -> Image.Image:
+    origin = compute_placement_origin(src_img.size, placement_img.size, location)
+    if origin is None:
+        return src_img
+
+    if location in MIRRORED_PLACEMENT_LOCATIONS:
+        placement_img = ImageOps.mirror(placement_img)
+
+    src_img.paste(placement_img, origin, placement_img)
+    return src_img
+
+
+def clamp(value: int, low: int, high: int) -> int:
+    return max(low, min(value, max(low, high)))
+
+
+def build_watermark_candidates(
+    canvas_size: tuple[int, int],
+    watermark_size: tuple[int, int],
+) -> list[tuple[int, int]]:
+    canvas_width, canvas_height = canvas_size
+    watermark_width, watermark_height = watermark_size
+    free_width = canvas_width - watermark_width
+    free_height = canvas_height - watermark_height
+
+    jitter_x = max(int(canvas_width * WATERMARK_JITTER_FRACTION), 1)
+    jitter_y = max(int(canvas_height * WATERMARK_JITTER_FRACTION), 1)
+    bleed_x = int(canvas_width * WATERMARK_BLEED_FRACTION)
+    bleed_y = int(canvas_height * WATERMARK_BLEED_FRACTION)
+
+    candidates = []
+    for x_fraction in WATERMARK_ANCHOR_FRACTIONS:
+        for y_fraction in WATERMARK_ANCHOR_FRACTIONS:
+            x = int(free_width * x_fraction) + random.randint(-jitter_x, jitter_x)
+            y = int(free_height * y_fraction) + random.randint(-jitter_y, jitter_y)
+            candidates.append(
+                (
+                    clamp(x, -bleed_x, max(free_width, 0) + bleed_x),
+                    clamp(y, -bleed_y, max(free_height, 0) + bleed_y),
+                )
+            )
+
+    random.shuffle(candidates)
+    return candidates
+
+
+def fit_watermark_clear_of(
+    watermark_source: Image.Image,
+    canvas_size: tuple[int, int],
+    watermark_box: tuple[int, int],
+    occupied_box: tuple[int, int, int, int] | None,
+) -> tuple[Image.Image, tuple[int, int]]:
+    canvas_width, canvas_height = canvas_size
+    max_width = min(watermark_box[0], int(canvas_width * WATERMARK_MAX_CANVAS_FRACTION))
+    max_height = min(watermark_box[1], int(canvas_height * WATERMARK_MAX_CANVAS_FRACTION))
+    closest_fit = None
+
+    for shrink_factor in WATERMARK_SHRINK_FACTORS:
+        watermark = ImageOps.contain(
+            watermark_source,
+            (max(int(max_width * shrink_factor), 1), max(int(max_height * shrink_factor), 1)),
+            Image.LANCZOS,
+        )
+
+        for position in build_watermark_candidates(canvas_size, watermark.size):
+            if occupied_box is None:
+                return watermark, position
+
+            overlap = boxes_overlap_area(box_at(position, watermark.size), occupied_box)
+            if overlap == 0:
+                return watermark, position
+
+            if closest_fit is None or overlap < closest_fit[0]:
+                closest_fit = (overlap, watermark, position)
+
+    logger.warning(
+        "[tynm] no overlap free watermark spot found, using the least overlapping one overlap={}",
+        closest_fit[0],
+    )
+    return closest_fit[1], closest_fit[2]
+
+
 def apply_modi_layout(
     img: Image.Image,
     foreground_modi: Image.Image,
     watermark_modi: Image.Image,
     layout: PosterLayout,
 ) -> Image.Image:
-    foreground = (
-        foreground_modi.convert("RGBA")
-        if foreground_modi.mode != "RGBA"
-        else foreground_modi.copy()
-    )
-    watermark_source = (
-        watermark_modi.convert("RGBA") if watermark_modi.mode != "RGBA" else watermark_modi.copy()
+    if img.mode != "RGBA":
+        img = img.convert("RGBA")
+
+    foreground = resize_placement_image(as_rgba(foreground_modi), img.size, layout.modi_scale)
+    foreground_origin = compute_placement_origin(img.size, foreground.size, layout.modi_location)
+    foreground_box = (
+        box_at(foreground_origin, foreground.size) if foreground_origin is not None else None
     )
 
-    watermark = ImageOps.contain(watermark_source, layout.watermark_size, Image.LANCZOS)
-    paste_with_opacity(img, watermark, layout.watermark_position, layout.watermark_opacity)
+    watermark, watermark_position = fit_watermark_clear_of(
+        as_rgba(watermark_modi),
+        img.size,
+        layout.watermark_size,
+        foreground_box,
+    )
+    logger.info(
+        "[tynm] layout={} modi_box={} watermark_box={}",
+        layout.name,
+        foreground_box,
+        box_at(watermark_position, watermark.size),
+    )
+    paste_with_opacity(img, watermark, watermark_position, layout.watermark_opacity)
 
-    return place_image(img, foreground, scale=layout.modi_scale, location=layout.modi_location)
+    return paste_placement(img, foreground, layout.modi_location)
 
 
 def paste_framed_portrait(
@@ -1314,72 +1467,14 @@ def place_image(src_img: Image, placement_img: Image, scale=2, location="bottom_
     if src_img.mode != "RGBA":
         src_img = src_img.convert("RGBA")
 
-    src_img_width, src_img_height = src_img.size
-    placement_img_width, placement_img_height = placement_img.size
-
-    logger.debug(
-        "original placement_img_width={} placement_img_height={}",
-        placement_img_width,
-        placement_img_height,
-    )
+    logger.debug("original placement_img_size={}", placement_img.size)
 
     # resize nm_img to match the size of the img
-    placement_img = ImageOps.contain(
-        placement_img,
-        (int(src_img_width / scale), int(src_img_height / scale)),
-        Image.LANCZOS,
-    )
+    placement_img = resize_placement_image(placement_img, src_img.size, scale)
 
-    placement_img_width, placement_img_height = placement_img.size
-    logger.debug(
-        "after resize placement_img_width={} placement_img_height={}",
-        placement_img_width,
-        placement_img_height,
-    )
+    logger.debug("after resize placement_img_size={}", placement_img.size)
 
-    if location == "bottom_right":
-        src_img.paste(
-            placement_img,
-            (src_img_width - placement_img_width, src_img_height - placement_img_height),
-            placement_img,
-        )
-
-    elif location == "bottom_left":
-        placement_img = ImageOps.mirror(placement_img)
-
-        src_img.paste(
-            placement_img,
-            (0, src_img_height - placement_img_height),
-            placement_img,
-        )
-
-    elif location == "top_right":
-        src_img.paste(
-            placement_img,
-            (src_img_width - placement_img_width, 0),
-            placement_img,
-        )
-
-    elif location == "top_left":
-        placement_img = ImageOps.mirror(placement_img)
-
-        src_img.paste(
-            placement_img,
-            (0, 0),
-            placement_img,
-        )
-
-    elif location == "center":
-        src_img.paste(
-            placement_img,
-            (
-                (src_img_width - placement_img_width) // 2,
-                (src_img_height - placement_img_height) // 2,
-            ),
-            placement_img,
-        )
-
-    return src_img
+    return paste_placement(src_img, placement_img, location)
 
 
 async def acquire_file(update: Update, context: ContextTypes.DEFAULT_TYPE):

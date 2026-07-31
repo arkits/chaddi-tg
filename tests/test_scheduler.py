@@ -215,7 +215,9 @@ class TestScheduler:
 
         assert mock_context.bot.send_message.called
 
-    @pytest.mark.parametrize("error_cls,error_arg", [(BadRequest, "Chat not found"), (Forbidden, "Bot was kicked")])
+    @pytest.mark.parametrize(
+        "error_cls,error_arg", [(BadRequest, "Chat not found"), (Forbidden, "Bot was kicked")]
+    )
     @patch("src.domain.scheduler.util")
     @patch("src.domain.scheduler.Group")
     @patch("src.domain.scheduler.Quote")

@@ -16,15 +16,19 @@ from src.bot.handlers.tynm import (
     add_poster_decorations,
     add_thank_you_text,
     apply_modi_layout,
+    box_at,
+    boxes_overlap_area,
     build_file_path,
     choose_poster_layout,
     choose_text_poster_layout,
+    compute_placement_origin,
     create_saffron_gradient,
     draw_centered_multiline_in_box,
     draw_firework,
     draw_flower,
     extract_reply_text,
     fit_caption_to_box,
+    fit_watermark_clear_of,
     generate_wrapped_caption,
     get_poster_caption_font_size,
     get_text_poster_message_area,
@@ -34,6 +38,7 @@ from src.bot.handlers.tynm import (
     measure_text,
     pick_distinct_tynm_images,
     place_image,
+    resize_placement_image,
     wrap_text_to_width,
 )
 
@@ -413,6 +418,101 @@ class TestPlaceImage:
         result = place_image(src_img, placement_img, location="center")
         assert result.mode == "RGBA"
         assert result.size == (500, 500)
+
+    def test_place_image_unknown_location_is_a_no_op(self):
+        src_img = Image.new("RGBA", (500, 500), color=(255, 255, 255, 255))
+        placement_img = Image.new("RGBA", (100, 100), color=(255, 0, 0, 255))
+        result = place_image(src_img, placement_img, location="somewhere")
+        assert result.getpixel((250, 250)) == (255, 255, 255, 255)
+
+
+class TestWatermarkPlacement:
+    """Tests that the two modi images never get stacked on top of each other."""
+
+    def build_modi(self) -> Image.Image:
+        return Image.new("RGBA", (600, 900), color=(255, 0, 0, 255))
+
+    def modi_box(self, canvas_size, modi, layout):
+        foreground = resize_placement_image(modi, canvas_size, layout.modi_scale)
+        origin = compute_placement_origin(canvas_size, foreground.size, layout.modi_location)
+        return box_at(origin, foreground.size)
+
+    def test_watermark_never_overlaps_modi_for_any_layout(self):
+        canvas_size = (POSTER_WIDTH, POSTER_HEIGHT)
+        modi = self.build_modi()
+
+        for layout in POSTER_LAYOUTS:
+            foreground_box = self.modi_box(canvas_size, modi, layout)
+
+            for _ in range(25):
+                watermark, position = fit_watermark_clear_of(
+                    modi,
+                    canvas_size,
+                    layout.watermark_size,
+                    foreground_box,
+                )
+                watermark_box = box_at(position, watermark.size)
+
+                assert boxes_overlap_area(watermark_box, foreground_box) == 0, (
+                    f"{layout.name} placed the watermark over the modi cutout"
+                )
+
+    def test_watermark_position_is_randomised(self):
+        canvas_size = (POSTER_WIDTH, POSTER_HEIGHT)
+        modi = self.build_modi()
+        layout = POSTER_LAYOUTS[0]
+        foreground_box = self.modi_box(canvas_size, modi, layout)
+
+        positions = {
+            fit_watermark_clear_of(modi, canvas_size, layout.watermark_size, foreground_box)[1]
+            for _ in range(25)
+        }
+
+        assert len(positions) > 1
+
+    def test_watermark_stays_mostly_on_canvas(self):
+        canvas_size = (POSTER_WIDTH, POSTER_HEIGHT)
+        modi = self.build_modi()
+
+        for layout in POSTER_LAYOUTS:
+            foreground_box = self.modi_box(canvas_size, modi, layout)
+            watermark, position = fit_watermark_clear_of(
+                modi,
+                canvas_size,
+                layout.watermark_size,
+                foreground_box,
+            )
+            watermark_box = box_at(position, watermark.size)
+            on_canvas = boxes_overlap_area(watermark_box, (0, 0, POSTER_WIDTH, POSTER_HEIGHT))
+
+            assert on_canvas >= watermark.size[0] * watermark.size[1] * 0.7
+
+    def test_watermark_is_capped_to_a_fraction_of_the_canvas(self):
+        watermark, _position = fit_watermark_clear_of(
+            self.build_modi(),
+            (400, 400),
+            (720, 720),
+            None,
+        )
+
+        assert watermark.size[0] <= 180
+        assert watermark.size[1] <= 180
+
+    def test_boxes_overlap_area(self):
+        assert boxes_overlap_area((0, 0, 10, 10), (5, 5, 15, 15)) == 25
+        assert boxes_overlap_area((0, 0, 10, 10), (10, 10, 20, 20)) == 0
+        assert boxes_overlap_area((0, 0, 10, 10), (20, 20, 30, 30)) == 0
+
+    def test_compute_placement_origin(self):
+        canvas_size = (500, 400)
+        placement_size = (100, 80)
+
+        assert compute_placement_origin(canvas_size, placement_size, "top_left") == (0, 0)
+        assert compute_placement_origin(canvas_size, placement_size, "top_right") == (400, 0)
+        assert compute_placement_origin(canvas_size, placement_size, "bottom_left") == (0, 320)
+        assert compute_placement_origin(canvas_size, placement_size, "bottom_right") == (400, 320)
+        assert compute_placement_origin(canvas_size, placement_size, "center") == (200, 160)
+        assert compute_placement_origin(canvas_size, placement_size, "nowhere") is None
 
 
 class TestBuildFilePath:
