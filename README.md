@@ -1,3 +1,5 @@
+
+
 <h1 align="center">
     Chaddi Bot for Telegram
 </h1>
@@ -73,6 +75,9 @@ $ psql -c "CREATE DATABASE chaddi_tg"
 
 # Install dependencies using uv
 $ uv sync
+
+# Build the web dashboard
+$ cd frontend && npm install && npm run build && cd ..
 
 # Run Chaddi!
 $ ./run.sh
