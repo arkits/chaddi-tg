@@ -1,28 +1,13 @@
-import re
-
 from loguru import logger
 from telegram import Update
 from telegram.ext import ContextTypes
 
-X_URL_REGEX = re.compile(
-    r"https?://(?:www\.)?x\.com(?=$|[/?#\s])(?P<suffix>(?:[/?#][^\s<]*)?)",
-    re.IGNORECASE,
-)
-TRAILING_PUNCTUATION = ".,!?;:)]}"
+# xcancel.com shut down, so there's nowhere to redirect x.com links to right now.
+# Flip this back to True once a replacement mirror/renderer is wired up.
+ENABLED = False
 
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    message_text = update.message.text
-
-    if not message_text:
+    if not ENABLED:
+        logger.trace("[x_links] handler is disabled... skipping")
         return
-
-    match = X_URL_REGEX.search(message_text)
-    if not match:
-        return
-
-    suffix = match.group("suffix").rstrip(TRAILING_PUNCTUATION)
-    xcancel_url = f"http://xcancel.com{suffix}"
-
-    logger.info(f"[x_links] converted x.com link to: {xcancel_url}")
-    await update.message.reply_text(xcancel_url)
