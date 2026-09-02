@@ -17,6 +17,9 @@ X_STATUS_URL_REGEX = re.compile(
     re.IGNORECASE,
 )
 
+# Twitter encodes each variant's dimensions into its path - .../vid/avc1/1280x720/x.mp4
+VIDEO_SIZE_IN_URL_REGEX = re.compile(r"/(?P<width>\d{2,5})x(?P<height>\d{2,5})/")
+
 # Telegram refuses uploads over 50MB, so pick a video variant comfortably under it
 MAX_MEDIA_BYTES = 45 * 1024 * 1024
 # A media group can hold at most 10 items
@@ -143,6 +146,20 @@ def pick_video_url(media_item: dict) -> str | None:
     return best_url or media_item.get("url")
 
 
+def video_dimensions(media_item: dict, url: str | None) -> tuple[int | None, int | None]:
+    """Dimensions of the variant we're actually uploading, not of the original.
+
+    Telegram sizes the player from the width/height we send and boxes the video
+    oddly when they're missing, so a 4K tweet uploaded as its 720p variant has
+    to report 720p. Twitter puts the size in the variant path (.../1280x720/...).
+    """
+    match = VIDEO_SIZE_IN_URL_REGEX.search(url or "")
+    if match:
+        return int(match.group("width")), int(match.group("height"))
+
+    return media_item.get("width"), media_item.get("height")
+
+
 def media_url_for(media_item: dict) -> str | None:
     if media_item.get("type") == "video":
         return pick_video_url(media_item)
@@ -181,7 +198,7 @@ async def reply_with_media(update: Update, tweet: dict, media_items: list[dict])
         if content is None:
             continue
 
-        downloaded.append((media_item, content))
+        downloaded.append((media_item, url, content))
 
     if not downloaded:
         return False
@@ -189,24 +206,54 @@ async def reply_with_media(update: Update, tweet: dict, media_items: list[dict])
     caption = build_caption(tweet, MessageLimit.CAPTION_LENGTH)
 
     if len(downloaded) == 1:
-        media_item, content = downloaded[0]
+        media_item, url, content = downloaded[0]
 
         if media_item.get("type") == "video":
-            await update.message.reply_video(video=io.BytesIO(content), caption=caption)
+            width, height = video_dimensions(media_item, url)
+            duration = media_item.get("duration")
+
+            await update.message.reply_video(
+                video=io.BytesIO(content),
+                caption=caption,
+                filename="video.mp4",
+                width=width,
+                height=height,
+                duration=int(duration) if duration else None,
+                supports_streaming=True,
+            )
         else:
-            await update.message.reply_photo(photo=io.BytesIO(content), caption=caption)
+            await update.message.reply_photo(
+                photo=io.BytesIO(content), caption=caption, filename="photo.jpg"
+            )
 
         return True
 
     group = []
-    for index, (media_item, content) in enumerate(downloaded):
+    for index, (media_item, url, content) in enumerate(downloaded):
         # Only the first item carries a caption - Telegram shows it for the album
         item_caption = caption if index == 0 else None
 
         if media_item.get("type") == "video":
-            group.append(InputMediaVideo(media=io.BytesIO(content), caption=item_caption))
+            width, height = video_dimensions(media_item, url)
+            duration = media_item.get("duration")
+
+            group.append(
+                InputMediaVideo(
+                    media=io.BytesIO(content),
+                    caption=item_caption,
+                    filename="video.mp4",
+                    width=width,
+                    height=height,
+                    duration=int(duration) if duration else None,
+                    supports_streaming=True,
+                )
+            )
         else:
-            group.append(InputMediaPhoto(media=io.BytesIO(content), caption=item_caption))
+            group.append(
+                InputMediaPhoto(
+                    media=io.BytesIO(content), caption=item_caption, filename="photo.jpg"
+                )
+            )
 
     await update.message.reply_media_group(media=group)
 

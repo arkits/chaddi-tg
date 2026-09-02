@@ -117,6 +117,28 @@ class TestPickVideoUrl:
         )
 
 
+class TestVideoDimensions:
+    def test_reads_dimensions_from_the_variant_url(self):
+        media_item = {"width": 3840, "height": 2160}
+        url = "https://video.twimg.com/amplify_video/1/vid/avc1/1280x720/abc.mp4?tag=21"
+
+        assert x_links.video_dimensions(media_item, url) == (1280, 720)
+
+    def test_falls_back_to_the_payload_dimensions(self):
+        media_item = {"width": 720, "height": 1280}
+
+        assert x_links.video_dimensions(media_item, "https://video/pl/abc.m3u8") == (720, 1280)
+
+    def test_returns_none_when_nothing_is_known(self):
+        assert x_links.video_dimensions({}, None) == (None, None)
+
+    def test_preserves_a_vertical_aspect_ratio(self):
+        media_item = {"width": 1080, "height": 1920}
+        url = "https://video.twimg.com/ext_tw_video/1/pu/vid/avc1/540x960/abc.mp4"
+
+        assert x_links.video_dimensions(media_item, url) == (540, 960)
+
+
 class TestHumanizeCount:
     @pytest.mark.parametrize(
         "count,expected",
@@ -188,6 +210,42 @@ class TestHandle:
 
         mock_update.message.reply_video.assert_awaited_once()
         mock_update.message.reply_text.assert_not_awaited()
+
+    async def test_video_reports_the_uploaded_variants_dimensions(self, mock_update, mock_context):
+        mock_update.message.text = "https://x.com/jack/status/20"
+        tweet = make_tweet(
+            media={
+                "all": [
+                    {
+                        "type": "video",
+                        "url": "https://video/vid/avc1/3840x2160/orig.mp4",
+                        "width": 3840,
+                        "height": 2160,
+                        "duration": 32.405,
+                        "variants": [
+                            {
+                                "content_type": "video/mp4",
+                                "url": "https://video/vid/avc1/1280x720/small.mp4",
+                                "bitrate": 2176000,
+                            }
+                        ],
+                    }
+                ]
+            }
+        )
+
+        with (
+            patch.object(x_links, "fetch_tweet", AsyncMock(return_value=tweet)),
+            patch.object(x_links, "download_media", AsyncMock(return_value=b"mp4bytes")),
+        ):
+            await x_links.handle(mock_update, mock_context)
+
+        kwargs = mock_update.message.reply_video.await_args.kwargs
+        # The 720p variant is what gets uploaded, so that is what Telegram is told
+        assert (kwargs["width"], kwargs["height"]) == (1280, 720)
+        assert kwargs["duration"] == 32
+        assert kwargs["supports_streaming"] is True
+        assert kwargs["filename"] == "video.mp4"
 
     async def test_replies_with_a_media_group_for_multiple_photos(self, mock_update, mock_context):
         mock_update.message.text = "https://x.com/jack/status/20"
