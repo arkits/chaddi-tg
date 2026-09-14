@@ -1,5 +1,6 @@
+import datetime
 import time
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from telegram.constants import ParseMode
@@ -241,6 +242,145 @@ class TestScheduler:
 
         assert mock_group.metadata["good_morning_enabled"] is False
         assert mock_group.save.called
+
+    @patch("src.domain.scheduler.util")
+    @patch("src.domain.scheduler.Group")
+    @patch("src.domain.scheduler.Quote")
+    @pytest.mark.anyio
+    async def test_daily_post_callback_message_includes_quote_date(
+        self, mock_quote_class, mock_group_class, mock_util
+    ):
+        """The posted message includes the quote text, author, and the date it was captured."""
+        mock_group = MagicMock()
+        mock_group.group_id = "test_group_id"
+        mock_group.name = "Test Group"
+        mock_group.metadata = {"good_morning_enabled": True}
+        mock_group_class.select.return_value = [mock_group]
+
+        mock_quote = MagicMock()
+        mock_quote.quote_id = "quote_1"
+        mock_quote.text = "Test quote text"
+        mock_quote.created = datetime.datetime(2026, 3, 12)
+        mock_quote_class.select.return_value.where.return_value.order_by.return_value.limit.return_value.first.return_value = mock_quote
+        mock_util.extract_pretty_name_from_bakchod.return_value = "Test Author"
+
+        mock_context = MagicMock()
+        mock_context.bot.send_message = AsyncMock()
+
+        await scheduler.daily_post_callback(mock_context)
+
+        message_text = mock_context.bot.send_message.call_args[1]["text"]
+        assert "Test quote text" in message_text
+        assert "Test Author" in message_text
+        assert "12 Mar 2026" in message_text
+
+    def test_prune_recent_quotes_removes_old_entries(self):
+        """Entries older than the 2-week window are dropped."""
+        now = int(time.time())
+        recent_quotes = {
+            "old_quote": now - scheduler.RECENT_QUOTE_WINDOW_SECONDS - 3600,
+            "fresh_quote": now - 3600,
+        }
+
+        pruned = scheduler._prune_recent_quotes(recent_quotes, now)
+
+        assert pruned == {"fresh_quote": now - 3600}
+
+    @patch("src.domain.scheduler.util")
+    @patch("src.domain.scheduler.Group")
+    @patch("src.domain.scheduler.Quote")
+    @pytest.mark.anyio
+    async def test_daily_post_callback_excludes_recently_posted_quotes(
+        self, mock_quote_class, mock_group_class, mock_util
+    ):
+        """Quotes posted within the past 2 weeks are excluded from selection."""
+        now = int(time.time())
+        mock_group = MagicMock()
+        mock_group.group_id = "test_group_id"
+        mock_group.name = "Test Group"
+        mock_group.metadata = {
+            "good_morning_enabled": True,
+            "recent_quote_ids": {"recent_quote": now - 3600},
+        }
+        mock_group_class.select.return_value = [mock_group]
+
+        mock_quote = MagicMock()
+        mock_quote.quote_id = "fresh_quote"
+        mock_quote.text = "Test quote text"
+        mock_quote_class.select.return_value.where.return_value.order_by.return_value.limit.return_value.first.return_value = mock_quote
+        mock_util.extract_pretty_name_from_bakchod.return_value = "@testauthor"
+
+        mock_context = MagicMock()
+        mock_context.bot.send_message = MagicMock()
+
+        await scheduler.daily_post_callback(mock_context)
+
+        where_call_args = mock_quote_class.select.return_value.where.call_args[0]
+        mock_quote_class.quote_id.not_in.assert_called_once_with(["recent_quote"])
+        assert where_call_args[1] == mock_quote_class.quote_id.not_in.return_value
+
+    @patch("src.domain.scheduler.util")
+    @patch("src.domain.scheduler.Group")
+    @patch("src.domain.scheduler.Quote")
+    @pytest.mark.anyio
+    async def test_daily_post_callback_records_posted_quote(
+        self, mock_quote_class, mock_group_class, mock_util
+    ):
+        """After a successful send, the posted quote is tracked with a timestamp."""
+        mock_group = MagicMock()
+        mock_group.group_id = "test_group_id"
+        mock_group.name = "Test Group"
+        mock_group.metadata = {"good_morning_enabled": True}
+        mock_group_class.select.return_value = [mock_group]
+
+        mock_quote = MagicMock()
+        mock_quote.quote_id = "new_quote"
+        mock_quote.text = "Test quote text"
+        mock_quote_class.select.return_value.where.return_value.order_by.return_value.limit.return_value.first.return_value = mock_quote
+        mock_util.extract_pretty_name_from_bakchod.return_value = "@testauthor"
+
+        mock_context = MagicMock()
+        mock_context.bot.send_message = AsyncMock()
+
+        await scheduler.daily_post_callback(mock_context)
+
+        assert "new_quote" in mock_group.metadata["recent_quote_ids"]
+        assert mock_group.save.called
+
+    @patch("src.domain.scheduler.util")
+    @patch("src.domain.scheduler.Group")
+    @patch("src.domain.scheduler.Quote")
+    @pytest.mark.anyio
+    async def test_daily_post_callback_falls_back_when_all_quotes_recent(
+        self, mock_quote_class, mock_group_class, mock_util
+    ):
+        """If every quote was posted recently, fall back to repeating one rather than skipping."""
+        mock_group = MagicMock()
+        mock_group.group_id = "test_group_id"
+        mock_group.name = "Test Group"
+        mock_group.metadata = {
+            "good_morning_enabled": True,
+            "recent_quote_ids": {"only_quote": int(time.time()) - 3600},
+        }
+        mock_group_class.select.return_value = [mock_group]
+
+        mock_quote = MagicMock()
+        mock_quote.quote_id = "only_quote"
+        mock_quote.text = "Test quote text"
+        mock_quote_class.select.return_value.where.return_value.order_by.return_value.limit.return_value.first.side_effect = [
+            None,
+            mock_quote,
+        ]
+        mock_util.extract_pretty_name_from_bakchod.return_value = "@testauthor"
+
+        mock_context = MagicMock()
+        mock_context.bot.send_message = MagicMock()
+
+        await scheduler.daily_post_callback(mock_context)
+
+        assert mock_context.bot.send_message.called
+        call_args = mock_context.bot.send_message.call_args
+        assert "Test quote text" in call_args[1]["text"]
 
     def test_schedule_daily_posts(self, mock_job_queue):
         """Test scheduling daily good morning posts."""

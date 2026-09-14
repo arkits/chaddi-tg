@@ -15,6 +15,8 @@ from src.bot.handlers.remind import build_job_name, reminder_handler
 from src.db import Group, Quote, ScheduledJob
 from src.domain import util
 
+RECENT_QUOTE_WINDOW_SECONDS = 14 * 24 * 60 * 60
+
 
 def reschedule_saved_jobs(job_queue: JobQueue):
     sjs = ScheduledJob.select()
@@ -67,6 +69,13 @@ def reschedule_saved_jobs(job_queue: JobQueue):
     return
 
 
+def _prune_recent_quotes(recent_quotes: dict, now: int) -> dict:
+    cutoff = now - RECENT_QUOTE_WINDOW_SECONDS
+    return {
+        quote_id: posted_at for quote_id, posted_at in recent_quotes.items() if posted_at > cutoff
+    }
+
+
 async def daily_post_callback(context: ContextTypes.DEFAULT_TYPE):
     logger.info("Running daily post job")
 
@@ -86,17 +95,32 @@ async def daily_post_callback(context: ContextTypes.DEFAULT_TYPE):
         "Subah ho gayi mamu!",
     ]
 
+    now = int(time.time())
+
     for group in enabled_groups:
         greeting = random.choice(greetings)
 
-        # Get a random quote from this group
+        recent_quotes = _prune_recent_quotes(group.metadata.get("recent_quote_ids", {}), now)
+
+        # Get a random quote from this group, avoiding ones posted in the past 2 weeks
         quote = (
             Quote.select()
-            .where(Quote.quoted_in_group == group)
+            .where(Quote.quoted_in_group == group, Quote.quote_id.not_in(list(recent_quotes)))
             .order_by(peewee.fn.Random())
             .limit(1)
             .first()
         )
+
+        if not quote:
+            # Every quote for this group was posted recently (or the pool is exhausted) -
+            # better to repeat a quote than send none.
+            quote = (
+                Quote.select()
+                .where(Quote.quoted_in_group == group)
+                .order_by(peewee.fn.Random())
+                .limit(1)
+                .first()
+            )
 
         message_text = f"🌅 {greeting}\n\n"
         if quote:
@@ -104,8 +128,9 @@ async def daily_post_callback(context: ContextTypes.DEFAULT_TYPE):
             # Escape HTML entities to prevent parsing errors
             escaped_quote_text = html.escape(quote.text)
             escaped_author_name = html.escape(author_name)
+            quote_date = quote.created.strftime("%d %b %Y")
             message_text += (
-                f"💡 <b>Daily Quote:</b>\n<i>{escaped_quote_text}</i>\n- {escaped_author_name}"
+                f'💬 <i>"{escaped_quote_text}"</i>\n\n— {escaped_author_name}, {quote_date}'
             )
 
         try:
@@ -113,6 +138,11 @@ async def daily_post_callback(context: ContextTypes.DEFAULT_TYPE):
                 chat_id=group.group_id, text=message_text, parse_mode=ParseMode.HTML
             )
             logger.info(f"Sent daily post to group {group.name} ({group.group_id})")
+
+            if quote:
+                recent_quotes[quote.quote_id] = now
+                group.metadata["recent_quote_ids"] = recent_quotes
+                group.save()
         except (BadRequest, Forbidden) as e:
             # The bot is no longer able to reach this chat (kicked, chat deleted, etc.).
             # Disable the job for this group so it doesn't fail again every day.
