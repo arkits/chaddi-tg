@@ -94,7 +94,6 @@ async def run_telegram_bot():
     application.add_handler(CommandHandler("patakaro", handlers.ask.handle))
     application.add_handler(CommandHandler("chatgpt", handlers.ask.handle))
     application.add_handler(CommandHandler("ai", handlers.ai.handle))
-    application.add_handler(CommandHandler("gemini", handlers.ai.handle))
 
     application.add_handler(CommandHandler("remind", handlers.remind.handle))
     application.add_handler(CommandHandler("reminder", handlers.remind.handle))

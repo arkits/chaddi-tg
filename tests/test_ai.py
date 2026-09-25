@@ -480,3 +480,201 @@ class TestImageHandling:
         contents = call_args[1]["contents"]
         # Should have image part and text part
         assert len(contents) == 2
+
+
+def _text_chunk(text):
+    chunk = MagicMock()
+    chunk.choices = [MagicMock()]
+    chunk.choices[0].delta.content = text
+    chunk.choices[0].delta.tool_calls = None
+    return chunk
+
+
+def _tool_call_chunk(index, call_id, name, arguments):
+    tool_call = MagicMock()
+    tool_call.index = index
+    tool_call.id = call_id
+    tool_call.function.name = name
+    tool_call.function.arguments = arguments
+    chunk = MagicMock()
+    chunk.choices = [MagicMock()]
+    chunk.choices[0].delta.content = None
+    chunk.choices[0].delta.tool_calls = [tool_call]
+    return chunk
+
+
+def _tool(handler, name="get_chat_history"):
+    return ai.LLMTool(
+        name=name,
+        description="Read the chat",
+        parameters={"type": "object", "properties": {}},
+        handler=handler,
+    )
+
+
+class TestLLMClientTools:
+    """Test tool calling in LLMClient.generate_streaming."""
+
+    @pytest.mark.anyio
+    @patch("src.domain.ai._openrouter_client")
+    async def test_runs_tool_and_feeds_result_back(self, mock_client):
+        mock_client.chat.completions.create.side_effect = [
+            [
+                _tool_call_chunk(0, "call_1", "get_chat_history", '{"lim'),
+                _tool_call_chunk(0, None, None, 'it": 5}'),
+            ],
+            [_text_chunk("They were "), _text_chunk("talking about chai")],
+        ]
+        calls = []
+
+        def handler(limit):
+            calls.append(limit)
+            return "[#1] @minji: chai?"
+
+        client = ai.LLMClient(provider="openrouter")
+        response = await client.generate_streaming(
+            messages=[{"role": "user", "content": "what's up?"}], tools=[_tool(handler)]
+        )
+
+        assert response == "They were talking about chai"
+        assert calls == [5]
+
+        second_call = mock_client.chat.completions.create.call_args_list[1].kwargs
+        assistant_msg, tool_msg = second_call["messages"][-2:]
+        assert assistant_msg["tool_calls"][0]["id"] == "call_1"
+        assert assistant_msg["tool_calls"][0]["function"]["arguments"] == '{"limit": 5}'
+        assert tool_msg == {
+            "role": "tool",
+            "tool_call_id": "call_1",
+            "content": "[#1] @minji: chai?",
+        }
+        # Server tools and function tools are sent together
+        tool_types = [t["type"] for t in second_call["tools"]]
+        assert "openrouter:datetime" in tool_types
+        assert "function" in tool_types
+
+    @pytest.mark.anyio
+    @patch("src.domain.ai._openai_client")
+    async def test_async_tool_handler(self, mock_client):
+        mock_client.chat.completions.create.side_effect = [
+            [_tool_call_chunk(0, "call_1", "get_chat_history", "{}")],
+            [_text_chunk("done")],
+        ]
+
+        async def handler():
+            return "result"
+
+        client = ai.LLMClient(provider="openai")
+        response = await client.generate_streaming("hi", tools=[_tool(handler)])
+
+        assert response == "done"
+        tool_msg = mock_client.chat.completions.create.call_args_list[1].kwargs["messages"][-1]
+        assert tool_msg["content"] == "result"
+
+    @pytest.mark.anyio
+    @patch("src.domain.ai._openai_client")
+    async def test_tool_errors_are_returned_to_model(self, mock_client):
+        mock_client.chat.completions.create.side_effect = [
+            [
+                _tool_call_chunk(0, "call_1", "get_chat_history", "not json"),
+                _tool_call_chunk(1, "call_2", "boom", "{}"),
+            ],
+            [_text_chunk("sorry")],
+        ]
+
+        def boom():
+            raise RuntimeError("kaboom")
+
+        client = ai.LLMClient(provider="openai")
+        response = await client.generate_streaming(
+            "hi", tools=[_tool(lambda: "unused"), _tool(boom, name="boom")]
+        )
+
+        assert response == "sorry"
+        messages = mock_client.chat.completions.create.call_args_list[1].kwargs["messages"]
+        assert messages[-2]["content"].startswith("Error: could not parse arguments")
+        assert messages[-1]["content"] == "Error: kaboom"
+
+    @pytest.mark.anyio
+    @patch("src.domain.ai._openrouter_client")
+    async def test_server_tool_calls_are_not_looped(self, mock_client):
+        mock_client.chat.completions.create.return_value = [
+            _tool_call_chunk(0, "srv_1", "web_search", "{}"),
+            _text_chunk("answer"),
+        ]
+
+        client = ai.LLMClient(provider="openrouter")
+        response = await client.generate_streaming("hi", tools=[_tool(lambda: "x")])
+
+        assert response == "answer"
+        assert mock_client.chat.completions.create.call_count == 1
+
+    @pytest.mark.anyio
+    @patch("src.domain.ai._openai_client")
+    async def test_tool_rounds_are_capped(self, mock_client):
+        rounds = ai.MAX_TOOL_ROUNDS + 1
+        mock_client.chat.completions.create.side_effect = [
+            [_tool_call_chunk(0, f"call_{i}", "get_chat_history", "{}")] for i in range(rounds)
+        ]
+
+        client = ai.LLMClient(provider="openai")
+        await client.generate_streaming("hi", tools=[_tool(lambda: "more")])
+
+        calls = mock_client.chat.completions.create.call_args_list
+        assert len(calls) == rounds
+        assert calls[-1].kwargs["tool_choice"] == "none"
+        assert "tool_choice" not in calls[0].kwargs
+
+    @pytest.mark.anyio
+    @patch("src.domain.ai._openai_client")
+    async def test_no_tools_kwarg_without_tools(self, mock_client):
+        mock_client.chat.completions.create.return_value = [_text_chunk("hi")]
+
+        client = ai.LLMClient(provider="openai")
+        await client.generate_streaming("hi")
+
+        assert "tools" not in mock_client.chat.completions.create.call_args.kwargs
+
+    @pytest.mark.anyio
+    @patch("src.domain.ai._openai_client")
+    async def test_streams_intermediate_updates(self, mock_client):
+        mock_client.chat.completions.create.return_value = [
+            _text_chunk("a"),
+            _text_chunk("b"),
+            _text_chunk("c"),
+        ]
+        updates = []
+
+        async def on_chunk(text):
+            updates.append(text)
+
+        client = ai.LLMClient(provider="openai")
+        await client.generate_streaming("hi", on_chunk=on_chunk, update_interval=0)
+
+        assert updates == ["a", "ab", "abc", "abc"]
+
+    @pytest.mark.anyio
+    @patch("src.domain.ai._openai_client")
+    async def test_image_only_on_last_message(self, mock_client):
+        mock_client.chat.completions.create.return_value = [_text_chunk("ok")]
+        messages = [
+            {"role": "user", "content": "same"},
+            {"role": "assistant", "content": "reply"},
+            {"role": "user", "content": "same"},
+        ]
+
+        client = ai.LLMClient(provider="openai")
+        await client.generate_streaming(messages=messages, image_bytes=b"img")
+
+        sent = mock_client.chat.completions.create.call_args.kwargs["messages"]
+        assert sent[0]["content"] == "same"
+        assert isinstance(sent[2]["content"], list)
+
+    @patch("src.domain.ai._openrouter_client")
+    @patch("src.domain.ai._openai_client")
+    def test_has_web_search(self, mock_openai, mock_openrouter):
+        with patch("src.domain.ai.OPENROUTER_WEB_SEARCH", True):
+            assert ai.LLMClient(provider="openrouter").has_web_search is True
+            assert ai.LLMClient(provider="openai").has_web_search is False
+        with patch("src.domain.ai.OPENROUTER_WEB_SEARCH", False):
+            assert ai.LLMClient(provider="openrouter").has_web_search is False

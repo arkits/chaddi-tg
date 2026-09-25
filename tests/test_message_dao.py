@@ -73,3 +73,43 @@ class TestMessageDao:
         assert call_args[1]["text"] == "Test message"
         assert call_args[1]["from_bakchod"] == mock_bakchod_instance
         assert call_args[1]["to_id"] == "chat_id"
+
+
+class TestGetChatMessages:
+    @staticmethod
+    def _query(mock_message, rows):
+        query = MagicMock()
+        query.join.return_value = query
+        query.where.return_value = query
+        query.order_by.return_value.limit.return_value = rows
+        mock_message.select.return_value = query
+        mock_message.time_sent.__lt__ = MagicMock(return_value="time condition")
+        return query
+
+    @patch("src.db.message_dao.Message")
+    def test_returns_messages_oldest_first(self, mock_message):
+        query = self._query(mock_message, ["newest", "older", "oldest"])
+
+        result = message_dao.get_chat_messages(123, limit=3)
+
+        assert result == ["oldest", "older", "newest"]
+        query.order_by.return_value.limit.assert_called_once_with(3)
+
+    @patch("src.db.message_dao.Message")
+    def test_filters_before_message_and_search(self, mock_message):
+        query = self._query(mock_message, [])
+        anchor = MagicMock()
+        query.first.return_value = anchor
+
+        message_dao.get_chat_messages(123, before_message_id=50, search="chai")
+
+        mock_message.text.contains.assert_called_once_with("chai")
+        mock_message.time_sent.__lt__.assert_called_once_with(anchor.time_sent)
+
+    @patch("src.db.message_dao.Message")
+    def test_unknown_before_message_is_ignored(self, mock_message):
+        query = self._query(mock_message, ["m"])
+        query.first.return_value = None
+
+        assert message_dao.get_chat_messages(123, before_message_id=50) == ["m"]
+        mock_message.time_sent.__lt__.assert_not_called()

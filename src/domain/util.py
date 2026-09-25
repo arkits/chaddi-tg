@@ -210,7 +210,7 @@ def paywall_user(bakchod_id: str, cost):
     b = Bakchod.get_by_id(bakchod_id)
 
     if b is not None:
-        if b.rokda <= cost:
+        if b.rokda < cost:
             logger.info("[paywall] {} doesn't have enough rokda cost={}", b.tg_id, cost)
             return False
         else:

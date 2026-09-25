@@ -178,9 +178,9 @@ class TestUtilAdvanced:
 
         result = paywall_user("user123", 50.0)
 
-        assert result is False  # rokda <= cost returns False
-        assert mock_bakchod.rokda == 50.0
-        assert not mock_bakchod.save.called
+        assert result is True  # exactly enough rokda is enough
+        assert mock_bakchod.rokda == 0.0
+        assert mock_bakchod.save.called
 
     @patch("src.domain.util.Bakchod")
     def test_paywall_user_not_found(self, mock_bakchod_model):

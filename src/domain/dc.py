@@ -16,7 +16,9 @@ from . import analytics, util
 from . import metrics as prom_metrics
 
 
-def log_command_usage(command_name: str, update: Update):
+def log_command_usage(command_name: str, update: Update) -> CommandUsage | None:
+    """Log a command invocation. Returns the created CommandUsage row, if one was saved."""
+    usage = None
     try:
         if not hasattr(update, "message"):
             logger.debug("[dc] update had no message... fast failing")
@@ -88,7 +90,7 @@ def log_command_usage(command_name: str, update: Update):
                 bakchod = Bakchod.get(Bakchod.tg_id == from_user.id)
                 group = Group.get(Group.group_id == chat.id)
 
-                CommandUsage.create(
+                usage = CommandUsage.create(
                     command_name=command_name,
                     executed_at=datetime.now(),
                     from_bakchod=bakchod,
@@ -106,7 +108,7 @@ def log_command_usage(command_name: str, update: Update):
 
             prom_metrics.inc_command_usage_count(command_name, update)
 
-        return
+        return usage
 
     except Exception as e:
         logger.error(
@@ -116,7 +118,7 @@ def log_command_usage(command_name: str, update: Update):
         )
         # Sentry: Capture exception
         sentry_sdk.capture_exception(e)
-        return
+        return usage
 
 
 def sync_persistence_data(update: Update):

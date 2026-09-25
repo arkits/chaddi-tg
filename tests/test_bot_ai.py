@@ -31,12 +31,20 @@ def mock_llm_client():
 
 
 @pytest.mark.asyncio
+@patch("src.bot.handlers.ai.Group")
 @patch("src.bot.handlers.ai.util.paywall_user")
-async def test_handle_insufficient_rokda(mock_paywall, mock_update, mock_context):
+async def test_handle_insufficient_rokda(mock_paywall, mock_group_class, mock_update, mock_context):
     """Test handler with insufficient rokda"""
     mock_paywall.return_value = False
     mock_update.effective_user.id = 123
     mock_context.args = ["test", "question"]
+    mock_update.message.reply_to_message = None
+    mock_update.message.photo = None
+    mock_update.message.caption = None
+
+    mock_group = MagicMock()
+    mock_group.metadata = {"enabled_commands": ["ai"]}
+    mock_group_class.get_by_id.return_value = mock_group
 
     await ai.handle(mock_update, mock_context)
 
@@ -170,9 +178,17 @@ async def test_handle_quiet_skips_paywall_reply(
     mock_update.effective_user.id = 123
     mock_update.effective_chat.id = 456
     mock_context.args = None
+    mock_update.message.reply_to_message = None
+    mock_update.message.photo = None
+    mock_update.message.caption = None
+
+    mock_group = MagicMock()
+    mock_group.metadata = {"enabled_commands": ["ai"]}
+    mock_group_class.get_by_id.return_value = mock_group
 
     await ai.handle(mock_update, mock_context, question="hello", quiet=True)
 
+    mock_paywall.assert_called_once()
     assert not mock_update.message.reply_text.called
 
 
@@ -506,3 +522,251 @@ def test_build_conversation_messages_empty_after_clear(mock_group_class, mock_co
     assert len(result) == 1
     assert result[0]["role"] == "user"
     assert result[0]["content"] == "Current message"
+
+
+def _enabled_group(mock_group_class):
+    mock_group = MagicMock()
+    mock_group.metadata = {"enabled_commands": ["ai"]}
+    mock_group_class.get_by_id.return_value = mock_group
+
+
+def _plain_message(mock_update, mock_context, args):
+    mock_update.effective_user.id = 123
+    mock_update.effective_chat.id = 456
+    mock_update.message.chat.id = 456
+    mock_update.message.chat.type = "private"
+    mock_update.message.message_id = 789
+    mock_update.message.from_user.username = "arkits"
+    mock_context.args = args
+    mock_update.message.reply_to_message = None
+    mock_update.message.photo = None
+    mock_update.message.caption = None
+    sent_message = AsyncMock()
+    mock_update.message.reply_text = AsyncMock(return_value=sent_message)
+    return sent_message
+
+
+@pytest.mark.asyncio
+@patch("src.bot.handlers.ai.Group")
+@patch("src.bot.handlers.ai.util.paywall_user")
+async def test_handle_disabled_group_does_not_charge(
+    mock_paywall, mock_group_class, mock_update, mock_context
+):
+    """Users aren't charged when the command is disabled for the group"""
+    _plain_message(mock_update, mock_context, ["hello"])
+    mock_group_class.get_by_id.return_value = MagicMock(metadata={})
+
+    await ai.handle(mock_update, mock_context)
+
+    mock_paywall.assert_not_called()
+
+
+@pytest.mark.asyncio
+@patch("src.bot.handlers.ai.Group")
+@patch("src.bot.handlers.ai.util.paywall_user")
+async def test_handle_empty_question_does_not_charge(
+    mock_paywall, mock_group_class, mock_update, mock_context
+):
+    """Users aren't charged for a bare /ai with nothing to answer"""
+    _plain_message(mock_update, mock_context, None)
+    _enabled_group(mock_group_class)
+
+    await ai.handle(mock_update, mock_context)
+
+    mock_paywall.assert_not_called()
+    assert "Please provide a question" in mock_update.message.reply_text.call_args[0][0]
+
+
+@pytest.mark.asyncio
+@patch("src.bot.handlers.ai.Group")
+@patch("src.bot.handlers.ai.util.paywall_user")
+async def test_handle_unknown_group_is_disabled(
+    mock_paywall, mock_group_class, mock_update, mock_context
+):
+    """A chat with no Group row (eg. a DM) is treated as disabled, not as an error"""
+    from peewee import DoesNotExist
+
+    _plain_message(mock_update, mock_context, ["hello"])
+    mock_group_class.get_by_id.side_effect = DoesNotExist()
+
+    await ai.handle(mock_update, mock_context)
+
+    mock_paywall.assert_not_called()
+    assert "not enabled" in mock_update.message.reply_text.call_args[0][0]
+
+
+@pytest.mark.asyncio
+@patch("src.bot.handlers.ai.Group")
+@patch("src.bot.handlers.ai.util.paywall_user")
+async def test_handle_group_lookup_error_replies(
+    mock_paywall, mock_group_class, mock_update, mock_context
+):
+    """An error checking permissions tells the user instead of failing silently"""
+    _plain_message(mock_update, mock_context, ["hello"])
+    mock_group_class.get_by_id.side_effect = RuntimeError("db down")
+
+    await ai.handle(mock_update, mock_context)
+
+    mock_paywall.assert_not_called()
+    assert "Something went wrong" in mock_update.message.reply_text.call_args[0][0]
+
+
+@pytest.mark.asyncio
+@patch("src.bot.handlers.ai.ai")
+@patch("src.bot.handlers.ai.Group")
+@patch("src.bot.handlers.ai.util.paywall_user")
+async def test_handle_caption_strips_command_with_bot_username(
+    mock_paywall, mock_group_class, mock_ai_module, mock_update, mock_context, mock_llm_client
+):
+    """`/ai@botname question` in a caption only sends the question"""
+    mock_paywall.return_value = True
+    _plain_message(mock_update, mock_context, None)
+    _enabled_group(mock_group_class)
+    mock_update.message.caption = "/ai@chaddi_bot what is this?"
+    mock_ai_module.get_default_client.return_value = mock_llm_client
+
+    await ai.handle(mock_update, mock_context)
+
+    messages = mock_llm_client.generate_streaming.call_args.kwargs["messages"]
+    assert messages[-1]["content"] == "@arkits: what is this?"
+
+
+@pytest.mark.asyncio
+@patch("src.bot.handlers.ai.ai")
+@patch("src.bot.handlers.ai.Group")
+@patch("src.bot.handlers.ai.util.paywall_user")
+async def test_handle_long_response_is_split(
+    mock_paywall, mock_group_class, mock_ai_module, mock_update, mock_context, mock_llm_client
+):
+    """Responses over Telegram's limit spill over into follow-up replies"""
+    mock_paywall.return_value = True
+    sent_message = _plain_message(mock_update, mock_context, ["long", "please"])
+    _enabled_group(mock_group_class)
+    mock_ai_module.get_default_client.return_value = mock_llm_client
+    mock_llm_client.generate_streaming.return_value = ("word " * 1000 + "\n") * 2
+
+    await ai.handle(mock_update, mock_context)
+
+    edited = sent_message.edit_text.call_args[0][0]
+    followups = [c[0][0] for c in sent_message.reply_text.call_args_list]
+    assert len(edited) <= ai.MAX_MESSAGE_LENGTH
+    assert followups
+    assert all(len(f) <= ai.MAX_MESSAGE_LENGTH for f in followups)
+    assert (edited + " " + " ".join(followups)).split() == ["word"] * 2000
+
+
+@pytest.mark.asyncio
+@patch("src.bot.handlers.ai.ai")
+@patch("src.bot.handlers.ai.Group")
+@patch("src.bot.handlers.ai.util.paywall_user")
+async def test_handle_saves_conversation_to_logged_usage(
+    mock_paywall, mock_group_class, mock_ai_module, mock_update, mock_context, mock_llm_client
+):
+    """The conversation is saved to the CommandUsage created for this request"""
+    mock_paywall.return_value = True
+    _plain_message(mock_update, mock_context, ["hi"])
+    _enabled_group(mock_group_class)
+    mock_ai_module.get_default_client.return_value = mock_llm_client
+
+    usage = MagicMock()
+    usage.metadata = None
+    with patch("src.bot.handlers.ai.dc.log_command_usage", return_value=usage):
+        await ai.handle(mock_update, mock_context)
+
+    assert usage.metadata == {"user_message": "@arkits: hi", "bot_response": "AI response text"}
+    usage.save.assert_called_once()
+
+
+@pytest.mark.asyncio
+@patch("src.bot.handlers.ai.ai")
+@patch("src.bot.handlers.ai.Group")
+@patch("src.bot.handlers.ai.util.paywall_user")
+async def test_handle_passes_chat_history_tool(
+    mock_paywall, mock_group_class, mock_ai_module, mock_update, mock_context, mock_llm_client
+):
+    """The model gets a chat history tool scoped to the current chat"""
+    mock_paywall.return_value = True
+    _plain_message(mock_update, mock_context, ["what", "happened?"])
+    _enabled_group(mock_group_class)
+    mock_ai_module.get_default_client.return_value = mock_llm_client
+
+    await ai.handle(mock_update, mock_context)
+
+    tools = mock_llm_client.generate_streaming.call_args.kwargs["tools"]
+    assert len(tools) == 1
+    assert mock_ai_module.LLMTool.call_args.kwargs["name"] == "get_chat_history"
+
+
+def test_system_prompt_only_advertises_web_search_when_available():
+    with_search = MagicMock(has_web_search=True, provider="openrouter")
+    without_search = MagicMock(has_web_search=False, provider="openai")
+
+    assert "web search" in ai._build_system_prompt(with_search, 1)
+    assert "web search" not in ai._build_system_prompt(without_search, 1)
+
+
+def test_system_prompt_only_mentions_tool_when_supported():
+    assert "get_chat_history" in ai._build_system_prompt(MagicMock(provider="openrouter"), 42)
+    assert "#42" in ai._build_system_prompt(MagicMock(provider="openrouter"), 42)
+    assert "get_chat_history" not in ai._build_system_prompt(MagicMock(provider="gemini"), 42)
+
+
+def _logged_message(message_id, text, username, reply_to=None, minute=0):
+    message = MagicMock()
+    message.message_id = str(message_id)
+    message.text = text
+    message.time_sent = datetime(2026, 9, 24, 18, minute)
+    message.from_bakchod.username = username
+    update = {"message": {"message_id": message_id}}
+    if reply_to is not None:
+        update["message"]["reply_to_message"] = {"message_id": reply_to}
+    message.update = update
+    return message
+
+
+@patch("src.bot.handlers.ai.message_dao")
+def test_chat_history_tool_formats_messages(mock_message_dao):
+    mock_message_dao.get_chat_messages.return_value = [
+        _logged_message(10, "anyone up for chai?", "minji", minute=1),
+        _logged_message(11, "always", "arkits", reply_to=10, minute=2),
+    ]
+
+    tool = ai._build_chat_history_tool(456)
+    result = tool.handler(limit=5, search="chai")
+
+    mock_message_dao.get_chat_messages.assert_called_once_with(
+        456, limit=5, before_message_id=None, search="chai"
+    )
+    assert result == (
+        "[#10 Sep 24 18:01] @minji: anyone up for chai?\n"
+        "[#11 Sep 24 18:02] @arkits (replying to #10): always"
+    )
+
+
+@patch("src.bot.handlers.ai.message_dao")
+def test_chat_history_tool_clamps_limit_and_truncates(mock_message_dao):
+    mock_message_dao.get_chat_messages.return_value = [
+        _logged_message(10, "x" * 1000, "minji"),
+    ]
+
+    tool = ai._build_chat_history_tool(456)
+    result = tool.handler(limit=10_000, before_message_id=99)
+
+    assert mock_message_dao.get_chat_messages.call_args.kwargs["limit"] == ai.CHAT_HISTORY_MAX_LIMIT
+    assert mock_message_dao.get_chat_messages.call_args.kwargs["before_message_id"] == 99
+    assert result.endswith("x" * ai.CHAT_HISTORY_MAX_TEXT_LENGTH + "…")
+
+
+@patch("src.bot.handlers.ai.message_dao")
+def test_chat_history_tool_no_messages(mock_message_dao):
+    mock_message_dao.get_chat_messages.return_value = []
+
+    assert ai._build_chat_history_tool(456).handler() == "No messages found."
+
+
+def test_split_message():
+    assert ai._split_message("short") == ["short"]
+    assert ai._split_message("") == [""]
+    assert ai._split_message("aaaa\nbbbb", limit=6) == ["aaaa", "bbbb"]
+    assert ai._split_message("aaa bbb ccc", limit=8) == ["aaa bbb", "ccc"]
+    assert ai._split_message("abcdefgh", limit=3) == ["abc", "def", "gh"]

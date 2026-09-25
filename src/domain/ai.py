@@ -4,8 +4,10 @@ import asyncio
 import base64
 import contextlib
 import inspect
+import json
 import time
 from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
 
 from loguru import logger
 
@@ -109,6 +111,90 @@ async def _call_callback(callback: Callable[[str], None | Awaitable[None]], text
         callback(text)
 
 
+# Hard cap on model <-> tool round trips per request, so a model that keeps
+# calling tools can't loop forever
+MAX_TOOL_ROUNDS = 4
+
+
+@dataclass
+class LLMTool:
+    """A function the model can call while generating a response."""
+
+    name: str
+    description: str
+    # JSON schema for the function's arguments
+    parameters: dict
+    # Called with the parsed arguments as kwargs; returns the result as text
+    handler: Callable[..., str | Awaitable[str]]
+
+    def to_openai(self) -> dict:
+        return {
+            "type": "function",
+            "function": {
+                "name": self.name,
+                "description": self.description,
+                "parameters": self.parameters,
+            },
+        }
+
+
+async def _run_tool(tool: LLMTool, raw_arguments: str) -> str:
+    """Run a tool call, returning errors as text so the model can recover."""
+    try:
+        arguments = json.loads(raw_arguments) if raw_arguments else {}
+        if not isinstance(arguments, dict):
+            raise ValueError("arguments must be a JSON object")
+    except Exception as e:
+        logger.warning(f"[ai] Bad arguments for tool {tool.name}: {raw_arguments!r} - {e}")
+        return f"Error: could not parse arguments - {e}"
+
+    try:
+        logger.info(f"[ai] Running tool {tool.name} with {arguments}")
+        result = tool.handler(**arguments)
+        if inspect.isawaitable(result):
+            result = await result
+        return str(result)
+    except Exception as e:
+        logger.warning(f"[ai] Tool {tool.name} failed: {e}")
+        return f"Error: {e}"
+
+
+def _build_openai_messages(
+    message_text: str | None,
+    messages: list[dict[str, str]] | None,
+    system_prompt: str | None,
+    image_bytes: bytes | None,
+) -> list[dict]:
+    """Build an OpenAI-style messages list, attaching the image to the last user message."""
+    if not messages:
+        if not message_text:
+            raise ValueError("Either message_text or messages must be provided")
+        messages = [{"role": "user", "content": message_text}]
+
+    formatted_messages = []
+
+    # Add system prompt if provided (must be first)
+    if system_prompt:
+        formatted_messages.append({"role": "system", "content": system_prompt})
+
+    last_index = len(messages) - 1
+    for i, msg in enumerate(messages):
+        if i == last_index and msg["role"] == "user" and image_bytes:
+            base64_image = base64.b64encode(bytes(image_bytes)).decode("utf-8")
+            content = [
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
+                },
+                {"type": "text", "text": msg["content"]},
+            ]
+            formatted_messages.append({"role": "user", "content": content})
+        else:
+            formatted_messages.append(msg)
+
+    return formatted_messages
+
+
 class LLMClient:
     """Unified interface for LLM providers (OpenAI and Gemini)."""
 
@@ -153,6 +239,11 @@ class LLMClient:
             if self.provider == "openrouter" and _openrouter_client is None:
                 raise ValueError("OpenRouter client is not configured.")
 
+    @property
+    def has_web_search(self) -> bool:
+        """Whether responses from this client can use real-time web search."""
+        return self.provider == "openrouter" and OPENROUTER_WEB_SEARCH
+
     async def generate_streaming(
         self,
         message_text: str | None = None,
@@ -162,6 +253,7 @@ class LLMClient:
         image_mime_type: str | None = None,
         on_chunk: Callable[[str], None | Awaitable[None]] | None = None,
         update_interval: float = 1.0,
+        tools: list[LLMTool] | None = None,
     ) -> str:
         """
         Generate streaming response from LLM.
@@ -174,75 +266,51 @@ class LLMClient:
             image_mime_type: MIME type of the image (e.g., "image/jpeg").
             on_chunk: Optional callback function called with accumulated text on each update.
             update_interval: Minimum seconds between on_chunk callbacks.
+            tools: Optional functions the model may call. Supported for the OpenAI and
+                OpenRouter providers; ignored for Gemini.
 
         Returns:
             Complete response text.
         """
-        # Convert messages to format expected by providers
-        if messages:
-            # Use messages list
-            if self.provider == "openai":
-                return await self._generate_openai_streaming(
-                    messages=messages,
-                    system_prompt=system_prompt,
-                    image_bytes=image_bytes,
-                    on_chunk=on_chunk,
-                    update_interval=update_interval,
-                )
-            elif self.provider == "openrouter":
-                return await self._generate_openrouter_streaming(
-                    messages=messages,
-                    system_prompt=system_prompt,
-                    image_bytes=image_bytes,
-                    on_chunk=on_chunk,
-                    update_interval=update_interval,
-                )
-            elif self.provider == "gemini":
-                # Gemini doesn't support streaming in the same way, so we'll use non-streaming
-                # and simulate streaming with periodic callbacks
-                return await self._generate_gemini_with_simulation(
-                    messages=messages,
-                    system_prompt=system_prompt,
-                    image_bytes=image_bytes,
-                    image_mime_type=image_mime_type,
-                    on_chunk=on_chunk,
-                    update_interval=update_interval,
-                )
-            else:
-                raise ValueError(f"Unsupported provider: {self.provider}")
+        if not messages and not message_text:
+            raise ValueError("Either message_text or messages must be provided")
+
+        if self.provider == "openai":
+            return await self._generate_openai_streaming(
+                message_text=message_text,
+                messages=messages,
+                system_prompt=system_prompt,
+                image_bytes=image_bytes,
+                on_chunk=on_chunk,
+                update_interval=update_interval,
+                tools=tools,
+            )
+        elif self.provider == "openrouter":
+            return await self._generate_openrouter_streaming(
+                message_text=message_text,
+                messages=messages,
+                system_prompt=system_prompt,
+                image_bytes=image_bytes,
+                on_chunk=on_chunk,
+                update_interval=update_interval,
+                tools=tools,
+            )
+        elif self.provider == "gemini":
+            if tools:
+                logger.debug("[ai] Tools are not supported for Gemini, ignoring")
+            # Gemini doesn't support streaming in the same way, so we'll use non-streaming
+            # and simulate streaming with periodic callbacks
+            return await self._generate_gemini_with_simulation(
+                message_text=message_text,
+                messages=messages,
+                system_prompt=system_prompt,
+                image_bytes=image_bytes,
+                image_mime_type=image_mime_type,
+                on_chunk=on_chunk,
+                update_interval=update_interval,
+            )
         else:
-            # Fallback to message_text for backward compatibility
-            if not message_text:
-                raise ValueError("Either message_text or messages must be provided")
-            if self.provider == "openai":
-                return await self._generate_openai_streaming(
-                    message_text=message_text,
-                    system_prompt=system_prompt,
-                    image_bytes=image_bytes,
-                    on_chunk=on_chunk,
-                    update_interval=update_interval,
-                )
-            elif self.provider == "openrouter":
-                return await self._generate_openrouter_streaming(
-                    message_text=message_text,
-                    system_prompt=system_prompt,
-                    image_bytes=image_bytes,
-                    on_chunk=on_chunk,
-                    update_interval=update_interval,
-                )
-            elif self.provider == "gemini":
-                # Gemini doesn't support streaming in the same way, so we'll use non-streaming
-                # and simulate streaming with periodic callbacks
-                return await self._generate_gemini_with_simulation(
-                    message_text=message_text,
-                    system_prompt=system_prompt,
-                    image_bytes=image_bytes,
-                    image_mime_type=image_mime_type,
-                    on_chunk=on_chunk,
-                    update_interval=update_interval,
-                )
-            else:
-                raise ValueError(f"Unsupported provider: {self.provider}")
+            raise ValueError(f"Unsupported provider: {self.provider}")
 
     async def generate(
         self,
@@ -281,80 +349,124 @@ class LLMClient:
         image_bytes: bytes | None = None,
         on_chunk: Callable[[str], None | Awaitable[None]] | None = None,
         update_interval: float = 1.0,
+        tools: list[LLMTool] | None = None,
     ) -> str:
         """Generate streaming response from OpenAI."""
-        # Build messages list
-        if messages:
-            # Use provided messages list, but handle images in the last user message
-            formatted_messages = []
+        client = self._client_override or _openai_client
+        assert client is not None, "OpenAI client not configured"
+        return await self._stream_chat_completion(
+            client=client,
+            formatted_messages=_build_openai_messages(
+                message_text, messages, system_prompt, image_bytes
+            ),
+            extra_kwargs={},
+            server_tools=[],
+            tools=tools,
+            on_chunk=on_chunk,
+            update_interval=update_interval,
+        )
 
-            # Add system prompt if provided (must be first)
-            if system_prompt:
-                formatted_messages.append({"role": "system", "content": system_prompt})
+    async def _stream_chat_completion(
+        self,
+        client,
+        formatted_messages: list[dict],
+        extra_kwargs: dict,
+        server_tools: list[dict],
+        tools: list[LLMTool] | None,
+        on_chunk: Callable[[str], None | Awaitable[None]] | None,
+        update_interval: float,
+    ) -> str:
+        """
+        Stream a chat completion from an OpenAI-compatible API, running any tool
+        calls the model makes and feeding the results back until it answers.
 
-            for msg in messages:
-                if msg["role"] == "user" and image_bytes and msg == messages[-1]:
-                    # Add image to the last user message
-                    content = []
-                    base64_image = base64.b64encode(bytes(image_bytes)).decode("utf-8")
-                    content.append(
+        The blocking SDK stream is consumed in a worker thread. on_chunk is invoked
+        on the event loop at most once per update_interval while text streams in,
+        and once more with the final text.
+        """
+        loop = asyncio.get_running_loop()
+        tool_map = {t.name: t for t in tools or []}
+        conversation = list(formatted_messages)
+
+        def emit(text: str):
+            future = asyncio.run_coroutine_threadsafe(_call_callback(on_chunk, text), loop)
+            # Wait so edits land in order and none arrive after the final one
+            with contextlib.suppress(Exception):
+                future.result(timeout=10)
+
+        def consume(create_kwargs: dict) -> tuple[str, dict[int, dict[str, str]]]:
+            text = ""
+            tool_calls: dict[int, dict[str, str]] = {}
+            last_emit = 0.0
+            for chunk in client.chat.completions.create(**create_kwargs):
+                if not chunk.choices:
+                    continue
+                delta = chunk.choices[0].delta
+                if delta is None:
+                    continue
+                if delta.content is not None:
+                    text += delta.content
+                    if on_chunk and time.monotonic() - last_emit >= update_interval:
+                        last_emit = time.monotonic()
+                        emit(text)
+                for tool_call in getattr(delta, "tool_calls", None) or []:
+                    index = tool_call.index if isinstance(tool_call.index, int) else 0
+                    entry = tool_calls.setdefault(index, {"id": "", "name": "", "arguments": ""})
+                    if isinstance(tool_call.id, str):
+                        entry["id"] = tool_call.id
+                    function = tool_call.function
+                    if function is not None:
+                        if isinstance(function.name, str):
+                            entry["name"] += function.name
+                        if isinstance(function.arguments, str):
+                            entry["arguments"] += function.arguments
+            return text, tool_calls
+
+        response_text = ""
+        for round_num in range(MAX_TOOL_ROUNDS + 1):
+            create_kwargs = {
+                "model": self.model,
+                "messages": conversation,
+                "stream": True,
+                "max_completion_tokens": 2000,
+                **extra_kwargs,
+            }
+            all_tools = server_tools + [t.to_openai() for t in tools or []]
+            if all_tools:
+                create_kwargs["tools"] = all_tools
+            if tool_map and round_num == MAX_TOOL_ROUNDS:
+                # Out of tool rounds - make the model answer with what it has
+                create_kwargs["tool_choice"] = "none"
+
+            response_text, tool_calls = await asyncio.to_thread(consume, create_kwargs)
+
+            # Server-side tools (eg. openrouter:web_search) are resolved by the
+            # provider, so only our own function tools need a round trip
+            own_calls = [c for c in tool_calls.values() if c["name"] in tool_map]
+            if not own_calls:
+                break
+
+            conversation.append(
+                {
+                    "role": "assistant",
+                    "content": response_text or None,
+                    "tool_calls": [
                         {
-                            "type": "image_url",
-                            "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
+                            "id": c["id"],
+                            "type": "function",
+                            "function": {"name": c["name"], "arguments": c["arguments"] or "{}"},
                         }
-                    )
-                    content.append({"type": "text", "text": msg["content"]})
-                    formatted_messages.append({"role": "user", "content": content})
-                else:
-                    formatted_messages.append(msg)
-        else:
-            # Build content for single message
-            if not message_text:
-                raise ValueError("Either message_text or messages must be provided")
-            formatted_messages = []
-
-            # Add system prompt if provided (must be first)
-            if system_prompt:
-                formatted_messages.append({"role": "system", "content": system_prompt})
-
-            content = []
-
-            if image_bytes:
-                base64_image = base64.b64encode(bytes(image_bytes)).decode("utf-8")
-                content.append(
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
-                    }
-                )
-
-            content.append({"type": "text", "text": message_text})
-            formatted_messages.append({"role": "user", "content": content})
-
-        # Stream response from OpenAI in thread pool to avoid blocking
-        def stream_openai():
-            client = self._client_override or _openai_client
-            assert client is not None, "OpenAI client not configured"
-            stream = client.chat.completions.create(
-                model=self.model,
-                messages=formatted_messages,
-                stream=True,
-                max_completion_tokens=2000,
+                        for c in own_calls
+                    ],
+                }
             )
-            response_text = ""
-            for chunk in stream:
-                # Check if choices exist and have at least one element
-                if chunk.choices and len(chunk.choices) > 0:
-                    delta = chunk.choices[0].delta
-                    if delta and delta.content is not None:
-                        response_text += delta.content
-            return response_text
+            for call in own_calls:
+                result = await _run_tool(tool_map[call["name"]], call["arguments"])
+                conversation.append({"role": "tool", "tool_call_id": call["id"], "content": result})
 
-        response_text = await asyncio.to_thread(stream_openai)
-
-        # Call on_chunk callback periodically
         if on_chunk:
-            await _call_callback(on_chunk, response_text)
+            with contextlib.suppress(Exception):
+                await _call_callback(on_chunk, response_text)
 
         return response_text
 
@@ -394,93 +506,33 @@ class LLMClient:
         image_bytes: bytes | None = None,
         on_chunk: Callable[[str], None | Awaitable[None]] | None = None,
         update_interval: float = 1.0,
+        tools: list[LLMTool] | None = None,
     ) -> str:
         """Generate streaming response from OpenRouter (OpenAI-compatible API)."""
-        # Build messages list (same logic as OpenAI)
-        if messages:
-            formatted_messages = []
+        client = self._client_override or _openrouter_client
+        assert client is not None, "OpenRouter client not configured"
 
-            # Add system prompt if provided (must be first)
-            if system_prompt:
-                formatted_messages.append({"role": "system", "content": system_prompt})
+        # Fallback models are passed through extra_body when configured
+        extra_kwargs = {}
+        if self.models:
+            extra_kwargs["extra_body"] = {"models": self.models}
 
-            for msg in messages:
-                if msg["role"] == "user" and image_bytes and msg == messages[-1]:
-                    content = []
-                    base64_image = base64.b64encode(bytes(image_bytes)).decode("utf-8")
-                    content.append(
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
-                        }
-                    )
-                    content.append({"type": "text", "text": msg["content"]})
-                    formatted_messages.append({"role": "user", "content": content})
-                else:
-                    formatted_messages.append(msg)
-        else:
-            if not message_text:
-                raise ValueError("Either message_text or messages must be provided")
-            formatted_messages = []
+        server_tools = []
+        if OPENROUTER_WEB_SEARCH:
+            server_tools.append({"type": "openrouter:web_search"})
+        server_tools.append({"type": "openrouter:datetime"})
 
-            # Add system prompt if provided (must be first)
-            if system_prompt:
-                formatted_messages.append({"role": "system", "content": system_prompt})
-
-            content = []
-            if image_bytes:
-                base64_image = base64.b64encode(bytes(image_bytes)).decode("utf-8")
-                content.append(
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
-                    }
-                )
-            content.append({"type": "text", "text": message_text})
-            formatted_messages.append({"role": "user", "content": content})
-
-        # Stream response from OpenRouter in thread pool to avoid blocking
-        def stream_openrouter():
-            # Build extra_body with models if fallback models are configured
-            extra_body = {}
-            if self.models:
-                extra_body["models"] = self.models
-
-            tools = []
-            if OPENROUTER_WEB_SEARCH:
-                tools.append({"type": "openrouter:web_search"})
-            tools.append({"type": "openrouter:datetime"})
-
-            create_kwargs = {
-                "model": self.model,
-                "messages": formatted_messages,
-                "stream": True,
-                "max_completion_tokens": 2000,
-                "tools": tools,
-            }
-            if extra_body:
-                create_kwargs["extra_body"] = extra_body
-
-            client = self._client_override or _openrouter_client
-            assert client is not None, "OpenRouter client not configured"
-            stream = client.chat.completions.create(**create_kwargs)
-            response_text = ""
-            for chunk in stream:
-                # Check if choices exist and have at least one element
-                if chunk.choices and len(chunk.choices) > 0:
-                    delta = chunk.choices[0].delta
-                    if delta and delta.content is not None:
-                        response_text += delta.content
-            return response_text
-
-        response_text = await asyncio.to_thread(stream_openrouter)
-
-        # Call on_chunk callback with final text
-        if on_chunk:
-            with contextlib.suppress(Exception):
-                await _call_callback(on_chunk, response_text)
-
-        return response_text
+        return await self._stream_chat_completion(
+            client=client,
+            formatted_messages=_build_openai_messages(
+                message_text, messages, system_prompt, image_bytes
+            ),
+            extra_kwargs=extra_kwargs,
+            server_tools=server_tools,
+            tools=tools,
+            on_chunk=on_chunk,
+            update_interval=update_interval,
+        )
 
     async def _generate_openrouter(self, message_text: str, image_bytes: bytes | None) -> str:
         """Generate non-streaming response from OpenRouter (OpenAI-compatible API)."""
