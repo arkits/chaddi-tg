@@ -27,6 +27,8 @@ MAX_MEDIA_GROUP = 10
 
 HTTP_TIMEOUT = 30.0
 MEDIA_TIMEOUT = 120.0
+# PTB's default 20s write timeout isn't enough to push tens of MB to Telegram
+UPLOAD_TIMEOUTS = {"write_timeout": MEDIA_TIMEOUT, "read_timeout": MEDIA_TIMEOUT}
 
 
 def extract_tweet_ref(message_text: str) -> tuple[str, str] | None:
@@ -220,10 +222,14 @@ async def reply_with_media(update: Update, tweet: dict, media_items: list[dict])
                 height=height,
                 duration=int(duration) if duration else None,
                 supports_streaming=True,
+                **UPLOAD_TIMEOUTS,
             )
         else:
             await update.message.reply_photo(
-                photo=io.BytesIO(content), caption=caption, filename="photo.jpg"
+                photo=io.BytesIO(content),
+                caption=caption,
+                filename="photo.jpg",
+                **UPLOAD_TIMEOUTS,
             )
 
         return True
@@ -255,7 +261,7 @@ async def reply_with_media(update: Update, tweet: dict, media_items: list[dict])
                 )
             )
 
-    await update.message.reply_media_group(media=group)
+    await update.message.reply_media_group(media=group, **UPLOAD_TIMEOUTS)
 
     return True
 

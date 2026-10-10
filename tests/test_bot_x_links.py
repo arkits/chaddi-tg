@@ -247,6 +247,20 @@ class TestHandle:
         assert kwargs["supports_streaming"] is True
         assert kwargs["filename"] == "video.mp4"
 
+    async def test_uploads_use_a_long_timeout(self, mock_update, mock_context):
+        mock_update.message.text = "https://x.com/jack/status/20"
+        tweet = make_tweet(media={"all": [{"type": "video", "url": "https://video/a.mp4"}]})
+
+        with (
+            patch.object(x_links, "fetch_tweet", AsyncMock(return_value=tweet)),
+            patch.object(x_links, "download_media", AsyncMock(return_value=b"mp4bytes")),
+        ):
+            await x_links.handle(mock_update, mock_context)
+
+        kwargs = mock_update.message.reply_video.await_args.kwargs
+        assert kwargs["write_timeout"] == x_links.MEDIA_TIMEOUT
+        assert kwargs["read_timeout"] == x_links.MEDIA_TIMEOUT
+
     async def test_replies_with_a_media_group_for_multiple_photos(self, mock_update, mock_context):
         mock_update.message.text = "https://x.com/jack/status/20"
         tweet = make_tweet(
