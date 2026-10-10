@@ -50,6 +50,11 @@ async def post_init(application: Application) -> None:
     schedule_daily_posts(application.job_queue)
 
 
+def command_handler(command: str, callback) -> CommandHandler:
+    # Only new messages - otherwise editing an old /daan or /gamble runs it again
+    return CommandHandler(command, callback, filters=filters.UpdateType.MESSAGE)
+
+
 async def run_telegram_bot():
     # Create the Application and pass it your bot's token.
     application = (
@@ -60,51 +65,51 @@ async def run_telegram_bot():
     )
 
     # Add command handlers
-    application.add_handler(CommandHandler("start", handlers.start.handle))
-    application.add_handler(CommandHandler("help", handlers.help.handle))
-    application.add_handler(CommandHandler("hi", handlers.hi.handle))
-    application.add_handler(CommandHandler("version", handlers.version.handle))
-    application.add_handler(CommandHandler("ping", handlers.ping.handle))
-    application.add_handler(CommandHandler("about", handlers.about.handle))
-    application.add_handler(CommandHandler("rokda", handlers.rokda.handle))
-    application.add_handler(CommandHandler("superpower", handlers.superpower.handle))
-    application.add_handler(CommandHandler("gamble", handlers.gamble.handle))
-    application.add_handler(CommandHandler("sutta", handlers.sutta.handle))
-    application.add_handler(CommandHandler("chutiya", handlers.chutiya.handle))
+    application.add_handler(command_handler("start", handlers.start.handle))
+    application.add_handler(command_handler("help", handlers.help.handle))
+    application.add_handler(command_handler("hi", handlers.hi.handle))
+    application.add_handler(command_handler("version", handlers.version.handle))
+    application.add_handler(command_handler("ping", handlers.ping.handle))
+    application.add_handler(command_handler("about", handlers.about.handle))
+    application.add_handler(command_handler("rokda", handlers.rokda.handle))
+    application.add_handler(command_handler("superpower", handlers.superpower.handle))
+    application.add_handler(command_handler("gamble", handlers.gamble.handle))
+    application.add_handler(command_handler("sutta", handlers.sutta.handle))
+    application.add_handler(command_handler("chutiya", handlers.chutiya.handle))
 
-    application.add_handler(CommandHandler("mom", handlers.mom_spacy.handle))
-    application.add_handler(CommandHandler("mom2", handlers.mom_rake.handle))
+    application.add_handler(command_handler("mom", handlers.mom_spacy.handle))
+    application.add_handler(command_handler("mom2", handlers.mom_rake.handle))
 
-    application.add_handler(CommandHandler("set", handlers.setter.handle))
+    application.add_handler(command_handler("set", handlers.setter.handle))
 
-    application.add_handler(CommandHandler("aao", handlers.aao.handle))
-    application.add_handler(CommandHandler("daan", handlers.daan.handle))
+    application.add_handler(command_handler("aao", handlers.aao.handle))
+    application.add_handler(command_handler("daan", handlers.daan.handle))
 
-    application.add_handler(CommandHandler("quote", handlers.quotes.handle))
-    application.add_handler(CommandHandler("quotes", handlers.quotes.handle))
+    application.add_handler(command_handler("quote", handlers.quotes.handle))
+    application.add_handler(command_handler("quotes", handlers.quotes.handle))
 
-    application.add_handler(CommandHandler("roll", handlers.roll.handle))
-    application.add_handler(CommandHandler("translate", handlers.translate.handle))
-    application.add_handler(CommandHandler("tynm", handlers.tynm.handle))
-    application.add_handler(CommandHandler("ytdl", handlers.ytdl.handle))
-    application.add_handler(CommandHandler("dalle", handlers.dalle.handle))
-    application.add_handler(CommandHandler("pic", handlers.pic.handle))
+    application.add_handler(command_handler("roll", handlers.roll.handle))
+    application.add_handler(command_handler("translate", handlers.translate.handle))
+    application.add_handler(command_handler("tynm", handlers.tynm.handle))
+    application.add_handler(command_handler("ytdl", handlers.ytdl.handle))
+    application.add_handler(command_handler("dalle", handlers.dalle.handle))
+    application.add_handler(command_handler("pic", handlers.pic.handle))
 
-    application.add_handler(CommandHandler("ask", handlers.ask.handle))
-    application.add_handler(CommandHandler("patakaro", handlers.ask.handle))
-    application.add_handler(CommandHandler("chatgpt", handlers.ask.handle))
-    application.add_handler(CommandHandler("ai", handlers.ai.handle))
+    application.add_handler(command_handler("ask", handlers.ask.handle))
+    application.add_handler(command_handler("patakaro", handlers.ask.handle))
+    application.add_handler(command_handler("chatgpt", handlers.ask.handle))
+    application.add_handler(command_handler("ai", handlers.ai.handle))
 
-    application.add_handler(CommandHandler("remind", handlers.remind.handle))
-    application.add_handler(CommandHandler("reminder", handlers.remind.handle))
-    application.add_handler(CommandHandler("remindme", handlers.remind.handle))
-    application.add_handler(CommandHandler("alarm", handlers.remind.handle))
+    application.add_handler(command_handler("remind", handlers.remind.handle))
+    application.add_handler(command_handler("reminder", handlers.remind.handle))
+    application.add_handler(command_handler("remindme", handlers.remind.handle))
+    application.add_handler(command_handler("alarm", handlers.remind.handle))
 
-    application.add_handler(CommandHandler("w", handlers.weather.handle))
-    application.add_handler(CommandHandler("weather", handlers.weather.handle))
+    application.add_handler(command_handler("w", handlers.weather.handle))
+    application.add_handler(command_handler("weather", handlers.weather.handle))
 
-    application.add_handler(CommandHandler("jyotish", handlers.jyotish.handle))
-    application.add_handler(CommandHandler("bs", handlers.bs.handle))
+    application.add_handler(command_handler("jyotish", handlers.jyotish.handle))
+    application.add_handler(command_handler("bs", handlers.bs.handle))
 
     # Add message handlers
     application.add_handler(

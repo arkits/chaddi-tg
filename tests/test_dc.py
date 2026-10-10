@@ -77,9 +77,12 @@ def test_log_command_usage_without_message():
     update = MagicMock(spec=Update)
     update.message = None
 
-    result = dc.log_command_usage("test_command", update)
+    with patch.object(dc.sentry_sdk, "capture_exception") as capture:
+        result = dc.log_command_usage("test_command", update)
 
     assert result is None
+    # An edited message has no .message - that's expected, not an error
+    capture.assert_not_called()
 
 
 def test_log_command_usage_with_database_error(mock_update):

@@ -20,7 +20,7 @@ def log_command_usage(command_name: str, update: Update) -> CommandUsage | None:
     """Log a command invocation. Returns the created CommandUsage row, if one was saved."""
     usage = None
     try:
-        if not hasattr(update, "message"):
+        if getattr(update, "message", None) is None:
             logger.debug("[dc] update had no message... fast failing")
             return
 
