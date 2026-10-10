@@ -5,7 +5,7 @@ from telegram import Update
 from telegram.error import BadRequest, Forbidden
 from telegram.ext import ContextTypes
 
-from src.domain import tg_logger
+from src.domain import analytics, tg_logger
 
 # BadRequest messages Telegram returns when the bot can't post in a chat
 # (muted, restricted, or no longer a member). Nothing we can do about these.
@@ -39,6 +39,20 @@ async def log_error(update: Update, context: ContextTypes.DEFAULT_TYPE):
             context.error,
         )
         return
+
+    user = update.effective_user if isinstance(update, Update) else None
+    chat = update.effective_chat if isinstance(update, Update) else None
+    analytics.capture_exception(
+        context.error,
+        distinct_id=str(user.id) if user else None,
+        properties={
+            "source": "telegram",
+            "chat_id": str(chat.id) if chat else None,
+            "chat_type": chat.type if chat else None,
+            "chat_title": chat.title if chat else None,
+            "username": user.username if user else None,
+        },
+    )
 
     logger.error(
         "Caught Fatal Error! error={} \n \nupdate={} \n \ncontext={} \n \ntraceback={}",

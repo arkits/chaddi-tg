@@ -4,15 +4,15 @@ from pathlib import Path
 import sentry_sdk
 import socketio
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from loguru import logger
 from starlette.exceptions import HTTPException
 from starlette_exporter import PrometheusMiddleware, handle_metrics
 
-from src.domain import config, version
+from src.domain import analytics, config, version
 from src.server.routes import api_routes
 
 app_config = config.get_config()
@@ -56,6 +56,24 @@ sio = socketio.AsyncServer(
 fastapi_app.sio = sio
 
 fastapi_app.include_router(api_routes.router, prefix="/api", tags=["api"])
+
+
+@fastapi_app.exception_handler(Exception)
+async def handle_unhandled_exception(request: Request, exc: Exception):
+    # FastAPI swallows route errors before sys.excepthook sees them, so PostHog's
+    # exception autocapture never fires - send them explicitly
+    analytics.capture_exception(
+        exc,
+        properties={
+            "source": "server",
+            "$current_url": str(request.url),
+            "method": request.method,
+            "path": request.url.path,
+        },
+    )
+    logger.error("[server] Unhandled error on {} {}: {}", request.method, request.url.path, exc)
+    return JSONResponse(status_code=500, content={"detail": "Internal Server Error"})
+
 
 from src.server.routes import sio_routes  # noqa: E402
 

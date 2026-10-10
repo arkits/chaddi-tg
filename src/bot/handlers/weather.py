@@ -175,7 +175,7 @@ Weather description: "{weather_description}"
 Funny rude description:"""
 
         # Use LLMClient wrapper
-        llm_client = ai.get_default_client()
+        llm_client = ai.get_default_client(properties={"command": "weather"})
         response = await llm_client.generate(
             message_text=f"You are a sarcastic weather reporter who makes rude and funny comments about the weather. Keep responses to one sentence.\n\n{prompt}",
         )

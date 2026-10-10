@@ -57,7 +57,10 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         sent_message = await update.message.reply_text("ek minute...")
 
         # Always use OpenRouter for /ask command
-        llm_client = ai.get_openrouter_client()
+        llm_client = ai.get_openrouter_client(
+            distinct_id=str(update.effective_user.id),
+            properties={"command": "ask", "chat_id": str(update.effective_chat.id)},
+        )
 
         # Build messages list
         messages = [{"role": "user", "content": message}]

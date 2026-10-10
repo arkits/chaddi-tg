@@ -6,6 +6,7 @@ import contextlib
 import inspect
 import json
 import time
+import uuid
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 
@@ -42,15 +43,19 @@ from openai import OpenAI as StandardOpenAI  # noqa: E402
 
 # Try to import PostHog's OpenAI wrapper for LLM analytics
 try:
+    from posthog.ai.gemini import Client as PostHogGemini
     from posthog.ai.openai import OpenAI as PostHogOpenAI
 
     _posthog_available = True
     _posthog_client = analytics.posthog
+    _posthog_wrappers: tuple[type, ...] = (PostHogOpenAI, PostHogGemini)
     logger.info("[ai] PostHog LLM analytics enabled")
 except ImportError:
     PostHogOpenAI = StandardOpenAI  # Fallback to standard OpenAI if PostHog not available
+    PostHogGemini = None
     _posthog_available = False
     _posthog_client = None
+    _posthog_wrappers = ()
     logger.warning("[ai] PostHog AI module not available, using standard OpenAI client")
 
 # Initialize clients with PostHog instrumentation (if available)
@@ -59,7 +64,9 @@ _gemini_client = None
 _openrouter_client = None
 
 try:
-    _openai_client = PostHogOpenAI(api_key=app_config.get("OPENAI", "API_KEY"))
+    _openai_client = PostHogOpenAI(
+        api_key=app_config.get("OPENAI", "API_KEY"), posthog_client=_posthog_client
+    )
     logger.info(f"[ai] OpenAI client initialized with model {OPENAI_MODEL}")
 except Exception as e:
     logger.debug(f"[ai] Failed to initialize OpenAI client: {e}")
@@ -72,7 +79,12 @@ except Exception as e:
 try:
     from google import genai
 
-    _gemini_client = genai.Client(api_key=app_config.get("GEMINI", "API_KEY"))
+    if PostHogGemini is not None:
+        _gemini_client = PostHogGemini(
+            api_key=app_config.get("GEMINI", "API_KEY"), posthog_client=_posthog_client
+        )
+    else:
+        _gemini_client = genai.Client(api_key=app_config.get("GEMINI", "API_KEY"))
     logger.info(f"[ai] Gemini client initialized with model {GEMINI_MODEL}")
 except Exception as e:
     logger.debug(f"[ai] Failed to initialize Gemini client: {e}")
@@ -81,6 +93,7 @@ try:
     _openrouter_client = PostHogOpenAI(
         base_url="https://openrouter.ai/api/v1",
         api_key=app_config.get("OPENROUTER", "API_KEY"),
+        posthog_client=_posthog_client,
     )
     logger.info(f"[ai] OpenRouter client initialized with model {OPENROUTER_MODEL}")
 except Exception as e:
@@ -203,6 +216,8 @@ class LLMClient:
         provider: str | None = None,
         model: str | None = None,
         models: list[str] | None = None,
+        distinct_id: str | None = None,
+        properties: dict | None = None,
         _client=None,
     ):
         """
@@ -213,9 +228,13 @@ class LLMClient:
             model: Model name. If None, uses configured default for provider.
             models: List of fallback model IDs for OpenRouter. If None, uses configured default.
                     Only used when provider is "openrouter".
+            distinct_id: Telegram user ID the generations are attributed to in PostHog.
+            properties: Extra properties attached to the PostHog $ai_generation events.
             _client: Optional client override (for internal use).
         """
         self.provider = provider or AI_PROVIDER
+        self.distinct_id = distinct_id
+        self.properties = properties or {}
         self._client_override = _client
         if self.provider == "openai":
             self.model = model or OPENAI_MODEL
@@ -238,6 +257,21 @@ class LLMClient:
                 raise ValueError("Gemini client is not configured.")
             if self.provider == "openrouter" and _openrouter_client is None:
                 raise ValueError("OpenRouter client is not configured.")
+
+    def _posthog_kwargs(self, client) -> dict:
+        """
+        PostHog tracking kwargs for a request, when the client is PostHog-wrapped.
+
+        Each call starts a new trace, so every model <-> tool round of one request
+        shows up as a single trace in PostHog AI observability.
+        """
+        if not _posthog_wrappers or not isinstance(client, _posthog_wrappers):
+            return {}
+        return {
+            "posthog_distinct_id": self.distinct_id,
+            "posthog_trace_id": str(uuid.uuid4()),
+            "posthog_properties": {"provider": self.provider, **self.properties},
+        }
 
     @property
     def has_web_search(self) -> bool:
@@ -359,7 +393,7 @@ class LLMClient:
             formatted_messages=_build_openai_messages(
                 message_text, messages, system_prompt, image_bytes
             ),
-            extra_kwargs={},
+            extra_kwargs=self._posthog_kwargs(client),
             server_tools=[],
             tools=tools,
             on_chunk=on_chunk,
@@ -494,6 +528,7 @@ class LLMClient:
             messages=[{"role": "user", "content": content}],
             stream=False,
             max_completion_tokens=2000,
+            **self._posthog_kwargs(client),
         )
 
         return response.choices[0].message.content or ""
@@ -513,7 +548,7 @@ class LLMClient:
         assert client is not None, "OpenRouter client not configured"
 
         # Fallback models are passed through extra_body when configured
-        extra_kwargs = {}
+        extra_kwargs = self._posthog_kwargs(client)
         if self.models:
             extra_kwargs["extra_body"] = {"models": self.models}
 
@@ -572,7 +607,7 @@ class LLMClient:
 
         client = self._client_override or _openrouter_client
         assert client is not None, "OpenRouter client not configured"
-        response = client.chat.completions.create(**create_kwargs)
+        response = client.chat.completions.create(**create_kwargs, **self._posthog_kwargs(client))
 
         return response.choices[0].message.content or ""
 
@@ -606,6 +641,7 @@ class LLMClient:
         response = client.models.generate_content(
             model=self.model,
             contents=contents,
+            **self._posthog_kwargs(client),
         )
 
         return response.text or ""
@@ -674,33 +710,50 @@ class LLMClient:
         return response_text
 
 
-def get_default_client() -> LLMClient:
+def get_default_client(distinct_id: str | None = None, properties: dict | None = None) -> LLMClient:
     """Get default LLM client based on configuration."""
-    return LLMClient()
+    return LLMClient(distinct_id=distinct_id, properties=properties)
 
 
-def get_openai_client(model: str | None = None) -> LLMClient:
+def get_openai_client(
+    model: str | None = None, distinct_id: str | None = None, properties: dict | None = None
+) -> LLMClient:
     """Get OpenAI client with optional custom model."""
-    return LLMClient(provider="openai", model=model)
+    return LLMClient(provider="openai", model=model, distinct_id=distinct_id, properties=properties)
 
 
-def get_gemini_client(model: str | None = None) -> LLMClient:
+def get_gemini_client(
+    model: str | None = None, distinct_id: str | None = None, properties: dict | None = None
+) -> LLMClient:
     """Get Gemini client with optional custom model."""
-    return LLMClient(provider="gemini", model=model)
+    return LLMClient(provider="gemini", model=model, distinct_id=distinct_id, properties=properties)
 
 
-def get_openrouter_client(model: str | None = None, models: list[str] | None = None) -> LLMClient:
+def get_openrouter_client(
+    model: str | None = None,
+    models: list[str] | None = None,
+    distinct_id: str | None = None,
+    properties: dict | None = None,
+) -> LLMClient:
     """
     Get OpenRouter client with optional custom model and fallback models.
 
     Args:
         model: Primary model name. If None, uses configured default.
         models: List of fallback model IDs. If None, uses configured default.
+        distinct_id: Telegram user ID the generations are attributed to in PostHog.
+        properties: Extra properties attached to the PostHog $ai_generation events.
 
     Returns:
         LLMClient configured for OpenRouter.
     """
-    return LLMClient(provider="openrouter", model=model, models=models)
+    return LLMClient(
+        provider="openrouter",
+        model=model,
+        models=models,
+        distinct_id=distinct_id,
+        properties=properties,
+    )
 
 
 def get_chatgpt_client(model: str | None = None) -> LLMClient:
@@ -714,7 +767,9 @@ def get_chatgpt_client(model: str | None = None) -> LLMClient:
         LLMClient configured for OpenAI.
     """
     try:
-        client = PostHogOpenAI(api_key=app_config.get("OPENAI", "API_KEY"))
+        client = PostHogOpenAI(
+            api_key=app_config.get("OPENAI", "API_KEY"), posthog_client=_posthog_client
+        )
     except Exception:
         client = StandardOpenAI(api_key=app_config.get("OPENAI", "API_KEY"))
     return LLMClient(provider="openai", model=model or OPENAI_MODEL, _client=client)

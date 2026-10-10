@@ -162,7 +162,10 @@ async def handle(
         # Send initial "Thinking..." message
         sent_message = await update.message.reply_text("ek minute...")
 
-        llm_client = ai.get_default_client()
+        llm_client = ai.get_default_client(
+            distinct_id=str(update.message.from_user.id),
+            properties={"command": "ai", "chat_id": str(update.message.chat.id)},
+        )
 
         # Build messages list with conversation history for group chats
         messages = []

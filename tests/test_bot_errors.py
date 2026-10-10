@@ -89,3 +89,43 @@ class TestErrors:
             await errors.log_error(mock_update, mock_context)
 
             mock_tg_logger.log.assert_called_once()
+
+
+class TestPostHogErrorCapture:
+    @pytest.mark.anyio
+    async def test_log_error_sends_exception_to_posthog(self, mock_context):
+        update = MagicMock(spec=Update)
+        update.to_json.return_value = "{}"
+        update.effective_user.id = 42
+        update.effective_user.username = "bakchod"
+        update.effective_chat.id = -100
+        update.effective_chat.type = "supergroup"
+        update.effective_chat.title = "Chaddi"
+
+        with (
+            patch("src.bot.handlers.errors.tg_logger") as mock_tg_logger,
+            patch("src.bot.handlers.errors.analytics") as mock_analytics,
+        ):
+            mock_tg_logger.log = AsyncMock()
+            await errors.log_error(update, mock_context)
+
+        mock_analytics.capture_exception.assert_called_once()
+        args, kwargs = mock_analytics.capture_exception.call_args
+        assert args[0] is mock_context.error
+        assert kwargs["distinct_id"] == "42"
+        assert kwargs["properties"]["chat_id"] == "-100"
+        assert kwargs["properties"]["source"] == "telegram"
+
+    @pytest.mark.anyio
+    async def test_log_error_skips_posthog_for_cant_send_errors(self, mock_update):
+        context = MagicMock()
+        context.error = Forbidden("bot was kicked from the group chat")
+
+        with (
+            patch("src.bot.handlers.errors.tg_logger") as mock_tg_logger,
+            patch("src.bot.handlers.errors.analytics") as mock_analytics,
+        ):
+            mock_tg_logger.log = AsyncMock()
+            await errors.log_error(mock_update, context)
+
+        mock_analytics.capture_exception.assert_not_called()

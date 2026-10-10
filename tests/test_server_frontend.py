@@ -59,3 +59,31 @@ def test_get_frontend_response_returns_404_when_build_missing(tmp_path, monkeypa
 
     assert exc_info.value.status_code == 404
     assert "Frontend build not found" in exc_info.value.detail
+
+
+def test_unhandled_route_error_is_sent_to_posthog(monkeypatch):
+    from unittest.mock import MagicMock
+
+    from fastapi.testclient import TestClient
+
+    mock_analytics = MagicMock()
+    monkeypatch.setattr(server, "analytics", mock_analytics)
+
+    async def boom():
+        raise RuntimeError("boom")
+
+    # Register ahead of the SPA catch-all route
+    server.fastapi_app.add_api_route("/api/__boom", boom)
+    routes = server.fastapi_app.router.routes
+    routes.insert(0, routes.pop())
+    try:
+        client = TestClient(server.fastapi_app, raise_server_exceptions=False)
+        response = client.get("/api/__boom")
+    finally:
+        routes.pop(0)
+
+    assert response.status_code == 500
+    mock_analytics.capture_exception.assert_called_once()
+    args, kwargs = mock_analytics.capture_exception.call_args
+    assert str(args[0]) == "boom"
+    assert kwargs["properties"]["path"] == "/api/__boom"

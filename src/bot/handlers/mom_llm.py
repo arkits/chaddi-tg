@@ -70,7 +70,11 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.debug("[mom3] prompt={} \n {} \n {}", instructions, input, multi_joke_instructions)
 
         # Use LLMClient wrapper
-        llm_client = ai.get_openai_client(model=MODEL_NAME)
+        llm_client = ai.get_openai_client(
+            model=MODEL_NAME,
+            distinct_id=str(initiator_id),
+            properties={"command": "mom3", "chat_id": str(update.message.chat.id)},
+        )
         llm_response = await llm_client.generate(
             message_text=f"{multi_joke_instructions}\n\n{input}",
         )

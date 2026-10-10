@@ -678,3 +678,66 @@ class TestLLMClientTools:
             assert ai.LLMClient(provider="openai").has_web_search is False
         with patch("src.domain.ai.OPENROUTER_WEB_SEARCH", False):
             assert ai.LLMClient(provider="openrouter").has_web_search is False
+
+
+class _FakePostHogWrapper:
+    """Stands in for a PostHog-wrapped provider client."""
+
+    def __init__(self):
+        self.chat = MagicMock()
+        self.models = MagicMock()
+
+
+class TestPostHogTracking:
+    """Test PostHog AI observability kwargs on LLM requests."""
+
+    def test_no_posthog_kwargs_for_unwrapped_client(self):
+        client = ai.LLMClient(provider="openai", distinct_id="42", _client=MagicMock())
+        assert client._posthog_kwargs(MagicMock()) == {}
+
+    @patch("src.domain.ai._posthog_wrappers", (_FakePostHogWrapper,))
+    def test_posthog_kwargs_for_wrapped_client(self):
+        wrapped = _FakePostHogWrapper()
+        client = ai.LLMClient(
+            provider="openai", distinct_id="42", properties={"command": "ai"}, _client=wrapped
+        )
+
+        kwargs = client._posthog_kwargs(wrapped)
+
+        assert kwargs["posthog_distinct_id"] == "42"
+        assert kwargs["posthog_properties"] == {"provider": "openai", "command": "ai"}
+        assert kwargs["posthog_trace_id"]
+        # Each request is its own trace
+        assert client._posthog_kwargs(wrapped)["posthog_trace_id"] != kwargs["posthog_trace_id"]
+
+    @pytest.mark.anyio
+    @patch("src.domain.ai._posthog_wrappers", (_FakePostHogWrapper,))
+    async def test_tool_rounds_share_one_trace(self):
+        wrapped = _FakePostHogWrapper()
+        wrapped.chat.completions.create.side_effect = [
+            [_tool_call_chunk(0, "call_1", "get_chat_history", "{}")],
+            [_text_chunk("done")],
+        ]
+        client = ai.LLMClient(provider="openrouter", distinct_id="42", _client=wrapped)
+
+        await client.generate_streaming(
+            messages=[{"role": "user", "content": "hi"}], tools=[_tool(lambda: "history")]
+        )
+
+        first, second = [c.kwargs for c in wrapped.chat.completions.create.call_args_list]
+        assert first["posthog_distinct_id"] == second["posthog_distinct_id"] == "42"
+        assert first["posthog_trace_id"] == second["posthog_trace_id"]
+
+    @pytest.mark.anyio
+    @patch("src.domain.ai._posthog_wrappers", (_FakePostHogWrapper,))
+    async def test_gemini_request_is_tracked(self):
+        wrapped = _FakePostHogWrapper()
+        wrapped.models.generate_content.return_value = MagicMock(text="hello")
+        client = ai.LLMClient(provider="gemini", distinct_id="42", _client=wrapped)
+
+        response = await client.generate("hi")
+
+        assert response.text == "hello"
+        kwargs = wrapped.models.generate_content.call_args.kwargs
+        assert kwargs["posthog_distinct_id"] == "42"
+        assert kwargs["posthog_properties"]["provider"] == "gemini"
