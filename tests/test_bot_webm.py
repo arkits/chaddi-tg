@@ -2,6 +2,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from telegram import Document, Message, Update, User
+from telegram.error import TimedOut
 from telegram.ext import ContextTypes
 
 from src.bot.handlers import webm
@@ -167,18 +168,68 @@ async def test_handle_webm_file_success(mock_update, mock_context):
 
     mock_webm_file = MagicMock()
     mock_webm_file.download_to_drive = AsyncMock()
+    mock_context.bot.get_file = AsyncMock(return_value=mock_webm_file)
+    mock_context.bot.send_video = AsyncMock()
 
     with (
         patch("src.bot.handlers.webm.dc"),
-        patch.object(mock_context.bot, "get_file", return_value=mock_webm_file),
         patch("subprocess.call", return_value=0),
         patch("src.bot.handlers.webm.util.pretty_time_delta", return_value="5 minutes"),
-        patch("src.bot.handlers.webm.util.delete_file"),
+        patch("src.bot.handlers.webm.os.path.exists", return_value=True),
+        patch("src.bot.handlers.webm.util.delete_file") as mock_delete_file,
         patch("builtins.open"),
     ):
         await webm.handle(mock_update, mock_context)
 
-    mock_message.edit_text.assert_called_once()
+    mock_message.edit_text.assert_not_called()
+    mock_message.delete.assert_called_once()
+
+    send_kwargs = mock_context.bot.send_video.call_args.kwargs
+    assert send_kwargs["read_timeout"] == webm.UPLOAD_TIMEOUT_SECONDS
+    assert send_kwargs["write_timeout"] == webm.UPLOAD_TIMEOUT_SECONDS
+
+    deleted = [c.args[0] for c in mock_delete_file.call_args_list]
+    assert deleted == [
+        webm.WEBM_RESOURCES_DIR + "testfile123.webm",
+        webm.WEBM_RESOURCES_DIR + "testfile123.mp4",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_handle_webm_file_upload_timeout_cleans_up(mock_update, mock_context):
+    """Test that files are cleaned up when the upload to Telegram times out"""
+    mock_document = MagicMock(spec=Document)
+    mock_document.file_name = "video.webm"
+    mock_document.file_id = "timeoutfile"
+    mock_update.message.document = mock_document
+    mock_update.message.chat_id = 999
+    mock_update.message.from_user = MagicMock(spec=User)
+    mock_update.message.from_user.id = 111
+    mock_update.message.from_user.username = "testuser"
+    mock_update.message.from_user.first_name = "Test"
+    mock_update.message.caption = None
+
+    mock_message = MagicMock()
+    mock_message.edit_text = AsyncMock()
+    mock_update.message.reply_text = AsyncMock(return_value=mock_message)
+
+    mock_webm_file = MagicMock()
+    mock_webm_file.download_to_drive = AsyncMock()
+    mock_context.bot.get_file = AsyncMock(return_value=mock_webm_file)
+    mock_context.bot.send_video = AsyncMock(side_effect=TimedOut())
+
+    with (
+        patch("src.bot.handlers.webm.dc"),
+        patch("subprocess.call", return_value=0),
+        patch("src.bot.handlers.webm.util.pretty_time_delta", return_value="5 seconds"),
+        patch("src.bot.handlers.webm.os.path.exists", return_value=True),
+        patch("src.bot.handlers.webm.util.delete_file") as mock_delete_file,
+        patch("builtins.open"),
+    ):
+        await webm.handle(mock_update, mock_context)
+
+    mock_message.edit_text.assert_called_once_with(text="(｡•́︿•̀｡) webm conversion failed (｡•́︿•̀｡)")
+    assert mock_delete_file.call_count == 2
 
 
 @pytest.mark.asyncio

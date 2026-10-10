@@ -1,4 +1,5 @@
 import datetime
+import os
 import subprocess
 import traceback
 
@@ -9,7 +10,10 @@ from telegram.ext import ContextTypes
 from src.domain import dc, util
 
 WEBM_RESOURCES_DIR = "resources/webm_conversions/"
-CUSTOM_TIMEOUT_SECONDS = 5000
+UPLOAD_TIMEOUT_SECONDS = 120
+# PTB's default 5s read timeout is too short - Telegram can take longer than that to
+# acknowledge a video upload, which surfaces as a TimedOut even though the video was sent
+UPLOAD_TIMEOUTS = {"write_timeout": UPLOAD_TIMEOUT_SECONDS, "read_timeout": UPLOAD_TIMEOUT_SECONDS}
 
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -95,17 +99,14 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await context.bot.send_video(
                     chat_id=update.message.chat_id,
                     video=f,
-                    write_timeout=CUSTOM_TIMEOUT_SECONDS,
                     caption=caption,
+                    **UPLOAD_TIMEOUTS,
                 )
 
             try:
                 await message.delete()
             except Exception as e:
                 logger.error("[webm] failed to delete message! error={}", e)
-
-            util.delete_file(WEBM_RESOURCES_DIR + str(document.file_id) + ".webm")
-            util.delete_file(WEBM_RESOURCES_DIR + str(document.file_id) + ".mp4")
 
         except Exception as e:
             logger.error(
@@ -115,6 +116,13 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
 
             await message.edit_text(text="(｡•́︿•̀｡) webm conversion failed (｡•́︿•̀｡)")
+
+        finally:
+            # Clean up on every path so failed conversions don't leave files behind
+            for ext in (".webm", ".mp4"):
+                path = WEBM_RESOURCES_DIR + str(document.file_id) + ext
+                if os.path.exists(path):
+                    util.delete_file(path)
 
     except Exception as e:
         logger.error(
