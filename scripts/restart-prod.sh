@@ -1,7 +1,11 @@
 #!/bin/bash
-# Stop if there is an error
+# restart-prod.sh
+#
+# Restarts chaddi-tg by stopping it and letting chaddi.service start it again.
+
 set -e
 
+cd "$(dirname "$0")"
+
 ./kill-chaddi.sh
-sleep 5
-./run-prod.sh
+./wait-for-chaddi.sh

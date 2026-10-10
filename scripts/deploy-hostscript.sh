@@ -3,6 +3,9 @@
 
 set -e
 
+# uv lives in ~/.local/bin, which a non-interactive ssh session doesn't have on PATH
+export PATH="$HOME/.local/bin:$PATH"
+
 echo ">>> hostscript running as $(whoami)@$(hostname)"
 echo ">>> deploying chaddi-tg to $(pwd)"
 echo ""
@@ -36,38 +39,18 @@ if [ -d "chaddi-tg" ]; then
     cd ..
     echo ""
 
-    echo ">>> triggering kill-chaddi.sh"
+    echo ">>> syncing python dependencies"
+    uv sync
+    echo ""
+
+    # chaddi.service (Restart=always) owns the process - stop it and let systemd
+    # start the new code, rather than starting a second copy that fights it
+    # for port 5100 and getUpdates
     cd scripts
     ./kill-chaddi.sh
+    ./wait-for-chaddi.sh
 
-    echo ">>> sleeping for 5 seconds"
-    sleep 5
-    echo ">>> done sleeping"
-
-    echo ">>> starting new chaddi-tg"
-    ./run-prod.sh
-
-    PID=$(ps -eaf | grep "chaddi.py" | grep -v grep | awk '{print $2}' || true)
-    echo ">>> PID of chaddi-tg: $PID"
-
-    PORT=5100
-    echo ">>> waiting for chaddi-tg to bind to port $PORT"
-    PID_PORT=""
-    for i in $(seq 1 10); do
-        PID_PORT=$(lsof -t -i:$PORT || true)
-        if [ -n "$PID_PORT" ]; then
-            break
-        fi
-        sleep 1
-    done
-    echo ">>> PID of server on port $PORT: $PID_PORT"
-
-    if [ -z "$PID_PORT" ]; then
-        echo "ERROR: chaddi-tg did not bind to port $PORT after starting"
-        exit 4
-    fi
-
-    echo ">>> done starting new chaddi-tg"
+    echo ">>> done deploying chaddi-tg"
 
 else
 

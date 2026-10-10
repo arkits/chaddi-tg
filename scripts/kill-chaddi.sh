@@ -1,26 +1,34 @@
 #!/bin/bash
 # kill-chaddi.sh
+#
+# Stops the running chaddi-tg. In prod chaddi.service (Restart=always) brings it
+# straight back up, so this doubles as a restart.
 
-PID=$(ps -eaf | grep "chaddi.py" | grep -v grep | awk '{print $2}')
-
-if [[ "" != "$PID" ]]; then
-    echo ">>> killing PID - $PID"
-    kill -9 $PID
-fi
-
-echo ">>> checking processes"
-ps aux | grep "chaddi.py"
-echo ""
-
-# kill server running on port 5100
 PORT=5100
 
-PID_PORT=$(lsof -t -i:$PORT)
-if [[ "" != "$PID_PORT" ]]; then
-    echo ">>> killing process on port $PORT - PID $PID_PORT"
-    kill $PID_PORT
+PIDS=$(pgrep -f "chaddi.py")
+
+if [[ -n "$PIDS" ]]; then
+    echo ">>> stopping chaddi-tg - PIDs $(echo $PIDS)"
+    kill $PIDS 2>/dev/null
+
+    # Give PTB a chance to shut down cleanly before forcing it
+    for i in $(seq 1 15); do
+        pgrep -f "chaddi.py" >/dev/null || break
+        sleep 1
+    done
+
+    PIDS=$(pgrep -f "chaddi.py")
+    if [[ -n "$PIDS" ]]; then
+        echo ">>> chaddi-tg did not exit, killing - PIDs $(echo $PIDS)"
+        kill -9 $PIDS 2>/dev/null
+    fi
 fi
 
-echo ">>> checking processes on port $PORT"
-lsof -i:$PORT
-echo ""
+PID_PORT=$(lsof -t -i:$PORT -sTCP:LISTEN)
+if [[ -n "$PID_PORT" ]]; then
+    echo ">>> killing leftover process on port $PORT - PID $PID_PORT"
+    kill -9 $PID_PORT
+fi
+
+echo ">>> chaddi-tg stopped"

@@ -1,0 +1,31 @@
+# chaddi.service - runs chaddi-tg in prod.
+#
+# Install:
+#   sudo cp scripts/chaddi.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now chaddi
+#
+# Deploys restart it with scripts/kill-chaddi.sh (Restart=always starts it again),
+# so nothing else should start chaddi.py by hand.
+
+[Unit]
+Description=chaddi-tg Telegram bot
+Documentation=https://github.com/arkits/chaddi-tg
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=arkits
+Group=arkits
+WorkingDirectory=/opt/software/chaddi-tg
+# run.sh calls `uv`, which lives in ~/.local/bin and is not on the default PATH
+Environment="PATH=/home/arkits/.local/bin:/home/arkits/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="HOME=/home/arkits"
+ExecStart=/bin/bash /opt/software/chaddi-tg/run.sh
+Restart=always
+RestartSec=10
+KillMode=mixed
+TimeoutStopSec=20
+
+[Install]
+WantedBy=multi-user.target
