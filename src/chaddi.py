@@ -9,6 +9,8 @@ from src.domain import config, sentry_filters
 
 app_config = config.get_config()
 
+logger.configure(patcher=sentry_filters.scrub_loguru_record)
+
 # Initialize Sentry SDK BEFORE importing any modules that use OpenAI
 # This ensures Sentry can instrument the OpenAI client when it's created
 sentry_sdk.init(
@@ -28,6 +30,9 @@ sentry_sdk.init(
     environment=app_config.get("SENTRY", "ENVIRONMENT", fallback="dev"),
     enable_logs=True,
     before_send=sentry_filters.before_send,
+    before_send_transaction=sentry_filters.before_send_transaction,
+    before_breadcrumb=sentry_filters.before_breadcrumb,
+    before_send_log=sentry_filters.before_send_log,
     integrations=[
         OpenAIIntegration(
             include_prompts=True,  # LLM/tokenizer inputs/outputs will be not sent to Sentry, despite send_default_pii=True
