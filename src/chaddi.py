@@ -5,7 +5,7 @@ from loguru import logger
 from sentry_sdk.integrations.openai import OpenAIIntegration
 
 # Import config first to get Sentry environment before initializing Sentry
-from src.domain import config
+from src.domain import config, sentry_filters
 
 app_config = config.get_config()
 
@@ -27,6 +27,7 @@ sentry_sdk.init(
     profile_lifecycle="trace",
     environment=app_config.get("SENTRY", "ENVIRONMENT", fallback="dev"),
     enable_logs=True,
+    before_send=sentry_filters.before_send,
     integrations=[
         OpenAIIntegration(
             include_prompts=True,  # LLM/tokenizer inputs/outputs will be not sent to Sentry, despite send_default_pii=True
