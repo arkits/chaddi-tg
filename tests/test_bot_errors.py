@@ -2,6 +2,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from telegram import Update
+from telegram.error import BadRequest, Forbidden
 
 from src.bot.handlers import errors
 
@@ -55,3 +56,36 @@ class TestErrors:
             call_args = mock_tg_logger.log.call_args[0][0]
             assert "Test error" in call_args
             assert "Traceback" in call_args
+
+    @pytest.mark.anyio
+    @pytest.mark.parametrize(
+        "error",
+        [
+            BadRequest("Not enough rights to send text messages to the chat"),
+            BadRequest("Have no rights to send a message"),
+            BadRequest("Chat not found"),
+            Forbidden("Forbidden: bot was kicked from the supergroup chat"),
+        ],
+    )
+    async def test_log_error_skips_alert_when_bot_cant_send(self, mock_update, error):
+        """Errors from chats the bot can't post in are logged as warnings, not alerted."""
+        mock_context = MagicMock()
+        mock_context.error = error
+
+        with patch("src.bot.handlers.errors.tg_logger") as mock_tg_logger:
+            mock_tg_logger.log = AsyncMock()
+            await errors.log_error(mock_update, mock_context)
+
+            mock_tg_logger.log.assert_not_called()
+
+    @pytest.mark.anyio
+    async def test_log_error_alerts_on_other_bad_requests(self, mock_update):
+        """Unrelated BadRequest errors still get alerted."""
+        mock_context = MagicMock()
+        mock_context.error = BadRequest("Message text is empty")
+
+        with patch("src.bot.handlers.errors.tg_logger") as mock_tg_logger:
+            mock_tg_logger.log = AsyncMock()
+            await errors.log_error(mock_update, mock_context)
+
+            mock_tg_logger.log.assert_called_once()
