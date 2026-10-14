@@ -124,3 +124,30 @@ class TestGetChatMessages:
 
         assert message_dao.get_chat_messages(123, before_message_id=50) == ["m"]
         mock_message.time_sent.__lt__.assert_not_called()
+
+
+class TestMessageLookups:
+    @patch("src.db.message_dao.Message")
+    def test_get_message(self, mock_message):
+        query = mock_message.select.return_value
+        query.join.return_value = query
+        query.where.return_value = query
+        query.first.return_value = "row"
+
+        assert message_dao.get_message(123, 10) == "row"
+        assert mock_message.message_id.__eq__.call_args_list[-1].args == ("10",)
+
+    @patch("src.db.message_dao.Message")
+    def test_get_messages_between(self, mock_message):
+        query = mock_message.select.return_value
+        query.join.return_value = query
+        query.where.return_value = query
+        query.order_by.return_value.limit.return_value = ["a", "b"]
+        mock_message.time_sent.__ge__ = MagicMock(return_value="after start")
+        mock_message.time_sent.__le__ = MagicMock(return_value="before end")
+        start = datetime.datetime(2026, 9, 24, 18)
+        end = datetime.datetime(2026, 9, 24, 19)
+
+        assert message_dao.get_messages_between(123, start, end) == ["a", "b"]
+        mock_message.time_sent.__ge__.assert_called_once_with(start)
+        mock_message.time_sent.__le__.assert_called_once_with(end)

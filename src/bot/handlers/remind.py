@@ -27,8 +27,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         # check if user can create reminder
-        reminders_created = scheduledjob_dao.get_scheduledjobs_by_bakchod(from_bakchod_id)
-        if len(reminders_created) > 10:
+        if has_too_many_reminders(from_bakchod_id):
             await update.message.reply_text(
                 text="You have created too many reminders! Please cancel your previous ones, or wait for them to complete.",
                 parse_mode=ParseMode.HTML,
@@ -50,52 +49,16 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_sticker(sticker=sticker_to_send)
             return
 
-        reminder_time = int(time.time()) + due_seconds
-
         # parse reminder_message
         reminder_message = extract_reminder_message(update.message.text)
 
-        # build the job_context
-        job_context = {
-            "chat_id": chat_id,
-            "due_seconds": due_seconds,
-            "from_bakchod_id": from_bakchod_id,
-            "reply_to_message_id": reply_to_message_id,
-            "reminder_message": reminder_message,
-            "reminder_time": reminder_time,
-        }
-
-        from_bakchod = Bakchod.get_by_id(from_bakchod_id)
-
-        sj = ScheduledJob.create(
-            created=datetime.now(),
-            updated=datetime.now(),
-            from_bakchod=from_bakchod,
-            group=chat_id,
-            job_context=job_context,
-        )
-
-        # build the job_name
-        job_name = build_job_name(str(chat_id), str(from_bakchod_id), sj.job_id)
-
-        # update job_context with new params
-        job_context["job_id"] = sj.job_id
-        job_context["job_name"] = job_name
-        sj.job_context = job_context
-        sj.save()
-
-        # add to the job_queue
-        context.job_queue.run_once(
-            reminder_handler,
-            due_seconds,
-            data=json.dumps(job_context),
-            name=job_name,
-        )
-
-        logger.info(
-            "[remind] Scheduled Job job_name={} job_context={}",
-            job_name,
-            job_context,
+        sj = schedule_reminder(
+            context.job_queue,
+            chat_id=chat_id,
+            from_bakchod_id=from_bakchod_id,
+            reply_to_message_id=reply_to_message_id,
+            due_seconds=due_seconds,
+            reminder_message=reminder_message,
         )
 
         await update.message.reply_text(
@@ -114,6 +77,72 @@ I will reply to you in {util.pretty_time_delta(due_seconds)} as a reminder.
             text='<b>Usage:</b> </pre>/remind 5m "Chai break"</pre>',
             parse_mode=ParseMode.HTML,
         )
+
+
+# Each user can have this many reminders pending at once
+MAX_PENDING_REMINDERS = 10
+
+
+def has_too_many_reminders(from_bakchod_id) -> bool:
+    reminders_created = scheduledjob_dao.get_scheduledjobs_by_bakchod(from_bakchod_id)
+    return reminders_created is not None and len(reminders_created) > MAX_PENDING_REMINDERS
+
+
+def schedule_reminder(
+    job_queue,
+    chat_id,
+    from_bakchod_id,
+    reply_to_message_id,
+    due_seconds: int,
+    reminder_message: str,
+) -> ScheduledJob:
+    """Save a reminder and queue it to be sent in `due_seconds`."""
+    reminder_time = int(time.time()) + due_seconds
+
+    # build the job_context
+    job_context = {
+        "chat_id": chat_id,
+        "due_seconds": due_seconds,
+        "from_bakchod_id": from_bakchod_id,
+        "reply_to_message_id": reply_to_message_id,
+        "reminder_message": reminder_message,
+        "reminder_time": reminder_time,
+    }
+
+    from_bakchod = Bakchod.get_by_id(from_bakchod_id)
+
+    sj = ScheduledJob.create(
+        created=datetime.now(),
+        updated=datetime.now(),
+        from_bakchod=from_bakchod,
+        group=chat_id,
+        job_context=job_context,
+    )
+
+    # build the job_name
+    job_name = build_job_name(str(chat_id), str(from_bakchod_id), sj.job_id)
+
+    # update job_context with new params
+    job_context["job_id"] = sj.job_id
+    job_context["job_name"] = job_name
+    sj.job_context = job_context
+    sj.save()
+
+    # add to the job_queue
+    job_queue.run_once(
+        reminder_handler,
+        due_seconds,
+        data=json.dumps(job_context),
+        name=job_name,
+    )
+
+    logger.info(
+        "[remind] Scheduled Job job_name={} job_context={}",
+        job_name,
+        job_context,
+    )
+
+    return sj
 
 
 def build_job_name(chat_id, from_bakchod_id, job_id):

@@ -246,6 +246,25 @@ class TestSetter:
     @patch("src.bot.handlers.setter.util.is_admin_tg_user", return_value=True)
     @patch("src.bot.handlers.setter.group_dao.get_group_from_update")
     @pytest.mark.anyio
+    async def test_handle_set_ai_forget(self, mock_get_group, mock_is_admin, mock_dc, mock_update):
+        """`/set ai forget` wipes the notes /ai remembers, keeping other settings."""
+        mock_update.message.text = "/set ai forget"
+        mock_group = MagicMock(spec=Group)
+        mock_group.metadata = {"enabled_commands": ["ai"], "ai_memory": [{"id": 1}]}
+        mock_get_group.return_value = mock_group
+
+        await setter.handle(mock_update, MagicMock())
+
+        assert mock_group.metadata == {"enabled_commands": ["ai"], "ai_memory": []}
+        mock_group.save.assert_called_once()
+        call_args = mock_update.message.reply_text.call_args
+        reply = call_args[0][0] if call_args[0] else call_args[1]["text"]
+        assert "memory wiped" in reply
+
+    @patch("src.bot.handlers.setter.dc")
+    @patch("src.bot.handlers.setter.util.is_admin_tg_user", return_value=True)
+    @patch("src.bot.handlers.setter.group_dao.get_group_from_update")
+    @pytest.mark.anyio
     async def test_handle_set_ai_clear_non_admin(
         self, mock_get_group, mock_is_admin, mock_dc, mock_update
     ):

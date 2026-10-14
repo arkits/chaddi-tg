@@ -77,3 +77,32 @@ def get_chat_messages(
     messages = list(query.order_by(Message.time_sent.desc()).limit(limit))
     messages.reverse()
     return messages
+
+
+def get_message(chat_id: str | int, message_id: str | int) -> Message | None:
+    """Fetch one logged message from a chat by its Telegram message id."""
+    return (
+        Message.select(Message, Bakchod)
+        .join(Bakchod)
+        .where(Message.to_id == str(chat_id))
+        .where(Message.message_id == str(message_id))
+        .first()
+    )
+
+
+def get_messages_between(
+    chat_id: str | int,
+    start: datetime.datetime,
+    end: datetime.datetime,
+    limit: int = 50,
+) -> list[Message]:
+    """Fetch logged messages from a chat sent between two times, oldest first."""
+    return list(
+        Message.select(Message, Bakchod)
+        .join(Bakchod)
+        .where(Message.to_id == str(chat_id))
+        .where(Message.time_sent >= start)
+        .where(Message.time_sent <= end)
+        .order_by(Message.time_sent)
+        .limit(limit)
+    )

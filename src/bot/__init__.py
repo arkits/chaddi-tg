@@ -50,9 +50,9 @@ async def post_init(application: Application) -> None:
     schedule_daily_posts(application.job_queue)
 
 
-def command_handler(command: str, callback) -> CommandHandler:
+def command_handler(command: str, callback, block: bool = True) -> CommandHandler:
     # Only new messages - otherwise editing an old /daan or /gamble runs it again
-    return CommandHandler(command, callback, filters=filters.UpdateType.MESSAGE)
+    return CommandHandler(command, callback, filters=filters.UpdateType.MESSAGE, block=block)
 
 
 async def run_telegram_bot():
@@ -98,7 +98,8 @@ async def run_telegram_bot():
     application.add_handler(command_handler("ask", handlers.ask.handle))
     application.add_handler(command_handler("patakaro", handlers.ask.handle))
     application.add_handler(command_handler("chatgpt", handlers.ask.handle))
-    application.add_handler(command_handler("ai", handlers.ai.handle))
+    # /ai can take a while (tools, downloads) - don't hold up other updates meanwhile
+    application.add_handler(command_handler("ai", handlers.ai.handle, block=False))
 
     application.add_handler(command_handler("remind", handlers.remind.handle))
     application.add_handler(command_handler("reminder", handlers.remind.handle))
@@ -120,6 +121,7 @@ async def run_telegram_bot():
         MessageHandler(
             filters.UpdateType.MESSAGE & filters.CaptionRegex(handlers.ai.COMMAND_PREFIX_RE),
             handlers.ai.handle_caption_command,
+            block=False,
         )
     )
     application.add_handler(MessageHandler(filters.Document.VIDEO, handlers.webm.handle))

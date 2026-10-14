@@ -1,4 +1,4 @@
-"""Unified LLM interface wrapper for OpenAI and Gemini providers."""
+"""Unified LLM interface wrapper for OpenRouter and OpenAI."""
 
 import asyncio
 import base64
@@ -8,24 +8,27 @@ import json
 import time
 import uuid
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
+import requests
 from loguru import logger
 
 from . import analytics, config
 
 app_config = config.get_config()
 
-# AI Provider configuration
-AI_PROVIDER = app_config.get(
-    "AI", "PROVIDER", fallback="openai"
-)  # "openai", "gemini", or "openrouter"
+SUPPORTED_PROVIDERS = ("openrouter", "openai")
+
+# AI Provider configuration - "openrouter" (preferred) or "openai"
+AI_PROVIDER = app_config.get("AI", "PROVIDER", fallback="openrouter")
+if AI_PROVIDER not in SUPPORTED_PROVIDERS:
+    logger.warning(f"[ai] Unsupported AI_PROVIDER={AI_PROVIDER!r}, using openrouter")
+    AI_PROVIDER = "openrouter"
 
 logger.info(f"[ai] AI_PROVIDER: {AI_PROVIDER}")
 
 # Model names
 OPENAI_MODEL = app_config.get("AI", "OPENAI_MODEL", fallback="gpt-5-nano-2025-08-07")
-GEMINI_MODEL = app_config.get("AI", "GEMINI_MODEL", fallback="gemini-2.5-flash")
 OPENROUTER_MODEL = app_config.get("AI", "OPENROUTER_MODEL", fallback="moonshotai/kimi-k2.5")
 # Optional fallback models for OpenRouter (comma-separated list)
 OPENROUTER_FALLBACK_MODELS = app_config.get("AI", "OPENROUTER_FALLBACK_MODELS", fallback="")
@@ -34,6 +37,10 @@ OPENROUTER_WEB_SEARCH = app_config.getboolean("AI", "OPENROUTER_WEB_SEARCH", fal
 # How OpenRouter reads attached PDFs: "pdf-text" (free), "mistral-ocr" (paid, handles
 # scans) or "native" (the model's own file support, where it has one)
 OPENROUTER_PDF_ENGINE = app_config.get("AI", "OPENROUTER_PDF_ENGINE", fallback="pdf-text")
+# Model used to generate images
+OPENROUTER_IMAGE_MODEL = app_config.get(
+    "AI", "OPENROUTER_IMAGE_MODEL", fallback="google/gemini-2.5-flash-image"
+)
 # Parse fallback models into a list if configured
 _openrouter_fallback_models = (
     [m.strip() for m in OPENROUTER_FALLBACK_MODELS.split(",") if m.strip()]
@@ -41,21 +48,21 @@ _openrouter_fallback_models = (
     else None
 )
 
+OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+
 # Always import standard OpenAI first to ensure Sentry can instrument it
 from openai import OpenAI as StandardOpenAI  # noqa: E402
 
 # Try to import PostHog's OpenAI wrapper for LLM analytics
 try:
-    from posthog.ai.gemini import Client as PostHogGemini
     from posthog.ai.openai import OpenAI as PostHogOpenAI
 
     _posthog_available = True
     _posthog_client = analytics.posthog
-    _posthog_wrappers: tuple[type, ...] = (PostHogOpenAI, PostHogGemini)
+    _posthog_wrappers: tuple[type, ...] = (PostHogOpenAI,)
     logger.info("[ai] PostHog LLM analytics enabled")
 except ImportError:
     PostHogOpenAI = StandardOpenAI  # Fallback to standard OpenAI if PostHog not available
-    PostHogGemini = None
     _posthog_available = False
     _posthog_client = None
     _posthog_wrappers = ()
@@ -63,7 +70,6 @@ except ImportError:
 
 # Initialize clients with PostHog instrumentation (if available)
 _openai_client = None
-_gemini_client = None
 _openrouter_client = None
 
 try:
@@ -80,21 +86,8 @@ except Exception as e:
         logger.debug(f"[ai] Failed to initialize OpenAI client (standard): {e2}")
 
 try:
-    from google import genai
-
-    if PostHogGemini is not None:
-        _gemini_client = PostHogGemini(
-            api_key=app_config.get("GEMINI", "API_KEY"), posthog_client=_posthog_client
-        )
-    else:
-        _gemini_client = genai.Client(api_key=app_config.get("GEMINI", "API_KEY"))
-    logger.info(f"[ai] Gemini client initialized with model {GEMINI_MODEL}")
-except Exception as e:
-    logger.debug(f"[ai] Failed to initialize Gemini client: {e}")
-
-try:
     _openrouter_client = PostHogOpenAI(
-        base_url="https://openrouter.ai/api/v1",
+        base_url=OPENROUTER_BASE_URL,
         api_key=app_config.get("OPENROUTER", "API_KEY"),
         posthog_client=_posthog_client,
     )
@@ -103,7 +96,7 @@ except Exception as e:
     logger.debug(f"[ai] Failed to initialize OpenRouter client: {e}")
     try:
         _openrouter_client = StandardOpenAI(
-            base_url="https://openrouter.ai/api/v1",
+            base_url=OPENROUTER_BASE_URL,
             api_key=app_config.get("OPENROUTER", "API_KEY"),
         )
         logger.info(f"[ai] OpenRouter client initialized (standard) with model {OPENROUTER_MODEL}")
@@ -119,39 +112,18 @@ class LLMResponse:
         self.provider = provider
 
 
-async def _call_callback(callback: Callable[[str], None | Awaitable[None]], text: str):
+async def _call_callback(callback: Callable[..., Awaitable[None] | None], *args):
     """Helper to call callback whether it's sync or async."""
-    if inspect.iscoroutinefunction(callback):
-        await callback(text)
-    else:
-        callback(text)
+    result = callback(*args)
+    if inspect.isawaitable(result):
+        await result
 
 
 # Hard cap on model <-> tool round trips per request, so a model that keeps
 # calling tools can't loop forever
-MAX_TOOL_ROUNDS = 4
-
-
-@dataclass
-class LLMTool:
-    """A function the model can call while generating a response."""
-
-    name: str
-    description: str
-    # JSON schema for the function's arguments
-    parameters: dict
-    # Called with the parsed arguments as kwargs; returns the result as text
-    handler: Callable[..., str | Awaitable[str]]
-
-    def to_openai(self) -> dict:
-        return {
-            "type": "function",
-            "function": {
-                "name": self.name,
-                "description": self.description,
-                "parameters": self.parameters,
-            },
-        }
+MAX_TOOL_ROUNDS = 8
+# Once a request has spent this long, the model has to answer with what it has
+TOOL_TIME_BUDGET_SECONDS = 90
 
 
 @dataclass
@@ -179,6 +151,50 @@ class LLMAttachment:
         }
 
 
+@dataclass
+class ToolResult:
+    """What a tool hands back to the model - text, plus any files it fetched."""
+
+    text: str
+    attachments: list[LLMAttachment] = field(default_factory=list)
+
+
+@dataclass
+class LLMTool:
+    """A function the model can call while generating a response."""
+
+    name: str
+    description: str
+    # JSON schema for the function's arguments
+    parameters: dict
+    # Called with the parsed arguments as kwargs; returns text or a ToolResult
+    handler: Callable[..., str | ToolResult | Awaitable[str | ToolResult]]
+    # Describes a call in progress for the user, eg. "🌐 opening example.com…"
+    status: Callable[[dict], str | None] | None = None
+
+    def to_openai(self) -> dict:
+        return {
+            "type": "function",
+            "function": {
+                "name": self.name,
+                "description": self.description,
+                "parameters": self.parameters,
+            },
+        }
+
+    def describe(self, arguments: dict) -> str | None:
+        if self.status is None:
+            return None
+        try:
+            return self.status(arguments)
+        except Exception:
+            return None
+
+
+# Called when the model starts a tool call, with the tool and its arguments
+ToolCallCallback = Callable[[LLMTool, dict], Awaitable[None] | None]
+
+
 def _merge_attachments(
     attachments: list[LLMAttachment] | None,
     image_bytes: bytes | None,
@@ -191,30 +207,35 @@ def _merge_attachments(
     return merged
 
 
-async def _run_tool(tool: LLMTool, raw_arguments: str) -> str:
-    """Run a tool call, returning errors as text so the model can recover."""
+def _parse_arguments(raw_arguments: str) -> tuple[dict | None, str | None]:
+    """Parse a tool call's JSON arguments, returning (arguments, error)."""
     try:
         arguments = json.loads(raw_arguments) if raw_arguments else {}
         if not isinstance(arguments, dict):
             raise ValueError("arguments must be a JSON object")
+        return arguments, None
     except Exception as e:
-        logger.warning(f"[ai] Bad arguments for tool {tool.name}: {raw_arguments!r} - {e}")
-        return f"Error: could not parse arguments - {e}"
+        return None, f"Error: could not parse arguments - {e}"
 
+
+async def _run_tool(tool: LLMTool, arguments: dict) -> ToolResult:
+    """Run a tool call, returning errors as text so the model can recover."""
     try:
         logger.info(f"[ai] Running tool {tool.name} with {arguments}")
         result = tool.handler(**arguments)
         if inspect.isawaitable(result):
             result = await result
-        return str(result)
+        if isinstance(result, ToolResult):
+            return result
+        return ToolResult(str(result))
     except Exception as e:
         logger.warning(f"[ai] Tool {tool.name} failed: {e}")
-        return f"Error: {e}"
+        return ToolResult(f"Error: {e}")
 
 
 def _build_openai_messages(
     message_text: str | None,
-    messages: list[dict[str, str]] | None,
+    messages: list[dict] | None,
     system_prompt: str | None,
     attachments: list[LLMAttachment] | None,
 ) -> list[dict]:
@@ -243,7 +264,7 @@ def _build_openai_messages(
 
 
 class LLMClient:
-    """Unified interface for LLM providers (OpenAI and Gemini)."""
+    """Unified interface for LLM providers (OpenRouter and OpenAI)."""
 
     def __init__(
         self,
@@ -258,7 +279,7 @@ class LLMClient:
         Initialize LLM client.
 
         Args:
-            provider: "openai", "gemini", or "openrouter". If None, uses configured default.
+            provider: "openrouter" or "openai". If None, uses configured default.
             model: Model name. If None, uses configured default for provider.
             models: List of fallback model IDs for OpenRouter. If None, uses configured default.
                     Only used when provider is "openrouter".
@@ -267,30 +288,31 @@ class LLMClient:
             _client: Optional client override (for internal use).
         """
         self.provider = provider or AI_PROVIDER
+        if self.provider not in SUPPORTED_PROVIDERS:
+            raise ValueError(f"Unsupported provider: {self.provider}")
         self.distinct_id = distinct_id
         self.properties = properties or {}
         self._client_override = _client
-        if self.provider == "openai":
-            self.model = model or OPENAI_MODEL
-            self.models = None  # Fallback models not supported for OpenAI
-        elif self.provider == "gemini":
-            self.model = model or GEMINI_MODEL
-            self.models = None  # Fallback models not supported for Gemini
-        elif self.provider == "openrouter":
+        if self.provider == "openrouter":
             self.model = model or OPENROUTER_MODEL
             # Use provided models, or fall back to configured defaults
             self.models = models if models is not None else _openrouter_fallback_models
         else:
             self.model = model or OPENAI_MODEL
-            self.models = None
+            self.models = None  # Fallback models not supported for OpenAI
 
         if self._client_override is None:
             if self.provider == "openai" and _openai_client is None:
                 raise ValueError("OpenAI client is not configured.")
-            if self.provider == "gemini" and _gemini_client is None:
-                raise ValueError("Gemini client is not configured.")
             if self.provider == "openrouter" and _openrouter_client is None:
                 raise ValueError("OpenRouter client is not configured.")
+
+    def _client(self):
+        client = self._client_override or (
+            _openrouter_client if self.provider == "openrouter" else _openai_client
+        )
+        assert client is not None, f"{self.provider} client not configured"
+        return client
 
     def _posthog_kwargs(self, client) -> dict:
         """
@@ -307,6 +329,29 @@ class LLMClient:
             "posthog_properties": {"provider": self.provider, **self.properties},
         }
 
+    def _extra_body(self, attachments: list[LLMAttachment] | None = None) -> dict:
+        """OpenRouter-specific request options - fallback models and the PDF parser."""
+        if self.provider != "openrouter":
+            return {}
+        extra_body = {}
+        if self.models:
+            extra_body["models"] = self.models
+        if any(not a.is_image for a in attachments or []):
+            extra_body["plugins"] = [
+                {"id": "file-parser", "pdf": {"engine": OPENROUTER_PDF_ENGINE}}
+            ]
+        return extra_body
+
+    def _server_tools(self) -> list[dict]:
+        """Tools OpenRouter runs itself, on our behalf."""
+        if self.provider != "openrouter":
+            return []
+        server_tools = []
+        if OPENROUTER_WEB_SEARCH:
+            server_tools.append({"type": "openrouter:web_search"})
+        server_tools.append({"type": "openrouter:datetime"})
+        return server_tools
+
     @property
     def has_web_search(self) -> bool:
         """Whether responses from this client can use real-time web search."""
@@ -315,14 +360,15 @@ class LLMClient:
     async def generate_streaming(
         self,
         message_text: str | None = None,
-        messages: list[dict[str, str]] | None = None,
+        messages: list[dict] | None = None,
         system_prompt: str | None = None,
         image_bytes: bytes | None = None,
         image_mime_type: str | None = None,
-        on_chunk: Callable[[str], None | Awaitable[None]] | None = None,
+        on_chunk: Callable[[str], Awaitable[None] | None] | None = None,
         update_interval: float = 1.0,
         tools: list[LLMTool] | None = None,
         attachments: list[LLMAttachment] | None = None,
+        on_tool_call: ToolCallCallback | None = None,
     ) -> str:
         """
         Generate streaming response from LLM.
@@ -335,9 +381,9 @@ class LLMClient:
             image_mime_type: MIME type of the image (e.g., "image/jpeg").
             on_chunk: Optional callback function called with accumulated text on each update.
             update_interval: Minimum seconds between on_chunk callbacks.
-            tools: Optional functions the model may call. Supported for the OpenAI and
-                OpenRouter providers; ignored for Gemini.
+            tools: Optional functions the model may call.
             attachments: Optional images / PDFs to send with the last user message.
+            on_tool_call: Optional callback invoked as each tool call starts.
 
         Returns:
             Complete response text.
@@ -346,42 +392,25 @@ class LLMClient:
             raise ValueError("Either message_text or messages must be provided")
 
         attachments = _merge_attachments(attachments, image_bytes, image_mime_type)
+        client = self._client()
 
-        if self.provider == "openai":
-            return await self._generate_openai_streaming(
-                message_text=message_text,
-                messages=messages,
-                system_prompt=system_prompt,
-                attachments=attachments,
-                on_chunk=on_chunk,
-                update_interval=update_interval,
-                tools=tools,
-            )
-        elif self.provider == "openrouter":
-            return await self._generate_openrouter_streaming(
-                message_text=message_text,
-                messages=messages,
-                system_prompt=system_prompt,
-                attachments=attachments,
-                on_chunk=on_chunk,
-                update_interval=update_interval,
-                tools=tools,
-            )
-        elif self.provider == "gemini":
-            if tools:
-                logger.debug("[ai] Tools are not supported for Gemini, ignoring")
-            # Gemini doesn't support streaming in the same way, so we'll use non-streaming
-            # and simulate streaming with periodic callbacks
-            return await self._generate_gemini_with_simulation(
-                message_text=message_text,
-                messages=messages,
-                system_prompt=system_prompt,
-                attachments=attachments,
-                on_chunk=on_chunk,
-                update_interval=update_interval,
-            )
-        else:
-            raise ValueError(f"Unsupported provider: {self.provider}")
+        extra_kwargs = self._posthog_kwargs(client)
+        extra_body = self._extra_body(attachments)
+        if extra_body:
+            extra_kwargs["extra_body"] = extra_body
+
+        return await self._stream_chat_completion(
+            client=client,
+            formatted_messages=_build_openai_messages(
+                message_text, messages, system_prompt, attachments
+            ),
+            extra_kwargs=extra_kwargs,
+            server_tools=self._server_tools(),
+            tools=tools,
+            on_chunk=on_chunk,
+            update_interval=update_interval,
+            on_tool_call=on_tool_call,
+        )
 
     async def generate(
         self,
@@ -400,42 +429,51 @@ class LLMClient:
         Returns:
             LLMResponse object with text and provider info.
         """
-        if self.provider == "openai":
-            text = await self._generate_openai(message_text, image_bytes)
-            return LLMResponse(text, "openai")
-        elif self.provider == "openrouter":
-            text = await self._generate_openrouter(message_text, image_bytes)
-            return LLMResponse(text, "openrouter")
-        elif self.provider == "gemini":
-            text = await self._generate_gemini(message_text, image_bytes, image_mime_type)
-            return LLMResponse(text, "gemini")
-        else:
-            raise ValueError(f"Unsupported provider: {self.provider}")
+        attachments = _merge_attachments(None, image_bytes, image_mime_type)
+        content = [a.to_openai() for a in attachments]
+        content.append({"type": "text", "text": message_text})
 
-    async def _generate_openai_streaming(
-        self,
-        message_text: str | None = None,
-        messages: list[dict[str, str]] | None = None,
-        system_prompt: str | None = None,
-        attachments: list[LLMAttachment] | None = None,
-        on_chunk: Callable[[str], None | Awaitable[None]] | None = None,
-        update_interval: float = 1.0,
-        tools: list[LLMTool] | None = None,
-    ) -> str:
-        """Generate streaming response from OpenAI."""
-        client = self._client_override or _openai_client
-        assert client is not None, "OpenAI client not configured"
-        return await self._stream_chat_completion(
-            client=client,
-            formatted_messages=_build_openai_messages(
-                message_text, messages, system_prompt, attachments
-            ),
-            extra_kwargs=self._posthog_kwargs(client),
-            server_tools=[],
-            tools=tools,
-            on_chunk=on_chunk,
-            update_interval=update_interval,
+        create_kwargs = {
+            "model": self.model,
+            "messages": [{"role": "user", "content": content}],
+            "stream": False,
+            "max_completion_tokens": 2000,
+        }
+        extra_body = self._extra_body(attachments)
+        if extra_body:
+            create_kwargs["extra_body"] = extra_body
+        server_tools = self._server_tools()
+        if server_tools:
+            create_kwargs["tools"] = server_tools
+
+        client = self._client()
+        response = await asyncio.to_thread(
+            client.chat.completions.create, **create_kwargs, **self._posthog_kwargs(client)
         )
+        return LLMResponse(response.choices[0].message.content or "", self.provider)
+
+    async def complete(
+        self,
+        messages: list[dict],
+        system_prompt: str | None = None,
+        max_tokens: int = 1000,
+    ) -> str:
+        """Plain non-streaming completion - no tools, no web search."""
+        create_kwargs = {
+            "model": self.model,
+            "messages": _build_openai_messages(None, messages, system_prompt, None),
+            "stream": False,
+            "max_completion_tokens": max_tokens,
+        }
+        extra_body = self._extra_body()
+        if extra_body:
+            create_kwargs["extra_body"] = extra_body
+
+        client = self._client()
+        response = await asyncio.to_thread(
+            client.chat.completions.create, **create_kwargs, **self._posthog_kwargs(client)
+        )
+        return response.choices[0].message.content or ""
 
     async def _stream_chat_completion(
         self,
@@ -444,8 +482,9 @@ class LLMClient:
         extra_kwargs: dict,
         server_tools: list[dict],
         tools: list[LLMTool] | None,
-        on_chunk: Callable[[str], None | Awaitable[None]] | None,
+        on_chunk: Callable[[str], Awaitable[None] | None] | None,
         update_interval: float,
+        on_tool_call: ToolCallCallback | None = None,
     ) -> str:
         """
         Stream a chat completion from an OpenAI-compatible API, running any tool
@@ -458,6 +497,7 @@ class LLMClient:
         loop = asyncio.get_running_loop()
         tool_map = {t.name: t for t in tools or []}
         conversation = list(formatted_messages)
+        deadline = time.monotonic() + TOOL_TIME_BUDGET_SECONDS
 
         def emit(text: str):
             future = asyncio.run_coroutine_threadsafe(_call_callback(on_chunk, text), loop)
@@ -495,6 +535,7 @@ class LLMClient:
 
         response_text = ""
         for round_num in range(MAX_TOOL_ROUNDS + 1):
+            out_of_budget = round_num == MAX_TOOL_ROUNDS or time.monotonic() > deadline
             create_kwargs = {
                 "model": self.model,
                 "messages": conversation,
@@ -505,8 +546,8 @@ class LLMClient:
             all_tools = server_tools + [t.to_openai() for t in tools or []]
             if all_tools:
                 create_kwargs["tools"] = all_tools
-            if tool_map and round_num == MAX_TOOL_ROUNDS:
-                # Out of tool rounds - make the model answer with what it has
+            if tool_map and out_of_budget:
+                # Out of tool rounds or time - make the model answer with what it has
                 create_kwargs["tool_choice"] = "none"
 
             response_text, tool_calls = await asyncio.to_thread(consume, create_kwargs)
@@ -514,7 +555,7 @@ class LLMClient:
             # Server-side tools (eg. openrouter:web_search) are resolved by the
             # provider, so only our own function tools need a round trip
             own_calls = [c for c in tool_calls.values() if c["name"] in tool_map]
-            if not own_calls:
+            if not own_calls or out_of_budget:
                 break
 
             conversation.append(
@@ -531,9 +572,44 @@ class LLMClient:
                     ],
                 }
             )
+
+            fetched: list[LLMAttachment] = []
             for call in own_calls:
-                result = await _run_tool(tool_map[call["name"]], call["arguments"])
-                conversation.append({"role": "tool", "tool_call_id": call["id"], "content": result})
+                tool = tool_map[call["name"]]
+                arguments, error = _parse_arguments(call["arguments"])
+                if arguments is None:
+                    logger.warning(
+                        f"[ai] Bad arguments for tool {tool.name}: {call['arguments']!r}"
+                    )
+                    result = ToolResult(error or "Error: bad arguments")
+                else:
+                    if on_tool_call:
+                        with contextlib.suppress(Exception):
+                            await _call_callback(on_tool_call, tool, arguments)
+                    result = await _run_tool(tool, arguments)
+                conversation.append(
+                    {"role": "tool", "tool_call_id": call["id"], "content": result.text}
+                )
+                fetched += result.attachments
+
+            # Tool messages can only carry text, so files the tools fetched are
+            # handed over in a follow-up user message
+            if fetched:
+                conversation.append(
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": "Files fetched by the tool calls above:"},
+                            *(a.to_openai() for a in fetched),
+                        ],
+                    }
+                )
+                plugins = self._extra_body(fetched).get("plugins")
+                if plugins:
+                    extra_kwargs["extra_body"] = {
+                        **extra_kwargs.get("extra_body", {}),
+                        "plugins": plugins,
+                    }
 
         if on_chunk:
             with contextlib.suppress(Exception):
@@ -541,211 +617,29 @@ class LLMClient:
 
         return response_text
 
-    async def _generate_openai(self, message_text: str, image_bytes: bytes | None) -> str:
-        """Generate non-streaming response from OpenAI."""
-        # Build content for the message
-        content = []
 
-        if image_bytes:
-            base64_image = base64.b64encode(bytes(image_bytes)).decode("utf-8")
-            content.append(
-                {
-                    "type": "image_url",
-                    "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
-                }
+async def generate_image(prompt: str) -> LLMAttachment:
+    """Generate an image from a text prompt with OpenRouter's image API."""
+
+    def post() -> dict:
+        response = requests.post(
+            f"{OPENROUTER_BASE_URL}/images",
+            headers={"Authorization": f"Bearer {app_config.get('OPENROUTER', 'API_KEY')}"},
+            json={"model": OPENROUTER_IMAGE_MODEL, "prompt": prompt},
+            timeout=120,
+        )
+        if not response.ok:
+            raise RuntimeError(
+                f"image generation failed ({response.status_code}): {response.text[:300]}"
             )
+        return response.json()
 
-        content.append({"type": "text", "text": message_text})
-
-        # Generate response from OpenAI
-        client = self._client_override or _openai_client
-        assert client is not None, "OpenAI client not configured"
-        response = client.chat.completions.create(
-            model=self.model,
-            messages=[{"role": "user", "content": content}],
-            stream=False,
-            max_completion_tokens=2000,
-            **self._posthog_kwargs(client),
-        )
-
-        return response.choices[0].message.content or ""
-
-    async def _generate_openrouter_streaming(
-        self,
-        message_text: str | None = None,
-        messages: list[dict[str, str]] | None = None,
-        system_prompt: str | None = None,
-        attachments: list[LLMAttachment] | None = None,
-        on_chunk: Callable[[str], None | Awaitable[None]] | None = None,
-        update_interval: float = 1.0,
-        tools: list[LLMTool] | None = None,
-    ) -> str:
-        """Generate streaming response from OpenRouter (OpenAI-compatible API)."""
-        client = self._client_override or _openrouter_client
-        assert client is not None, "OpenRouter client not configured"
-
-        # Fallback models and plugins are passed through extra_body
-        extra_kwargs = self._posthog_kwargs(client)
-        extra_body = {}
-        if self.models:
-            extra_body["models"] = self.models
-        if any(not a.is_image for a in attachments or []):
-            extra_body["plugins"] = [
-                {"id": "file-parser", "pdf": {"engine": OPENROUTER_PDF_ENGINE}}
-            ]
-        if extra_body:
-            extra_kwargs["extra_body"] = extra_body
-
-        server_tools = []
-        if OPENROUTER_WEB_SEARCH:
-            server_tools.append({"type": "openrouter:web_search"})
-        server_tools.append({"type": "openrouter:datetime"})
-
-        return await self._stream_chat_completion(
-            client=client,
-            formatted_messages=_build_openai_messages(
-                message_text, messages, system_prompt, attachments
-            ),
-            extra_kwargs=extra_kwargs,
-            server_tools=server_tools,
-            tools=tools,
-            on_chunk=on_chunk,
-            update_interval=update_interval,
-        )
-
-    async def _generate_openrouter(self, message_text: str, image_bytes: bytes | None) -> str:
-        """Generate non-streaming response from OpenRouter (OpenAI-compatible API)."""
-        # Build content for the message
-        content = []
-
-        if image_bytes:
-            base64_image = base64.b64encode(bytes(image_bytes)).decode("utf-8")
-            content.append(
-                {
-                    "type": "image_url",
-                    "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
-                }
-            )
-
-        content.append({"type": "text", "text": message_text})
-
-        # Build extra_body with models if fallback models are configured
-        extra_body = {}
-        if self.models:
-            extra_body["models"] = self.models
-
-        # Generate response from OpenRouter
-        create_kwargs = {
-            "model": self.model,
-            "messages": [{"role": "user", "content": content}],
-            "stream": False,
-            "max_completion_tokens": 2000,
-        }
-        if extra_body:
-            create_kwargs["extra_body"] = extra_body
-        tools = []
-        if OPENROUTER_WEB_SEARCH:
-            tools.append({"type": "openrouter:web_search"})
-        tools.append({"type": "openrouter:datetime"})
-        create_kwargs["tools"] = tools
-
-        client = self._client_override or _openrouter_client
-        assert client is not None, "OpenRouter client not configured"
-        response = client.chat.completions.create(**create_kwargs, **self._posthog_kwargs(client))
-
-        return response.choices[0].message.content or ""
-
-    async def _generate_gemini(
-        self,
-        message_text: str,
-        image_bytes: bytes | None,
-        image_mime_type: str | None,
-        attachments: list[LLMAttachment] | None = None,
-    ) -> str:
-        """Generate non-streaming response from Gemini."""
-        from google.genai import types
-
-        # Build contents for the request - files go in as inline data
-        contents = [
-            types.Part.from_bytes(data=bytes(a.data), mime_type=a.mime_type)
-            for a in _merge_attachments(attachments, image_bytes, image_mime_type)
-        ]
-
-        # Add text prompt
-        contents.append(message_text)
-
-        # Generate response
-        client = self._client_override or _gemini_client
-        assert client is not None, "Gemini client not configured"
-        response = client.models.generate_content(
-            model=self.model,
-            contents=contents,
-            **self._posthog_kwargs(client),
-        )
-
-        return response.text or ""
-
-    async def _generate_gemini_with_simulation(
-        self,
-        message_text: str | None = None,
-        messages: list[dict[str, str]] | None = None,
-        system_prompt: str | None = None,
-        attachments: list[LLMAttachment] | None = None,
-        on_chunk: Callable[[str], None | Awaitable[None]] | None = None,
-        update_interval: float = 1.0,
-    ) -> str:
-        """Generate response from Gemini with simulated streaming via callbacks."""
-        # Convert messages to text format for Gemini (Gemini doesn't support structured messages)
-        if messages:
-            # Convert messages list to a single text prompt
-            conversation_text = ""
-
-            # Add system prompt if provided
-            if system_prompt:
-                conversation_text += f"System: {system_prompt}\n\n"
-
-            for msg in messages:
-                role = msg.get("role", "user")
-                content = msg.get("content", "")
-                if role == "system":
-                    # System messages already handled above
-                    continue
-                elif role == "user":
-                    conversation_text += f"User: {content}\n\n"
-                elif role == "assistant":
-                    conversation_text += f"Assistant: {content}\n\n"
-            message_text = conversation_text.strip()
-        elif not message_text:
-            raise ValueError("Either message_text or messages must be provided")
-        else:
-            # Add system prompt to single message if provided
-            if system_prompt:
-                message_text = f"System: {system_prompt}\n\n{message_text}"
-
-        # Get the full response
-        response_text = await self._generate_gemini(message_text, None, None, attachments)
-
-        # Simulate streaming by calling on_chunk with progressively more text
-        if on_chunk:
-            words = response_text.split()
-            accumulated = ""
-            last_update_time = 0
-
-            for word in words:
-                accumulated += word + " "
-                current_time = time.time()
-                if current_time - last_update_time > update_interval:
-                    try:
-                        await _call_callback(on_chunk, accumulated.strip())
-                        last_update_time = current_time
-                    except Exception:
-                        pass
-
-            # Final callback with complete text
-            with contextlib.suppress(Exception):
-                await _call_callback(on_chunk, response_text)
-
-        return response_text
+    body = await asyncio.to_thread(post)
+    image = body["data"][0]
+    return LLMAttachment(
+        data=base64.b64decode(image["b64_json"]),
+        mime_type=image.get("media_type") or "image/png",
+    )
 
 
 def get_default_client(distinct_id: str | None = None, properties: dict | None = None) -> LLMClient:
@@ -758,13 +652,6 @@ def get_openai_client(
 ) -> LLMClient:
     """Get OpenAI client with optional custom model."""
     return LLMClient(provider="openai", model=model, distinct_id=distinct_id, properties=properties)
-
-
-def get_gemini_client(
-    model: str | None = None, distinct_id: str | None = None, properties: dict | None = None
-) -> LLMClient:
-    """Get Gemini client with optional custom model."""
-    return LLMClient(provider="gemini", model=model, distinct_id=distinct_id, properties=properties)
 
 
 def get_openrouter_client(

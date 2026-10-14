@@ -132,7 +132,17 @@ def parse_request(
         try:
             value = request[2].lower()
         except IndexError:
-            return "Please specify on, off, or clear - `/set ai on`"
+            return "Please specify on, off, clear or forget - `/set ai on`"
+
+        if value == "forget":
+            group = group_dao.get_group_from_update(tg_update)
+            if not group:
+                return "❌ Group not found."
+
+            # Wipe the notes /ai has been asked to remember
+            group.metadata = {**(group.metadata or {}), "ai_memory": []}
+            group.save()
+            return "✅ AI memory wiped!"
 
         if value == "clear":
             group = group_dao.get_group_from_update(tg_update)
@@ -147,7 +157,7 @@ def parse_request(
             return "✅ AI conversation thread cleared!"
 
         if value not in ["on", "off"]:
-            return "Please specify on, off, or clear - `/set ai on`"
+            return "Please specify on, off, clear or forget - `/set ai on`"
 
         group = group_dao.get_group_from_update(tg_update)
         if not group:

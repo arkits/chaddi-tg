@@ -20,11 +20,11 @@ class TestLLMResponse:
     def test_llm_response_different_providers(self):
         """Test LLMResponse with different providers."""
         response1 = ai.LLMResponse(text="Test", provider="openai")
-        response2 = ai.LLMResponse(text="Test", provider="gemini")
+        response2 = ai.LLMResponse(text="Test", provider="openrouter")
         response3 = ai.LLMResponse(text="Test", provider="openrouter")
 
         assert response1.provider == "openai"
-        assert response2.provider == "gemini"
+        assert response2.provider == "openrouter"
         assert response3.provider == "openrouter"
 
 
@@ -66,15 +66,6 @@ class TestLLMClientInitialization:
         assert client.provider == "openai"
         assert client.model is not None
 
-    @patch("src.domain.ai._gemini_client")
-    @patch("src.domain.ai.AI_PROVIDER", "gemini")
-    def test_init_gemini_client(self, mock_client):
-        """Test initializing Gemini client."""
-        mock_client.__bool__ = lambda x: True
-        client = ai.LLMClient(provider="gemini")
-        assert client.provider == "gemini"
-        assert client.model is not None
-
     @patch("src.domain.ai._openrouter_client")
     @patch("src.domain.ai.AI_PROVIDER", "openrouter")
     def test_init_openrouter_client(self, mock_client):
@@ -89,12 +80,6 @@ class TestLLMClientInitialization:
         """Test initializing OpenAI client when not configured."""
         with pytest.raises(ValueError, match="OpenAI client is not configured"):
             ai.LLMClient(provider="openai")
-
-    @patch("src.domain.ai._gemini_client", None)
-    def test_init_gemini_client_not_configured(self):
-        """Test initializing Gemini client when not configured."""
-        with pytest.raises(ValueError, match="Gemini client is not configured"):
-            ai.LLMClient(provider="gemini")
 
     @patch("src.domain.ai._openrouter_client", None)
     def test_init_openrouter_client_not_configured(self):
@@ -162,25 +147,6 @@ class TestLLMClientGenerate:
         mock_client.chat.completions.create.assert_called_once()
 
     @pytest.mark.anyio
-    @patch("src.domain.ai._gemini_client")
-    async def test_generate_gemini(self, mock_client):
-        """Test generating response from Gemini."""
-        # Mock Gemini response
-        mock_response = MagicMock()
-        mock_response.text = "Gemini response"
-
-        mock_client.models.generate_content = MagicMock(return_value=mock_response)
-        mock_client.__bool__ = lambda x: True
-
-        client = ai.LLMClient(provider="gemini")
-        response = await client.generate("Hello")
-
-        assert isinstance(response, ai.LLMResponse)
-        assert response.text == "Gemini response"
-        assert response.provider == "gemini"
-        mock_client.models.generate_content.assert_called_once()
-
-    @pytest.mark.anyio
     @patch("src.domain.ai._openai_client")
     async def test_generate_with_image(self, mock_client):
         """Test generating response with image."""
@@ -222,13 +188,9 @@ class TestLLMClientGenerate:
     @pytest.mark.anyio
     @patch("src.domain.ai._openai_client")
     async def test_generate_unsupported_provider(self, mock_client):
-        """Test generating with unsupported provider."""
-        mock_client.__bool__ = lambda x: True
-        client = ai.LLMClient(provider="openai")
-        client.provider = "unsupported"
-
+        """Unknown providers (eg. the removed gemini) are rejected."""
         with pytest.raises(ValueError, match="Unsupported provider"):
-            await client.generate("Hello")
+            ai.LLMClient(provider="gemini")
 
 
 class TestLLMClientGenerateStreaming:
@@ -309,29 +271,6 @@ class TestLLMClientGenerateStreaming:
         assert callback_calls[-1] == "Hello World"
 
     @pytest.mark.anyio
-    @patch("src.domain.ai._gemini_client")
-    async def test_generate_streaming_gemini_simulation(self, mock_client):
-        """Test Gemini streaming simulation."""
-        # Mock Gemini response
-        mock_response = MagicMock()
-        mock_response.text = "Gemini streaming response"
-
-        mock_client.models.generate_content = MagicMock(return_value=mock_response)
-        mock_client.__bool__ = lambda x: True
-
-        callback_calls = []
-
-        async def callback(text: str):
-            callback_calls.append(text)
-
-        client = ai.LLMClient(provider="gemini")
-        response = await client.generate_streaming("Hello", on_chunk=callback)
-
-        assert response == "Gemini streaming response"
-        # Callback should be called for simulated streaming
-        assert len(callback_calls) > 0
-
-    @pytest.mark.anyio
     @patch("src.domain.ai._openai_client")
     async def test_generate_streaming_with_image(self, mock_client):
         """Test streaming with image."""
@@ -407,14 +346,6 @@ class TestHelperFunctions:
         client = ai.get_openai_client(model="custom-model")
         assert client.model == "custom-model"
 
-    @patch("src.domain.ai._gemini_client")
-    def test_get_gemini_client(self, mock_client):
-        """Test get_gemini_client function."""
-        mock_client.__bool__ = lambda x: True
-        client = ai.get_gemini_client()
-        assert isinstance(client, ai.LLMClient)
-        assert client.provider == "gemini"
-
     @patch("src.domain.ai._openrouter_client")
     def test_get_openrouter_client(self, mock_client):
         """Test get_openrouter_client function."""
@@ -460,26 +391,6 @@ class TestImageHandling:
         # Verify it's valid base64
         decoded = base64.b64decode(base64_data)
         assert decoded == image_bytes
-
-    @pytest.mark.anyio
-    @patch("src.domain.ai._gemini_client")
-    async def test_gemini_image_handling(self, mock_client):
-        """Test Gemini image handling."""
-        mock_response = MagicMock()
-        mock_response.text = "Response"
-
-        mock_client.models.generate_content = MagicMock(return_value=mock_response)
-        mock_client.__bool__ = lambda x: True
-
-        client = ai.LLMClient(provider="gemini")
-        image_bytes = b"fake_image_data"
-        await client.generate("Test", image_bytes=image_bytes, image_mime_type="image/png")
-
-        # Verify the call was made
-        call_args = mock_client.models.generate_content.call_args
-        contents = call_args[1]["contents"]
-        # Should have image part and text part
-        assert len(contents) == 2
 
 
 def _text_chunk(text):
@@ -728,20 +639,6 @@ class TestPostHogTracking:
         assert first["posthog_distinct_id"] == second["posthog_distinct_id"] == "42"
         assert first["posthog_trace_id"] == second["posthog_trace_id"]
 
-    @pytest.mark.anyio
-    @patch("src.domain.ai._posthog_wrappers", (_FakePostHogWrapper,))
-    async def test_gemini_request_is_tracked(self):
-        wrapped = _FakePostHogWrapper()
-        wrapped.models.generate_content.return_value = MagicMock(text="hello")
-        client = ai.LLMClient(provider="gemini", distinct_id="42", _client=wrapped)
-
-        response = await client.generate("hi")
-
-        assert response.text == "hello"
-        kwargs = wrapped.models.generate_content.call_args.kwargs
-        assert kwargs["posthog_distinct_id"] == "42"
-        assert kwargs["posthog_properties"]["provider"] == "gemini"
-
 
 class TestAttachments:
     """Test sending images and PDFs with a request."""
@@ -798,18 +695,135 @@ class TestAttachments:
 
         assert "extra_body" not in mock_client.chat.completions.create.call_args.kwargs
 
+
+class TestAgentLoop:
+    """Tool results with files, progress callbacks and the time budget."""
+
     @pytest.mark.anyio
-    async def test_gemini_sends_attachments_inline(self):
-        gemini = MagicMock()
-        gemini.models.generate_content.return_value = MagicMock(text="ok")
-        client = ai.LLMClient(provider="gemini", _client=gemini)
+    @patch("src.domain.ai._openrouter_client")
+    async def test_tool_files_are_handed_to_the_model(self, mock_client):
+        mock_client.chat.completions.create.side_effect = [
+            [_tool_call_chunk(0, "call_1", "get_chat_history", "{}")],
+            [_text_chunk("nice pic")],
+        ]
+        image = ai.LLMAttachment(b"img", "image/png")
+        pdf = ai.LLMAttachment(b"%PDF", "application/pdf", filename="a.pdf")
 
-        with patch("google.genai.types.Part.from_bytes", side_effect=lambda **kw: kw):
-            await client.generate_streaming(
-                messages=[{"role": "user", "content": "hi"}],
-                attachments=[ai.LLMAttachment(b"%PDF", "application/pdf")],
-            )
+        client = ai.LLMClient(provider="openrouter", models=[])
+        response = await client.generate_streaming(
+            "look", tools=[_tool(lambda: ai.ToolResult("found it", [image, pdf]))]
+        )
 
-        contents = gemini.models.generate_content.call_args.kwargs["contents"]
-        assert contents[0] == {"data": b"%PDF", "mime_type": "application/pdf"}
-        assert contents[1] == "User: hi"
+        assert response == "nice pic"
+        second = mock_client.chat.completions.create.call_args_list[1].kwargs
+        tool_msg, files_msg = second["messages"][-2:]
+        assert tool_msg["content"] == "found it"
+        assert files_msg["role"] == "user"
+        assert [p["type"] for p in files_msg["content"]] == ["text", "image_url", "file"]
+        # A fetched PDF turns on the PDF parser for the following rounds
+        assert second["extra_body"]["plugins"][0]["id"] == "file-parser"
+
+    @pytest.mark.anyio
+    @patch("src.domain.ai._openai_client")
+    async def test_on_tool_call_gets_tool_and_arguments(self, mock_client):
+        mock_client.chat.completions.create.side_effect = [
+            [_tool_call_chunk(0, "call_1", "get_chat_history", '{"limit": 3}')],
+            [_text_chunk("ok")],
+        ]
+        seen = []
+        tool = _tool(lambda limit: "x")
+
+        client = ai.LLMClient(provider="openai")
+        await client.generate_streaming(
+            "hi", tools=[tool], on_tool_call=lambda t, args: seen.append((t, args))
+        )
+
+        assert seen == [(tool, {"limit": 3})]
+
+    @pytest.mark.anyio
+    @patch("src.domain.ai._openai_client")
+    async def test_on_tool_call_errors_dont_stop_the_tool(self, mock_client):
+        mock_client.chat.completions.create.side_effect = [
+            [_tool_call_chunk(0, "call_1", "get_chat_history", "{}")],
+            [_text_chunk("ok")],
+        ]
+        calls = []
+
+        def boom(tool, args):
+            raise RuntimeError("telegram down")
+
+        client = ai.LLMClient(provider="openai")
+        await client.generate_streaming(
+            "hi", tools=[_tool(lambda: calls.append(1) or "x")], on_tool_call=boom
+        )
+
+        assert calls == [1]
+
+    @pytest.mark.anyio
+    @patch("src.domain.ai._openai_client")
+    async def test_time_budget_forces_an_answer(self, mock_client):
+        mock_client.chat.completions.create.side_effect = [
+            [_tool_call_chunk(0, "call_1", "get_chat_history", "{}")],
+            [_text_chunk("out of time")],
+        ]
+
+        client = ai.LLMClient(provider="openai")
+        with patch("src.domain.ai.TOOL_TIME_BUDGET_SECONDS", -1):
+            response = await client.generate_streaming("hi", tools=[_tool(lambda: "x")])
+
+        # The first round is already over budget, so tools are switched off
+        calls = mock_client.chat.completions.create.call_args_list
+        assert len(calls) == 1
+        assert calls[0].kwargs["tool_choice"] == "none"
+        assert response == ""
+
+    def test_tool_describe(self):
+        tool = _tool(lambda: "x")
+        assert tool.describe({}) is None
+        tool.status = lambda args: f"doing {args['what']}"
+        assert tool.describe({"what": "stuff"}) == "doing stuff"
+        # A broken status never breaks the request
+        assert tool.describe({}) is None
+
+
+class TestCompleteAndImages:
+    @pytest.mark.anyio
+    @patch("src.domain.ai._openrouter_client")
+    async def test_complete_sends_no_tools(self, mock_client):
+        response = MagicMock()
+        response.choices[0].message.content = "summary"
+        mock_client.chat.completions.create.return_value = response
+
+        client = ai.LLMClient(provider="openrouter", models=[])
+        text = await client.complete([{"role": "user", "content": "sum up"}], "be brief")
+
+        assert text == "summary"
+        kwargs = mock_client.chat.completions.create.call_args.kwargs
+        assert "tools" not in kwargs
+        assert kwargs["messages"][0] == {"role": "system", "content": "be brief"}
+        assert kwargs["stream"] is False
+
+    @pytest.mark.anyio
+    @patch("src.domain.ai.requests.post")
+    async def test_generate_image(self, mock_post):
+        mock_post.return_value.ok = True
+        mock_post.return_value.json.return_value = {
+            "data": [{"b64_json": base64.b64encode(b"png").decode(), "media_type": "image/png"}]
+        }
+
+        image = await ai.generate_image("a cat")
+
+        assert image == ai.LLMAttachment(b"png", "image/png")
+        body = mock_post.call_args.kwargs["json"]
+        assert body == {"model": ai.OPENROUTER_IMAGE_MODEL, "prompt": "a cat"}
+        assert mock_post.call_args.args[0].endswith("/images")
+
+    @pytest.mark.anyio
+    @patch("src.domain.ai.requests.post")
+    async def test_generate_image_error(self, mock_post):
+        mock_post.return_value.ok = False
+        mock_post.return_value.status_code = 402
+        mock_post.return_value.text = "insufficient credits"
+
+        with pytest.raises(RuntimeError, match="402"):
+            await ai.generate_image("a cat")

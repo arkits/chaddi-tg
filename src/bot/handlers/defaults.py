@@ -11,7 +11,7 @@ from src.bot.handlers import mom_spacy, roll
 from src.db import EMPTY_JSON, Bakchod, GroupMember, bakchod_dao, group_dao
 from src.domain import config, dc, rokda, util
 
-from . import ai, antiwordle, bestie, hi, instagram, musiclinks, x_links
+from . import ai, ai_history, antiwordle, bestie, hi, instagram, musiclinks, x_links
 
 app_config = config.get_config()
 
@@ -41,7 +41,8 @@ async def all(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     await handle_message_matching(update, context)
 
-    await handle_bot_mention(update, context)
+    if not await handle_bot_mention(update, context):
+        await handle_reply_to_bot(update, context)
 
     await antiwordle.handle(update, context)
 
@@ -203,19 +204,21 @@ def extract_bot_mention_question(message, bot_username: str | None = None) -> st
     return None
 
 
-async def handle_bot_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_bot_mention(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
     """
     Route messages that @mention the bot to the AI handler.
 
     The mention is stripped out and the rest of the message becomes the
     question. Replies are handled by ai.handle, so mentioning the bot while
     replying to a message asks about that message.
+
+    Returns whether the message was routed.
     """
     try:
         message = update.message
 
         if message.from_user is not None and message.from_user.is_bot:
-            return
+            return False
 
         # Prefer the username Telegram reports over the configured one - a stale
         # BOT_USERNAME would otherwise make mentions silently stop working
@@ -227,15 +230,56 @@ async def handle_bot_mention(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
         question = extract_bot_mention_question(message, bot_username)
         if question is None:
-            return
+            return False
 
         logger.info(f"[defaults] Bot mentioned, routing to ai - question='{question}'")
 
-        await ai.handle(update, context, question=question or None, quiet=True)
+        ai.handle_in_background(update, context, question=question or None, quiet=True)
+        return True
     except Exception as e:
         logger.error("Caught Exception in handle_bot_mention - e={}", e)
 
-    return
+    return False
+
+
+async def handle_reply_to_bot(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
+    """
+    Continue an /ai conversation when someone replies to one of its answers.
+
+    Only replies to /ai responses count - replying to a reminder or a /roll
+    result shouldn't cost anyone ₹okda. Returns whether the message was routed.
+    """
+    try:
+        message = update.message
+        reply_to = message.reply_to_message
+        if reply_to is None or reply_to.from_user is None:
+            return False
+        if message.from_user is not None and message.from_user.is_bot:
+            return False
+
+        bot_id = getattr(context.bot, "id", None)
+        if bot_id is None or reply_to.from_user.id != bot_id:
+            return False
+
+        # Commands are handled by their own handlers
+        text = message.text or message.caption
+        if isinstance(text, str) and text.startswith("/"):
+            return False
+
+        # A sticker or emoji reaction-style reply isn't a question worth ₹okda
+        if not text and not message.photo and message.document is None:
+            return False
+
+        if not ai_history.is_ai_response(message.chat.id, reply_to.message_id):
+            return False
+
+        logger.info("[defaults] Reply to an /ai response, routing to ai")
+        ai.handle_in_background(update, context, question=message.text or None, quiet=True)
+        return True
+    except Exception as e:
+        logger.error("Caught Exception in handle_reply_to_bot - e={}", e)
+
+    return False
 
 
 async def handle_dice_rolls(update: Update, context: ContextTypes.DEFAULT_TYPE):

@@ -273,12 +273,11 @@ def make_mention_message(text, mention="@ChaddiBot", entity_type="mention", is_b
 async def test_handle_bot_mention_routes_to_ai(mock_update, mock_context, bot_username):
     """Mentioning the bot routes the message to the AI handler, mention stripped."""
     with patch("src.bot.handlers.defaults.ai") as mock_ai:
-        mock_ai.handle = AsyncMock()
         mock_update.message = make_mention_message("@ChaddiBot how much is 10000 divided by 12")
 
         await defaults.handle_bot_mention(mock_update, mock_context)
 
-        mock_ai.handle.assert_awaited_once_with(
+        mock_ai.handle_in_background.assert_called_once_with(
             mock_update,
             mock_context,
             question="how much is 10000 divided by 12",
@@ -290,14 +289,13 @@ async def test_handle_bot_mention_routes_to_ai(mock_update, mock_context, bot_us
 async def test_handle_bot_mention_text_mention_entity(mock_update, mock_context, bot_username):
     """A text_mention entity pointing at the bot also routes to the AI handler."""
     with patch("src.bot.handlers.defaults.ai") as mock_ai:
-        mock_ai.handle = AsyncMock()
         mock_update.message = make_mention_message(
             "Chaddi what is this", mention="Chaddi", entity_type="text_mention"
         )
 
         await defaults.handle_bot_mention(mock_update, mock_context)
 
-        mock_ai.handle.assert_awaited_once_with(
+        mock_ai.handle_in_background.assert_called_once_with(
             mock_update, mock_context, question="what is this", quiet=True
         )
 
@@ -306,12 +304,11 @@ async def test_handle_bot_mention_text_mention_entity(mock_update, mock_context,
 async def test_handle_bot_mention_bare_mention(mock_update, mock_context, bot_username):
     """A bare mention with no question passes question=None (reply may still supply context)."""
     with patch("src.bot.handlers.defaults.ai") as mock_ai:
-        mock_ai.handle = AsyncMock()
         mock_update.message = make_mention_message("@ChaddiBot")
 
         await defaults.handle_bot_mention(mock_update, mock_context)
 
-        mock_ai.handle.assert_awaited_once_with(
+        mock_ai.handle_in_background.assert_called_once_with(
             mock_update, mock_context, question=None, quiet=True
         )
 
@@ -320,7 +317,6 @@ async def test_handle_bot_mention_bare_mention(mock_update, mock_context, bot_us
 async def test_handle_bot_mention_uses_runtime_username(mock_update, mock_context, bot_username):
     """The username Telegram reports wins over a stale BOT_USERNAME config value."""
     with patch("src.bot.handlers.defaults.ai") as mock_ai:
-        mock_ai.handle = AsyncMock()
         mock_context.bot.username = "SomeOtherBot"
         mock_update.message = make_mention_message(
             "@SomeOtherBot hello there", mention="@SomeOtherBot"
@@ -328,7 +324,7 @@ async def test_handle_bot_mention_uses_runtime_username(mock_update, mock_contex
 
         await defaults.handle_bot_mention(mock_update, mock_context)
 
-        mock_ai.handle.assert_awaited_once_with(
+        mock_ai.handle_in_background.assert_called_once_with(
             mock_update, mock_context, question="hello there", quiet=True
         )
 
@@ -337,45 +333,41 @@ async def test_handle_bot_mention_uses_runtime_username(mock_update, mock_contex
 async def test_handle_bot_mention_other_user_mentioned(mock_update, mock_context, bot_username):
     """Mentioning someone else does not route to the AI handler."""
     with patch("src.bot.handlers.defaults.ai") as mock_ai:
-        mock_ai.handle = AsyncMock()
         mock_update.message = make_mention_message("@someoneelse hello", mention="@someoneelse")
 
         await defaults.handle_bot_mention(mock_update, mock_context)
 
-        assert not mock_ai.handle.called
+        assert not mock_ai.handle_in_background.called
 
 
 @pytest.mark.asyncio
 async def test_handle_bot_mention_no_entities(mock_update, mock_context, bot_username):
     """Plain text mentioning the bot's name without an entity does not fire."""
     with patch("src.bot.handlers.defaults.ai") as mock_ai:
-        mock_ai.handle = AsyncMock()
         message = make_mention_message("chaddibot is being dumb again")
         message.entities = ()
         mock_update.message = message
 
         await defaults.handle_bot_mention(mock_update, mock_context)
 
-        assert not mock_ai.handle.called
+        assert not mock_ai.handle_in_background.called
 
 
 @pytest.mark.asyncio
 async def test_handle_bot_mention_ignores_bots(mock_update, mock_context, bot_username):
     """Mentions from other bots are ignored, to avoid bot-to-bot loops."""
     with patch("src.bot.handlers.defaults.ai") as mock_ai:
-        mock_ai.handle = AsyncMock()
         mock_update.message = make_mention_message("@ChaddiBot hello", is_bot=True)
 
         await defaults.handle_bot_mention(mock_update, mock_context)
 
-        assert not mock_ai.handle.called
+        assert not mock_ai.handle_in_background.called
 
 
 @pytest.mark.asyncio
 async def test_handle_bot_mention_caption(mock_update, mock_context, bot_username):
     """A mention in a photo caption routes to the AI handler."""
     with patch("src.bot.handlers.defaults.ai") as mock_ai:
-        mock_ai.handle = AsyncMock()
         message = make_mention_message("@ChaddiBot what is this")
         message.text = None
         message.caption = "@ChaddiBot what is this"
@@ -386,7 +378,7 @@ async def test_handle_bot_mention_caption(mock_update, mock_context, bot_usernam
 
         await defaults.handle_bot_mention(mock_update, mock_context)
 
-        mock_ai.handle.assert_awaited_once_with(
+        mock_ai.handle_in_background.assert_called_once_with(
             mock_update, mock_context, question="what is this", quiet=True
         )
 
@@ -490,3 +482,105 @@ async def test_status_update_left_chat_member(mock_update, mock_context):
         await defaults.status_update(mock_update, mock_context)
 
         mock_group_member.delete.assert_called_once()
+
+
+def _reply_to_bot(mock_update, mock_context, text="and then?"):
+    mock_context.bot.id = 42
+    reply_to = MagicMock(spec=Message)
+    reply_to.message_id = 50
+    reply_to.from_user = MagicMock(spec=User)
+    reply_to.from_user.id = 42
+    mock_update.message.reply_to_message = reply_to
+    mock_update.message.text = text
+    mock_update.message.caption = None
+    mock_update.message.photo = None
+    mock_update.message.document = None
+    mock_update.message.from_user.is_bot = False
+
+
+@pytest.mark.asyncio
+async def test_handle_reply_to_bot_continues_ai_thread(mock_update, mock_context):
+    _reply_to_bot(mock_update, mock_context)
+
+    with (
+        patch("src.bot.handlers.defaults.ai") as mock_ai,
+        patch("src.bot.handlers.defaults.ai_history") as mock_history,
+    ):
+        mock_history.is_ai_response.return_value = True
+        routed = await defaults.handle_reply_to_bot(mock_update, mock_context)
+
+    assert routed is True
+    mock_history.is_ai_response.assert_called_once_with(-1001234567890, 50)
+    mock_ai.handle_in_background.assert_called_once_with(
+        mock_update, mock_context, question="and then?", quiet=True
+    )
+
+
+@pytest.mark.asyncio
+async def test_handle_reply_to_bot_ignores_non_ai_messages(mock_update, mock_context):
+    """Replying to a reminder or /roll result shouldn't cost anyone rokda"""
+    _reply_to_bot(mock_update, mock_context)
+
+    with (
+        patch("src.bot.handlers.defaults.ai") as mock_ai,
+        patch("src.bot.handlers.defaults.ai_history") as mock_history,
+    ):
+        mock_history.is_ai_response.return_value = False
+        routed = await defaults.handle_reply_to_bot(mock_update, mock_context)
+
+    assert routed is False
+    assert not mock_ai.handle_in_background.called
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("case", ["other_user", "command", "from_bot", "no_reply", "sticker"])
+async def test_handle_reply_to_bot_skips(mock_update, mock_context, case):
+    _reply_to_bot(mock_update, mock_context)
+    if case == "other_user":
+        mock_update.message.reply_to_message.from_user.id = 7
+    elif case == "command":
+        mock_update.message.text = "/roll"
+    elif case == "from_bot":
+        mock_update.message.from_user.is_bot = True
+    elif case == "sticker":
+        mock_update.message.text = None
+    else:
+        mock_update.message.reply_to_message = None
+
+    with (
+        patch("src.bot.handlers.defaults.ai") as mock_ai,
+        patch("src.bot.handlers.defaults.ai_history") as mock_history,
+    ):
+        mock_history.is_ai_response.return_value = True
+        routed = await defaults.handle_reply_to_bot(mock_update, mock_context)
+
+    assert routed is False
+    assert not mock_ai.handle_in_background.called
+
+
+@pytest.mark.asyncio
+async def test_all_tries_reply_route_only_without_mention(mock_update, mock_context):
+    with (
+        patch("src.bot.handlers.defaults.dc"),
+        patch("src.bot.handlers.defaults.bakchod_dao"),
+        patch("src.bot.handlers.defaults.rokda"),
+        patch("src.bot.handlers.defaults.antiwordle") as mock_antiwordle,
+        patch("src.bot.handlers.defaults.musiclinks") as mock_musiclinks,
+        patch("src.bot.handlers.defaults.x_links") as mock_x_links,
+        patch("src.bot.handlers.defaults.instagram") as mock_instagram,
+        patch("src.bot.handlers.defaults.handle_bakchod_metadata_effects", new=AsyncMock()),
+        patch("src.bot.handlers.defaults.handle_dice_rolls", new=AsyncMock()),
+        patch("src.bot.handlers.defaults.handle_message_matching", new=AsyncMock()),
+        patch("src.bot.handlers.defaults.handle_bot_mention", new=AsyncMock()) as mention,
+        patch("src.bot.handlers.defaults.handle_reply_to_bot", new=AsyncMock()) as reply,
+    ):
+        for module in (mock_antiwordle, mock_musiclinks, mock_x_links, mock_instagram):
+            module.handle = AsyncMock()
+
+        mention.return_value = True
+        await defaults.all(mock_update, mock_context)
+        assert not reply.called
+
+        mention.return_value = False
+        await defaults.all(mock_update, mock_context)
+        reply.assert_awaited_once_with(mock_update, mock_context)
