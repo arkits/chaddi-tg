@@ -31,6 +31,9 @@ OPENROUTER_MODEL = app_config.get("AI", "OPENROUTER_MODEL", fallback="moonshotai
 OPENROUTER_FALLBACK_MODELS = app_config.get("AI", "OPENROUTER_FALLBACK_MODELS", fallback="")
 # Enable web search server tool for OpenRouter requests
 OPENROUTER_WEB_SEARCH = app_config.getboolean("AI", "OPENROUTER_WEB_SEARCH", fallback=True)
+# How OpenRouter reads attached PDFs: "pdf-text" (free), "mistral-ocr" (paid, handles
+# scans) or "native" (the model's own file support, where it has one)
+OPENROUTER_PDF_ENGINE = app_config.get("AI", "OPENROUTER_PDF_ENGINE", fallback="pdf-text")
 # Parse fallback models into a list if configured
 _openrouter_fallback_models = (
     [m.strip() for m in OPENROUTER_FALLBACK_MODELS.split(",") if m.strip()]
@@ -151,6 +154,43 @@ class LLMTool:
         }
 
 
+@dataclass
+class LLMAttachment:
+    """A file sent to the model alongside the prompt - an image or a PDF."""
+
+    data: bytes
+    mime_type: str
+    filename: str | None = None
+
+    @property
+    def is_image(self) -> bool:
+        return self.mime_type.startswith("image/")
+
+    def data_url(self) -> str:
+        return f"data:{self.mime_type};base64,{base64.b64encode(bytes(self.data)).decode('utf-8')}"
+
+    def to_openai(self) -> dict:
+        """The attachment as an OpenAI chat completions content part."""
+        if self.is_image:
+            return {"type": "image_url", "image_url": {"url": self.data_url()}}
+        return {
+            "type": "file",
+            "file": {"filename": self.filename or "file", "file_data": self.data_url()},
+        }
+
+
+def _merge_attachments(
+    attachments: list[LLMAttachment] | None,
+    image_bytes: bytes | None,
+    image_mime_type: str | None,
+) -> list[LLMAttachment]:
+    """Combine the attachments list with the legacy single image arguments."""
+    merged = list(attachments or [])
+    if image_bytes:
+        merged.insert(0, LLMAttachment(bytes(image_bytes), image_mime_type or "image/jpeg"))
+    return merged
+
+
 async def _run_tool(tool: LLMTool, raw_arguments: str) -> str:
     """Run a tool call, returning errors as text so the model can recover."""
     try:
@@ -176,9 +216,9 @@ def _build_openai_messages(
     message_text: str | None,
     messages: list[dict[str, str]] | None,
     system_prompt: str | None,
-    image_bytes: bytes | None,
+    attachments: list[LLMAttachment] | None,
 ) -> list[dict]:
-    """Build an OpenAI-style messages list, attaching the image to the last user message."""
+    """Build an OpenAI-style messages list, attaching files to the last user message."""
     if not messages:
         if not message_text:
             raise ValueError("Either message_text or messages must be provided")
@@ -192,15 +232,9 @@ def _build_openai_messages(
 
     last_index = len(messages) - 1
     for i, msg in enumerate(messages):
-        if i == last_index and msg["role"] == "user" and image_bytes:
-            base64_image = base64.b64encode(bytes(image_bytes)).decode("utf-8")
-            content = [
-                {
-                    "type": "image_url",
-                    "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
-                },
-                {"type": "text", "text": msg["content"]},
-            ]
+        if i == last_index and msg["role"] == "user" and attachments:
+            content = [a.to_openai() for a in attachments]
+            content.append({"type": "text", "text": msg["content"]})
             formatted_messages.append({"role": "user", "content": content})
         else:
             formatted_messages.append(msg)
@@ -288,6 +322,7 @@ class LLMClient:
         on_chunk: Callable[[str], None | Awaitable[None]] | None = None,
         update_interval: float = 1.0,
         tools: list[LLMTool] | None = None,
+        attachments: list[LLMAttachment] | None = None,
     ) -> str:
         """
         Generate streaming response from LLM.
@@ -302,6 +337,7 @@ class LLMClient:
             update_interval: Minimum seconds between on_chunk callbacks.
             tools: Optional functions the model may call. Supported for the OpenAI and
                 OpenRouter providers; ignored for Gemini.
+            attachments: Optional images / PDFs to send with the last user message.
 
         Returns:
             Complete response text.
@@ -309,12 +345,14 @@ class LLMClient:
         if not messages and not message_text:
             raise ValueError("Either message_text or messages must be provided")
 
+        attachments = _merge_attachments(attachments, image_bytes, image_mime_type)
+
         if self.provider == "openai":
             return await self._generate_openai_streaming(
                 message_text=message_text,
                 messages=messages,
                 system_prompt=system_prompt,
-                image_bytes=image_bytes,
+                attachments=attachments,
                 on_chunk=on_chunk,
                 update_interval=update_interval,
                 tools=tools,
@@ -324,7 +362,7 @@ class LLMClient:
                 message_text=message_text,
                 messages=messages,
                 system_prompt=system_prompt,
-                image_bytes=image_bytes,
+                attachments=attachments,
                 on_chunk=on_chunk,
                 update_interval=update_interval,
                 tools=tools,
@@ -338,8 +376,7 @@ class LLMClient:
                 message_text=message_text,
                 messages=messages,
                 system_prompt=system_prompt,
-                image_bytes=image_bytes,
-                image_mime_type=image_mime_type,
+                attachments=attachments,
                 on_chunk=on_chunk,
                 update_interval=update_interval,
             )
@@ -380,7 +417,7 @@ class LLMClient:
         message_text: str | None = None,
         messages: list[dict[str, str]] | None = None,
         system_prompt: str | None = None,
-        image_bytes: bytes | None = None,
+        attachments: list[LLMAttachment] | None = None,
         on_chunk: Callable[[str], None | Awaitable[None]] | None = None,
         update_interval: float = 1.0,
         tools: list[LLMTool] | None = None,
@@ -391,7 +428,7 @@ class LLMClient:
         return await self._stream_chat_completion(
             client=client,
             formatted_messages=_build_openai_messages(
-                message_text, messages, system_prompt, image_bytes
+                message_text, messages, system_prompt, attachments
             ),
             extra_kwargs=self._posthog_kwargs(client),
             server_tools=[],
@@ -538,7 +575,7 @@ class LLMClient:
         message_text: str | None = None,
         messages: list[dict[str, str]] | None = None,
         system_prompt: str | None = None,
-        image_bytes: bytes | None = None,
+        attachments: list[LLMAttachment] | None = None,
         on_chunk: Callable[[str], None | Awaitable[None]] | None = None,
         update_interval: float = 1.0,
         tools: list[LLMTool] | None = None,
@@ -547,10 +584,17 @@ class LLMClient:
         client = self._client_override or _openrouter_client
         assert client is not None, "OpenRouter client not configured"
 
-        # Fallback models are passed through extra_body when configured
+        # Fallback models and plugins are passed through extra_body
         extra_kwargs = self._posthog_kwargs(client)
+        extra_body = {}
         if self.models:
-            extra_kwargs["extra_body"] = {"models": self.models}
+            extra_body["models"] = self.models
+        if any(not a.is_image for a in attachments or []):
+            extra_body["plugins"] = [
+                {"id": "file-parser", "pdf": {"engine": OPENROUTER_PDF_ENGINE}}
+            ]
+        if extra_body:
+            extra_kwargs["extra_body"] = extra_body
 
         server_tools = []
         if OPENROUTER_WEB_SEARCH:
@@ -560,7 +604,7 @@ class LLMClient:
         return await self._stream_chat_completion(
             client=client,
             formatted_messages=_build_openai_messages(
-                message_text, messages, system_prompt, image_bytes
+                message_text, messages, system_prompt, attachments
             ),
             extra_kwargs=extra_kwargs,
             server_tools=server_tools,
@@ -616,21 +660,16 @@ class LLMClient:
         message_text: str,
         image_bytes: bytes | None,
         image_mime_type: str | None,
+        attachments: list[LLMAttachment] | None = None,
     ) -> str:
         """Generate non-streaming response from Gemini."""
         from google.genai import types
 
-        # Build contents for the request
-        contents = []
-
-        if image_bytes:
-            # Add image as inline data
-            contents.append(
-                types.Part.from_bytes(
-                    data=bytes(image_bytes),
-                    mime_type=image_mime_type or "image/jpeg",
-                )
-            )
+        # Build contents for the request - files go in as inline data
+        contents = [
+            types.Part.from_bytes(data=bytes(a.data), mime_type=a.mime_type)
+            for a in _merge_attachments(attachments, image_bytes, image_mime_type)
+        ]
 
         # Add text prompt
         contents.append(message_text)
@@ -651,8 +690,7 @@ class LLMClient:
         message_text: str | None = None,
         messages: list[dict[str, str]] | None = None,
         system_prompt: str | None = None,
-        image_bytes: bytes | None = None,
-        image_mime_type: str | None = None,
+        attachments: list[LLMAttachment] | None = None,
         on_chunk: Callable[[str], None | Awaitable[None]] | None = None,
         update_interval: float = 1.0,
     ) -> str:
@@ -685,7 +723,7 @@ class LLMClient:
                 message_text = f"System: {system_prompt}\n\n{message_text}"
 
         # Get the full response
-        response_text = await self._generate_gemini(message_text, image_bytes, image_mime_type)
+        response_text = await self._generate_gemini(message_text, None, None, attachments)
 
         # Simulate streaming by calling on_chunk with progressively more text
         if on_chunk:

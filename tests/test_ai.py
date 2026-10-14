@@ -741,3 +741,75 @@ class TestPostHogTracking:
         kwargs = wrapped.models.generate_content.call_args.kwargs
         assert kwargs["posthog_distinct_id"] == "42"
         assert kwargs["posthog_properties"]["provider"] == "gemini"
+
+
+class TestAttachments:
+    """Test sending images and PDFs with a request."""
+
+    def test_image_part(self):
+        part = ai.LLMAttachment(b"png", "image/png").to_openai()
+        assert part == {
+            "type": "image_url",
+            "image_url": {"url": "data:image/png;base64," + base64.b64encode(b"png").decode()},
+        }
+
+    def test_pdf_part(self):
+        part = ai.LLMAttachment(b"%PDF", "application/pdf", filename="a.pdf").to_openai()
+        assert part["type"] == "file"
+        assert part["file"]["filename"] == "a.pdf"
+        assert part["file"]["file_data"].startswith("data:application/pdf;base64,")
+
+    def test_legacy_image_bytes_merged_first(self):
+        pdf = ai.LLMAttachment(b"%PDF", "application/pdf")
+        merged = ai._merge_attachments([pdf], b"img", None)
+        assert merged == [ai.LLMAttachment(b"img", "image/jpeg"), pdf]
+
+    @pytest.mark.anyio
+    @patch("src.domain.ai._openrouter_client")
+    async def test_openrouter_sends_attachments_with_pdf_parser(self, mock_client):
+        mock_client.chat.completions.create.return_value = [_text_chunk("ok")]
+        attachments = [
+            ai.LLMAttachment(b"img", "image/webp"),
+            ai.LLMAttachment(b"%PDF", "application/pdf", filename="a.pdf"),
+        ]
+
+        client = ai.LLMClient(provider="openrouter", models=[])
+        await client.generate_streaming(
+            messages=[{"role": "user", "content": "summarise"}], attachments=attachments
+        )
+
+        kwargs = mock_client.chat.completions.create.call_args.kwargs
+        content = kwargs["messages"][0]["content"]
+        assert [p["type"] for p in content] == ["image_url", "file", "text"]
+        assert content[0]["image_url"]["url"].startswith("data:image/webp;base64,")
+        assert kwargs["extra_body"] == {
+            "plugins": [{"id": "file-parser", "pdf": {"engine": ai.OPENROUTER_PDF_ENGINE}}]
+        }
+
+    @pytest.mark.anyio
+    @patch("src.domain.ai._openrouter_client")
+    async def test_openrouter_images_only_skip_pdf_parser(self, mock_client):
+        mock_client.chat.completions.create.return_value = [_text_chunk("ok")]
+
+        client = ai.LLMClient(provider="openrouter", models=[])
+        await client.generate_streaming(
+            "describe", attachments=[ai.LLMAttachment(b"img", "image/jpeg")]
+        )
+
+        assert "extra_body" not in mock_client.chat.completions.create.call_args.kwargs
+
+    @pytest.mark.anyio
+    async def test_gemini_sends_attachments_inline(self):
+        gemini = MagicMock()
+        gemini.models.generate_content.return_value = MagicMock(text="ok")
+        client = ai.LLMClient(provider="gemini", _client=gemini)
+
+        with patch("google.genai.types.Part.from_bytes", side_effect=lambda **kw: kw):
+            await client.generate_streaming(
+                messages=[{"role": "user", "content": "hi"}],
+                attachments=[ai.LLMAttachment(b"%PDF", "application/pdf")],
+            )
+
+        contents = gemini.models.generate_content.call_args.kwargs["contents"]
+        assert contents[0] == {"data": b"%PDF", "mime_type": "application/pdf"}
+        assert contents[1] == "User: hi"

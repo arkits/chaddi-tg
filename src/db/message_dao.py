@@ -38,25 +38,25 @@ def get_chat_messages(
     limit: int = 30,
     before_message_id: str | int | None = None,
     search: str | None = None,
+    since: datetime.datetime | None = None,
 ) -> list[Message]:
     """
-    Fetch logged text messages from a chat, oldest first.
+    Fetch logged messages from a chat, oldest first.
+
+    Media messages (photos, files, stickers...) have no text, but are still
+    returned - their stored update says what was sent.
 
     Args:
         chat_id: The chat to read from.
         limit: Maximum number of messages to return.
         before_message_id: Only return messages sent before this Telegram message id.
         search: Only return messages whose text contains this (case-insensitive).
+        since: Only return messages sent after this time.
 
     Returns:
         Up to `limit` of the most recent matching messages, in chronological order.
     """
-    query = (
-        Message.select(Message, Bakchod)
-        .join(Bakchod)
-        .where(Message.to_id == str(chat_id))
-        .where(Message.text.is_null(False))
-    )
+    query = Message.select(Message, Bakchod).join(Bakchod).where(Message.to_id == str(chat_id))
 
     if before_message_id is not None:
         anchor = (
@@ -70,6 +70,9 @@ def get_chat_messages(
 
     if search:
         query = query.where(Message.text.contains(search))
+
+    if since is not None:
+        query = query.where(Message.time_sent > since)
 
     messages = list(query.order_by(Message.time_sent.desc()).limit(limit))
     messages.reverse()

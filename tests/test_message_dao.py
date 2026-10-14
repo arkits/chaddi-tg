@@ -1,3 +1,4 @@
+import datetime
 from unittest.mock import MagicMock, patch
 
 from src.db import message_dao
@@ -105,6 +106,16 @@ class TestGetChatMessages:
 
         mock_message.text.contains.assert_called_once_with("chai")
         mock_message.time_sent.__lt__.assert_called_once_with(anchor.time_sent)
+
+    @patch("src.db.message_dao.Message")
+    def test_filters_since(self, mock_message):
+        self._query(mock_message, [])
+        mock_message.time_sent.__gt__ = MagicMock(return_value="since condition")
+        since = datetime.datetime(2026, 9, 24)
+
+        message_dao.get_chat_messages(123, since=since)
+
+        mock_message.time_sent.__gt__.assert_called_once_with(since)
 
     @patch("src.db.message_dao.Message")
     def test_unknown_before_message_is_ignored(self, mock_message):

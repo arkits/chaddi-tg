@@ -115,6 +115,13 @@ async def run_telegram_bot():
     application.add_handler(
         MessageHandler(filters.StatusUpdate.ALL, handlers.defaults.status_update)
     )
+    # CommandHandler ignores captions, so photos / files sent with "/ai ..." need their own route
+    application.add_handler(
+        MessageHandler(
+            filters.UpdateType.MESSAGE & filters.CaptionRegex(handlers.ai.COMMAND_PREFIX_RE),
+            handlers.ai.handle_caption_command,
+        )
+    )
     application.add_handler(MessageHandler(filters.Document.VIDEO, handlers.webm.handle))
     application.add_handler(MessageHandler(filters.ALL, handlers.defaults.all))
 
