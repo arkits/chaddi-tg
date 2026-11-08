@@ -184,6 +184,11 @@ async def test_handle_webm_file_success(mock_update, mock_context):
     mock_message.edit_text.assert_not_called()
     mock_message.delete.assert_called_once()
 
+    get_file_kwargs = mock_context.bot.get_file.call_args.kwargs
+    assert get_file_kwargs["read_timeout"] == webm.UPLOAD_TIMEOUT_SECONDS
+    download_kwargs = mock_webm_file.download_to_drive.call_args.kwargs
+    assert download_kwargs["read_timeout"] == webm.UPLOAD_TIMEOUT_SECONDS
+
     send_kwargs = mock_context.bot.send_video.call_args.kwargs
     assert send_kwargs["read_timeout"] == webm.UPLOAD_TIMEOUT_SECONDS
     assert send_kwargs["write_timeout"] == webm.UPLOAD_TIMEOUT_SECONDS

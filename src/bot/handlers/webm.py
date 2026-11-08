@@ -14,6 +14,9 @@ UPLOAD_TIMEOUT_SECONDS = 120
 # PTB's default 5s read timeout is too short - Telegram can take longer than that to
 # acknowledge a video upload, which surfaces as a TimedOut even though the video was sent
 UPLOAD_TIMEOUTS = {"write_timeout": UPLOAD_TIMEOUT_SECONDS, "read_timeout": UPLOAD_TIMEOUT_SECONDS}
+# getFile and the file download hit the same 5s default; getFile on a large document
+# can take longer than that to respond, failing the conversion before it starts
+DOWNLOAD_TIMEOUTS = {"read_timeout": UPLOAD_TIMEOUT_SECONDS}
 
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -41,9 +44,10 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             # Download the webm file
             logger.info("[webm] Starting webm download - " + str(document.file_id) + ".webm")
-            webm_file = await context.bot.get_file(document.file_id)
+            webm_file = await context.bot.get_file(document.file_id, **DOWNLOAD_TIMEOUTS)
             await webm_file.download_to_drive(
                 WEBM_RESOURCES_DIR + str(document.file_id) + ".webm",
+                **DOWNLOAD_TIMEOUTS,
             )
             logger.info("[webm] Finished downloading webm - " + str(document.file_id) + ".webm")
 
