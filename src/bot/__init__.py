@@ -134,9 +134,14 @@ async def run_telegram_bot():
             block=False,
         )
     )
-    # Only new messages - edited ones have no update.message and re-running a conversion is pointless
+    # Only new messages - edited ones have no update.message and re-running a conversion is pointless.
+    # Non-blocking: a conversion can take minutes and would otherwise hold up every other update
     application.add_handler(
-        MessageHandler(filters.Document.VIDEO & filters.UpdateType.MESSAGE, handlers.webm.handle)
+        MessageHandler(
+            filters.Document.VIDEO & filters.UpdateType.MESSAGE,
+            handlers.webm.handle,
+            block=False,
+        )
     )
     application.add_handler(MessageHandler(filters.ALL, handlers.defaults.all))
 
