@@ -9,6 +9,10 @@ from src.domain import dc, util
 COMMAND_COST = 200
 
 
+def sutta_job_name(bakchod_id) -> str:
+    return f"sutta_{bakchod_id}"
+
+
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE, log_to_dc=True):
     try:
         initiator_user = update.message.from_user
@@ -69,10 +73,12 @@ async def update_sutta(context: ContextTypes.DEFAULT_TYPE):
         else:
             job.schedule_removal()
 
-            await context.bot.edit_message_text("~~~", chat_id, message_id)
-
+            # Release the lock before the final edit - if the edit fails the user
+            # would otherwise be stuck "smoking" forever
             b.metadata["sutta_ittr"] = None
             b.save()
+
+            await context.bot.edit_message_text("~~~", chat_id, message_id)
 
     except Exception as e:
         logger.error("Caught Exception in update_sutta - e={}", e)
@@ -84,12 +90,20 @@ async def start_sutta(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.error("Bakchod not found")
         return
 
+    job_name = sutta_job_name(b.id)
+
     if util.get_metadata_value(b.metadata, "sutta_ittr") is not None:
-        logger.error("[sutta] sutta_ittr was not None...")
-        await update.message.reply_text(
-            "DHUMRAPAN SEHAT KE LIYE HANIKARAK HAI! 💀",
-        )
-        return
+        if context.job_queue.get_jobs_by_name(job_name):
+            logger.info("[sutta] sutta already running for bakchod_id={}", b.id)
+            await update.message.reply_text(
+                "DHUMRAPAN SEHAT KE LIYE HANIKARAK HAI! 💀",
+            )
+            return
+
+        # No job is animating it (bot restarted mid-sutta, or the job died) - stale lock
+        logger.warning("[sutta] clearing stale sutta_ittr for bakchod_id={}", b.id)
+        b.metadata["sutta_ittr"] = None
+        b.save()
 
     message = await update.message.reply_text(
         "`~~ Ek minute... lighter kidhar hai... ~~`", parse_mode=ParseMode.MARKDOWN_V2
@@ -106,4 +120,5 @@ async def start_sutta(update: Update, context: ContextTypes.DEFAULT_TYPE):
         interval=3,
         first=0,
         data=job_context,
+        name=job_name,
     )

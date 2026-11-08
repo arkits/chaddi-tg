@@ -7,6 +7,7 @@ import traceback
 
 import requests
 from ddgs import DDGS
+from ddgs.exceptions import DDGSException
 from loguru import logger
 from telegram import InputMediaPhoto, Update
 from telegram.error import TimedOut
@@ -63,7 +64,15 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             # Search for images using DuckDuckGo
             ddgs = DDGS()
             # Search for images
-            results = list(ddgs.images(query=search_query, max_results=5, safesearch="on"))
+            try:
+                results = list(ddgs.images(query=search_query, max_results=5, safesearch="on"))
+            except DDGSException as e:
+                # ddgs raises a bare DDGSException when the search comes back empty;
+                # rate limits and timeouts are subclasses and still count as errors
+                if type(e) is not DDGSException:
+                    raise
+                logger.warning(f"[pic] no image results for query={search_query!r} - {e}")
+                results = []
 
             if len(results) == 0:
                 await sent_message.edit_text("No images found for your search query.")

@@ -21,6 +21,9 @@ DOWNLOAD_TIMEOUTS = {"read_timeout": UPLOAD_TIMEOUT_SECONDS}
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
+        if update.message is None:
+            return
+
         document = update.message.document
 
         # return if there is no document associated with the message

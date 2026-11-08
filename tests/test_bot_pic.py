@@ -1,6 +1,7 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from ddgs.exceptions import DDGSException, RatelimitException
 from telegram import Chat, Message, Update, User
 from telegram.ext import ContextTypes
 
@@ -373,3 +374,43 @@ async def test_handles_different_content_types(mock_update, mock_context):
             await pic.handle(mock_update, mock_context)
 
             assert mock_update.message.reply_text.called
+
+
+@pytest.mark.asyncio
+async def test_handle_ddgs_no_results_is_not_an_error(mock_update, mock_context):
+    """ddgs raises DDGSException("No results found.") on an empty search."""
+    mock_sent_message = MagicMock()
+    mock_sent_message.edit_text = AsyncMock()
+    mock_update.message.reply_text = AsyncMock(return_value=mock_sent_message)
+    mock_context.args = ["obscure", "query"]
+
+    with (
+        patch("src.bot.handlers.pic.dc"),
+        patch("src.bot.handlers.pic.DDGS") as mock_ddgs,
+        patch("src.bot.handlers.pic.logger") as mock_logger,
+    ):
+        mock_ddgs.return_value.images.side_effect = DDGSException("No results found.")
+
+        await pic.handle(mock_update, mock_context)
+
+    mock_sent_message.edit_text.assert_awaited_once_with("No images found for your search query.")
+    mock_logger.error.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_handle_ddgs_rate_limit_is_still_an_error(mock_update, mock_context):
+    mock_sent_message = MagicMock()
+    mock_sent_message.edit_text = AsyncMock()
+    mock_update.message.reply_text = AsyncMock(return_value=mock_sent_message)
+    mock_context.args = ["obscure", "query"]
+
+    with (
+        patch("src.bot.handlers.pic.dc"),
+        patch("src.bot.handlers.pic.DDGS") as mock_ddgs,
+        patch("src.bot.handlers.pic.logger") as mock_logger,
+    ):
+        mock_ddgs.return_value.images.side_effect = RatelimitException("slow down")
+
+        await pic.handle(mock_update, mock_context)
+
+    mock_logger.error.assert_called_once()

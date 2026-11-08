@@ -2,6 +2,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from telegram import Message, Update
+from telegram.error import BadRequest
 from telegram.ext import ContextTypes
 
 from src.bot.handlers import x_links
@@ -328,6 +329,26 @@ class TestHandle:
             await x_links.handle(mock_update, mock_context)
 
         mock_update.message.reply_text.assert_awaited_once()
+
+    async def test_missing_media_rights_falls_back_to_text_without_an_error(
+        self, mock_update, mock_context
+    ):
+        mock_update.message.text = "https://x.com/jack/status/20"
+        tweet = make_tweet(media={"all": [{"type": "photo", "url": "https://pbs/a.jpg"}]})
+        mock_update.message.reply_photo = AsyncMock(
+            side_effect=BadRequest("Not enough rights to send photos to the chat")
+        )
+
+        with (
+            patch.object(x_links, "fetch_tweet", AsyncMock(return_value=tweet)),
+            patch.object(x_links, "download_media", AsyncMock(return_value=b"jpegbytes")),
+            patch.object(x_links, "logger") as mock_logger,
+        ):
+            await x_links.handle(mock_update, mock_context)
+
+        mock_update.message.reply_text.assert_awaited_once()
+        mock_logger.error.assert_not_called()
+        mock_logger.warning.assert_called_once()
 
     async def test_falls_back_to_an_fxtwitter_link_when_the_api_fails(
         self, mock_update, mock_context

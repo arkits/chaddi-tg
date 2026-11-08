@@ -5,6 +5,7 @@ import httpx
 from loguru import logger
 from telegram import InputMediaPhoto, InputMediaVideo, Update
 from telegram.constants import MessageLimit
+from telegram.error import BadRequest, Forbidden
 from telegram.ext import ContextTypes
 
 # FxEmbed's public API - no key, no account. Swap this for a self-hosted
@@ -294,6 +295,12 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if media_items and await reply_with_media(update, tweet, media_items):
             logger.info(f"[x_links] replied with {len(media_items)} media item(s)")
             return
+    except (BadRequest, Forbidden) as e:
+        if "not enough rights" not in str(e).lower():
+            logger.error(f"[x_links] error replying with media - {e}")
+        else:
+            # The chat doesn't let the bot post media - expected, and the text fallback covers it
+            logger.warning(f"[x_links] no rights to send media in this chat - {e}")
     except Exception as e:
         logger.error(f"[x_links] error replying with media - {e}")
 

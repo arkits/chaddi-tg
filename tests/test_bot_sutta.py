@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from telegram import Message, Update, User
@@ -85,3 +85,49 @@ async def test_update_sutta_in_range(mock_bakchod_class, mock_context):
         await sutta.update_sutta(mock_context)
 
         mock_context.bot.edit_message_text.assert_called_once()
+
+
+@pytest.mark.asyncio
+@patch("src.bot.handlers.sutta.Bakchod")
+@patch("src.bot.handlers.sutta.util.paywall_user")
+async def test_handle_clears_stale_sutta_lock(
+    mock_paywall, mock_bakchod_class, mock_update, mock_context
+):
+    """A leftover sutta_ittr with no running job (e.g. after a restart) must not lock the user out"""
+    mock_paywall.return_value = True
+    mock_update.message.from_user.id = 123
+
+    mock_bakchod = MagicMock()
+    mock_bakchod.id = 123
+    mock_bakchod.metadata = {"sutta_ittr": 9}
+    mock_bakchod_class.get_by_id.return_value = mock_bakchod
+
+    mock_context.job_queue = MagicMock()
+    mock_context.job_queue.get_jobs_by_name.return_value = ()
+    mock_update.message.reply_text = AsyncMock()
+
+    await sutta.handle(mock_update, mock_context)
+
+    assert mock_bakchod.metadata["sutta_ittr"] is None
+    mock_context.job_queue.get_jobs_by_name.assert_called_once_with("sutta_123")
+    mock_context.job_queue.run_repeating.assert_called_once()
+    assert mock_context.job_queue.run_repeating.call_args.kwargs["name"] == "sutta_123"
+    assert "DHUMRAPAN" not in mock_update.message.reply_text.call_args.args[0]
+
+
+@pytest.mark.asyncio
+async def test_update_sutta_releases_lock_even_if_final_edit_fails():
+    mock_bakchod = MagicMock()
+    mock_bakchod.metadata = {"sutta_ittr": 8}
+
+    with patch("src.bot.handlers.sutta.Bakchod") as mock_bakchod_class:
+        mock_bakchod_class.get_by_id.return_value = mock_bakchod
+
+        mock_context = MagicMock()
+        mock_context.job.data = {"chat_id": 123, "message_id": 456, "bakchod_id": 789}
+        mock_context.bot.edit_message_text = AsyncMock(side_effect=Exception("message deleted"))
+
+        await sutta.update_sutta(mock_context)
+
+    mock_context.job.schedule_removal.assert_called_once()
+    assert mock_bakchod.metadata["sutta_ittr"] is None

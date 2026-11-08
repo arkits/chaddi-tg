@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 from telegram import Chat, Message, MessageEntity, Update, User
 
-from src.bot import command_handler
+from src.bot import TELEGRAM_READ_TIMEOUT_SECONDS, build_application, command_handler
 
 
 async def noop(update, context):
@@ -38,3 +38,9 @@ def test_ignores_edited_commands():
     update = Update(update_id=1, edited_message=make_message("/daan 25"))
 
     assert not handler.check_update(update)
+
+
+def test_application_uses_a_longer_read_timeout():
+    application = build_application("123:ABC")
+
+    assert application.bot.request._client.timeout.read == TELEGRAM_READ_TIMEOUT_SECONDS

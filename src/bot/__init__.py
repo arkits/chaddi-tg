@@ -55,14 +55,24 @@ def command_handler(command: str, callback, block: bool = True) -> CommandHandle
     return CommandHandler(command, callback, filters=filters.UpdateType.MESSAGE, block=block)
 
 
-async def run_telegram_bot():
-    # Create the Application and pass it your bot's token.
-    application = (
+# PTB's default 5s read timeout is shorter than Telegram sometimes takes to answer
+# getFile, forwardMessage and friends, which surfaced as spurious TimedOut errors
+TELEGRAM_READ_TIMEOUT_SECONDS = 30
+
+
+def build_application(token: str) -> Application:
+    return (
         Application.builder()
-        .token(app_config.get("TELEGRAM", "TG_BOT_TOKEN"))
+        .token(token)
+        .read_timeout(TELEGRAM_READ_TIMEOUT_SECONDS)
         .post_init(post_init)
         .build()
     )
+
+
+async def run_telegram_bot():
+    # Create the Application and pass it your bot's token.
+    application = build_application(app_config.get("TELEGRAM", "TG_BOT_TOKEN"))
 
     # Add command handlers
     application.add_handler(command_handler("start", handlers.start.handle))
@@ -124,7 +134,10 @@ async def run_telegram_bot():
             block=False,
         )
     )
-    application.add_handler(MessageHandler(filters.Document.VIDEO, handlers.webm.handle))
+    # Only new messages - edited ones have no update.message and re-running a conversion is pointless
+    application.add_handler(
+        MessageHandler(filters.Document.VIDEO & filters.UpdateType.MESSAGE, handlers.webm.handle)
+    )
     application.add_handler(MessageHandler(filters.ALL, handlers.defaults.all))
 
     # Log all errors
