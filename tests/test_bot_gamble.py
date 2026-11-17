@@ -323,3 +323,19 @@ class TestHandle:
             mock_bakchod_dao.get_or_create_bakchod_from_tg_user.side_effect = Exception("Error")
 
             await gamble.handle(mock_update, MagicMock())
+
+
+@patch("src.bot.handlers.gamble.util.get_random_bakchod_from_group", return_value=None)
+@patch("src.bot.handlers.gamble.random.random", return_value=0.0005)
+def test_gamble_lowest_roll_has_response(mock_random, mock_get_bakchod):
+    """Rolls at or below 0.001 used to fall through every branch and return None."""
+    bakchod = MagicMock()
+    bakchod.rokda = 1000
+    bakchod.metadata = {}
+    update = MagicMock()
+
+    response = gamble.gamble(bakchod, update)
+
+    assert response
+    assert "entire fortune" in response
+    assert bakchod.rokda == 1

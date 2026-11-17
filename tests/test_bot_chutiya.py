@@ -191,3 +191,18 @@ class TestChutiya:
 
         with pytest.raises(IndexError):
             chutiya.pick_a_word("z")
+
+
+@patch("src.bot.handlers.chutiya.acronymify", return_value=" acronym")
+@patch("src.bot.handlers.chutiya.dc")
+@patch("src.bot.handlers.chutiya.util")
+@pytest.mark.anyio
+async def test_handle_escapes_markdown_in_name(mock_util, mock_dc, mock_acronymify, mock_update):
+    """Usernames with underscores must not break Markdown parsing."""
+    mock_update.message.reply_to_message = None
+    mock_util.extract_pretty_name_from_tg_user.return_value = "@foo_bar"
+
+    await chutiya.handle(mock_update, MagicMock())
+
+    text = mock_update.message.reply_text.call_args.kwargs["text"]
+    assert text.startswith("@foo\\_bar is a")

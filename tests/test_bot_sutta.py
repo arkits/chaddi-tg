@@ -131,3 +131,27 @@ async def test_update_sutta_releases_lock_even_if_final_edit_fails():
 
     mock_context.job.schedule_removal.assert_called_once()
     assert mock_bakchod.metadata["sutta_ittr"] is None
+
+
+@pytest.mark.asyncio
+async def test_update_sutta_flood_control_is_a_warning_not_an_error():
+    from telegram.error import RetryAfter
+
+    mock_bakchod = MagicMock()
+    mock_bakchod.metadata = {"sutta_ittr": 2}
+
+    with (
+        patch("src.bot.handlers.sutta.Bakchod") as mock_bakchod_class,
+        patch("src.bot.handlers.sutta.logger") as mock_logger,
+    ):
+        mock_bakchod_class.get_by_id.return_value = mock_bakchod
+
+        mock_context = MagicMock()
+        mock_context.job.data = {"chat_id": 123, "message_id": 456, "bakchod_id": 789}
+        mock_context.bot.edit_message_text = AsyncMock(side_effect=RetryAfter(3))
+
+        await sutta.update_sutta(mock_context)
+
+    mock_logger.warning.assert_called_once()
+    mock_logger.error.assert_not_called()
+    mock_context.job.schedule_removal.assert_not_called()

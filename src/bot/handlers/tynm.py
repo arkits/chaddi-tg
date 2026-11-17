@@ -134,6 +134,8 @@ MESSAGE_BOX_BOTTOM_FOR_BOTTOM_MODI = 860
 POSTER_CAPTION_MIN_FONT_SIZE = 30
 POSTER_CAPTION_MAX_FONT_SIZE = 92
 PRAYER_HANDS_REACTION = "🙏"
+# Posters are ~1MB PNGs - the default 5s timeouts are too tight for the upload
+UPLOAD_TIMEOUT_SECONDS = 120
 
 
 def extract_reply_text(reply_message) -> str | None:
@@ -229,6 +231,8 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     logger.info("[tynm] uploading completed photo")
                     await update.message.reply_photo(
                         photo=photo_to_upload,
+                        write_timeout=UPLOAD_TIMEOUT_SECONDS,
+                        read_timeout=UPLOAD_TIMEOUT_SECONDS,
                     )
 
                 util.delete_file(build_file_path(file))
@@ -273,6 +277,8 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 logger.info("[tynm] uploading completed photo")
                 await update.message.reply_photo(
                     photo=photo_to_upload,
+                    write_timeout=UPLOAD_TIMEOUT_SECONDS,
+                    read_timeout=UPLOAD_TIMEOUT_SECONDS,
                 )
 
             util.delete_file(img_path)

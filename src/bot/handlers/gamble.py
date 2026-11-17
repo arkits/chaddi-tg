@@ -91,7 +91,7 @@ def gamble(bakchod: Bakchod, update: Update):
     elif roll > 0.01:
         response = "CBI Raided ChaddiInc... That 1000 you just won was derokdatized!"
         bakchod.rokda = bakchod.rokda - 1000
-    elif roll > 0.001:
+    else:
         response = f"You lost your entire fortune (and Paul's Kwid) to {random_bakchod_pretty_name}. Gambling can suck!"
         if random_bakchod is not None:
             random_bakchod.rokda += bakchod.rokda

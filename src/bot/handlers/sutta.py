@@ -1,6 +1,7 @@
 from loguru import logger
 from telegram import Update
 from telegram.constants import ParseMode
+from telegram.error import RetryAfter
 from telegram.ext import ContextTypes
 
 from src.db import Bakchod
@@ -80,6 +81,9 @@ async def update_sutta(context: ContextTypes.DEFAULT_TYPE):
 
             await context.bot.edit_message_text("~~~", chat_id, message_id)
 
+    except RetryAfter as e:
+        # Telegram throttled the edit - this frame is skipped, the next tick carries on
+        logger.warning("[sutta] flood control hit in update_sutta, skipping frame - e={}", e)
     except Exception as e:
         logger.error("Caught Exception in update_sutta - e={}", e)
 

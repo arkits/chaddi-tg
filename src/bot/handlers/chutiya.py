@@ -5,6 +5,7 @@ from loguru import logger
 from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
+from telegram.helpers import escape_markdown
 
 from src.domain import config, dc, util
 
@@ -29,6 +30,8 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         og_sender = util.extract_pretty_name_from_tg_user(og_from)
         if og_sender != BOT_USERNAME:
+            # Names like "@foo_bar" would otherwise open an unterminated Markdown entity
+            og_sender = escape_markdown(og_sender, version=1)
             if reply_to_message is not None:
                 await update.message.reply_to_message.reply_text(
                     text="{} is a {}".format(og_sender, acronymify("chutiya")),
