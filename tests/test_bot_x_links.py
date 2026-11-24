@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from telegram import Message, Update
-from telegram.error import BadRequest
+from telegram.error import BadRequest, RetryAfter
 from telegram.ext import ContextTypes
 
 from src.bot.handlers import x_links
@@ -417,57 +417,75 @@ class TestDownloadMedia:
 
 @pytest.mark.asyncio
 class TestFloodControl:
-    async def test_waits_out_flood_control_and_retries_media(self, mock_update, mock_context):
-        from telegram.error import RetryAfter
-
+    async def run_handle(self, mock_update, mock_context, photo_side_effect):
+        """Run the handler against a throttled photo reply. Returns the scheduled tasks."""
         mock_update.message.text = "https://x.com/jack/status/20"
+        mock_update.message.reply_photo.side_effect = photo_side_effect
         tweet = make_tweet(media={"all": [{"type": "photo", "url": "https://pbs/a.jpg"}]})
-        mock_update.message.reply_photo.side_effect = [RetryAfter(8), None]
 
-        with (
-            patch.object(x_links, "fetch_tweet", AsyncMock(return_value=tweet)),
-            patch.object(x_links, "download_media", AsyncMock(return_value=b"jpegbytes")),
-            patch.object(x_links.asyncio, "sleep", AsyncMock()) as mock_sleep,
-            patch.object(x_links, "logger") as mock_logger,
-        ):
+        scheduled = []
+        mock_context.application = MagicMock()
+        mock_context.application.create_task.side_effect = lambda coro, update: scheduled.append(
+            coro
+        )
+
+        with patch.object(x_links, "fetch_tweet", AsyncMock(return_value=tweet)):
             await x_links.handle(mock_update, mock_context)
 
-        mock_sleep.assert_awaited_once_with(8.0)
+        return scheduled
+
+    @pytest.fixture(autouse=True)
+    def patches(self):
+        with (
+            patch.object(x_links, "download_media", AsyncMock(return_value=b"jpegbytes")),
+            patch.object(x_links.asyncio, "sleep", AsyncMock()) as self.sleep,
+            patch.object(x_links, "logger") as self.logger,
+        ):
+            yield
+
+    async def test_retries_media_without_blocking_the_handler(self, mock_update, mock_context):
+        tasks = await self.run_handle(mock_update, mock_context, [RetryAfter(8), None])
+
+        # The handler has returned without waiting or replying
+        self.sleep.assert_not_awaited()
+        assert mock_update.message.reply_photo.await_count == 1
+        mock_update.message.reply_text.assert_not_awaited()
+        assert len(tasks) == 1
+
+        await tasks[0]
+
+        self.sleep.assert_awaited_once_with(8.0)
         assert mock_update.message.reply_photo.await_count == 2
         mock_update.message.reply_text.assert_not_awaited()
-        mock_logger.error.assert_not_called()
+        self.logger.error.assert_not_called()
 
     async def test_falls_back_to_text_when_flood_control_persists(self, mock_update, mock_context):
-        from telegram.error import RetryAfter
+        tasks = await self.run_handle(mock_update, mock_context, RetryAfter(8))
+        await tasks[0]
 
-        mock_update.message.text = "https://x.com/jack/status/20"
-        tweet = make_tweet(media={"all": [{"type": "photo", "url": "https://pbs/a.jpg"}]})
-        mock_update.message.reply_photo.side_effect = RetryAfter(8)
+        assert mock_update.message.reply_photo.await_count == 2
+        mock_update.message.reply_text.assert_awaited_once()
+        self.logger.error.assert_not_called()
 
-        with (
-            patch.object(x_links, "fetch_tweet", AsyncMock(return_value=tweet)),
-            patch.object(x_links, "download_media", AsyncMock(return_value=b"jpegbytes")),
-            patch.object(x_links.asyncio, "sleep", AsyncMock()),
-            patch.object(x_links, "logger") as mock_logger,
-        ):
-            await x_links.handle(mock_update, mock_context)
+    async def test_falls_back_to_text_when_the_retry_fails(self, mock_update, mock_context):
+        tasks = await self.run_handle(
+            mock_update, mock_context, [RetryAfter(8), BadRequest("Wrong file")]
+        )
+        await tasks[0]
 
         mock_update.message.reply_text.assert_awaited_once()
-        mock_logger.error.assert_not_called()
+        self.logger.error.assert_called_once()
 
     async def test_does_not_wait_out_a_long_flood_control(self, mock_update, mock_context):
-        from telegram.error import RetryAfter
+        tasks = await self.run_handle(mock_update, mock_context, RetryAfter(300))
 
-        mock_update.message.text = "https://x.com/jack/status/20"
-        tweet = make_tweet(media={"all": [{"type": "photo", "url": "https://pbs/a.jpg"}]})
-        mock_update.message.reply_photo.side_effect = RetryAfter(300)
-
-        with (
-            patch.object(x_links, "fetch_tweet", AsyncMock(return_value=tweet)),
-            patch.object(x_links, "download_media", AsyncMock(return_value=b"jpegbytes")),
-            patch.object(x_links.asyncio, "sleep", AsyncMock()) as mock_sleep,
-        ):
-            await x_links.handle(mock_update, mock_context)
-
-        mock_sleep.assert_not_awaited()
+        assert tasks == []
+        self.sleep.assert_not_awaited()
         mock_update.message.reply_text.assert_awaited_once()
+
+    async def test_throttled_text_reply_is_a_warning(self, mock_update, mock_context):
+        mock_update.message.reply_text.side_effect = RetryAfter(300)
+
+        await self.run_handle(mock_update, mock_context, RetryAfter(300))
+
+        self.logger.error.assert_not_called()

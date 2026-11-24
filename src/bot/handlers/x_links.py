@@ -278,17 +278,51 @@ def retry_after_seconds(e: RetryAfter) -> float:
     return float(retry_after)
 
 
-async def reply_with_media_with_retry(update: Update, tweet: dict, media_items: list) -> bool:
-    """Send the media, waiting out a single Telegram flood-control response."""
+async def reply_with_text(update: Update, tweet: dict) -> None:
     try:
-        return await reply_with_media(update, tweet, media_items)
+        await update.message.reply_text(
+            build_caption(tweet, MessageLimit.MAX_TEXT_LENGTH),
+            disable_web_page_preview=True,
+        )
+        logger.info("[x_links] replied with tweet text")
     except RetryAfter as e:
-        wait = retry_after_seconds(e)
-        if wait > MAX_FLOOD_WAIT:
-            raise
-        logger.warning(f"[x_links] flood control hit, retrying media in {wait}s - {e}")
-        await asyncio.sleep(wait)
-        return await reply_with_media(update, tweet, media_items)
+        # The throttle covers the whole chat, so there's nothing left to fall back to
+        logger.warning(f"[x_links] flood control hit replying with text, giving up - {e}")
+
+
+async def try_reply_with_media(update: Update, tweet: dict, media_items: list[dict]) -> bool:
+    """Send the media, logging failures. Only flood control is left for the caller to handle."""
+    try:
+        if media_items and await reply_with_media(update, tweet, media_items):
+            logger.info(f"[x_links] replied with {len(media_items)} media item(s)")
+            return True
+    except RetryAfter:
+        raise
+    except (BadRequest, Forbidden) as e:
+        if "not enough rights" not in str(e).lower():
+            logger.error(f"[x_links] error replying with media - {e}")
+        else:
+            # The chat doesn't let the bot post media - expected, and the text fallback covers it
+            logger.warning(f"[x_links] no rights to send media in this chat - {e}")
+    except Exception as e:
+        logger.error(f"[x_links] error replying with media - {e}")
+
+    return False
+
+
+async def retry_after_flood_control(
+    update: Update, tweet: dict, media_items: list[dict], wait: float
+) -> None:
+    """Wait out flood control and try the media once more, falling back to text."""
+    await asyncio.sleep(wait)
+
+    try:
+        if await try_reply_with_media(update, tweet, media_items):
+            return
+    except RetryAfter as e:
+        logger.warning(f"[x_links] flood control persisted, falling back to text - {e}")
+
+    await reply_with_text(update, tweet)
 
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -316,24 +350,18 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     media_items = ((tweet.get("media") or {}).get("all")) or []
 
     try:
-        if media_items and await reply_with_media_with_retry(update, tweet, media_items):
-            logger.info(f"[x_links] replied with {len(media_items)} media item(s)")
+        if await try_reply_with_media(update, tweet, media_items):
             return
     except RetryAfter as e:
-        # Still throttled after waiting once - the text fallback below will have to do
-        logger.warning(f"[x_links] flood control persisted, falling back to text - {e}")
-    except (BadRequest, Forbidden) as e:
-        if "not enough rights" not in str(e).lower():
-            logger.error(f"[x_links] error replying with media - {e}")
-        else:
-            # The chat doesn't let the bot post media - expected, and the text fallback covers it
-            logger.warning(f"[x_links] no rights to send media in this chat - {e}")
-    except Exception as e:
-        logger.error(f"[x_links] error replying with media - {e}")
+        wait = retry_after_seconds(e)
+        if wait <= MAX_FLOOD_WAIT:
+            logger.warning(f"[x_links] flood control hit, retrying media in {wait}s - {e}")
+            # Updates are processed one at a time, so waiting here would stall the whole bot
+            context.application.create_task(
+                retry_after_flood_control(update, tweet, media_items, wait), update=update
+            )
+            return
+        logger.warning(f"[x_links] flood control too long to wait out - {e}")
 
     # No media, or the media couldn't be sent - the text is still worth having
-    await update.message.reply_text(
-        build_caption(tweet, MessageLimit.MAX_TEXT_LENGTH),
-        disable_web_page_preview=True,
-    )
-    logger.info(f"[x_links] replied with tweet text - {screen_name}/{tweet_id}")
+    await reply_with_text(update, tweet)
