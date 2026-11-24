@@ -1,3 +1,5 @@
+import asyncio
+import datetime
 import io
 import re
 
@@ -5,7 +7,7 @@ import httpx
 from loguru import logger
 from telegram import InputMediaPhoto, InputMediaVideo, Update
 from telegram.constants import MessageLimit
-from telegram.error import BadRequest, Forbidden
+from telegram.error import BadRequest, Forbidden, RetryAfter
 from telegram.ext import ContextTypes
 
 # FxEmbed's public API - no key, no account. Swap this for a self-hosted
@@ -30,6 +32,8 @@ HTTP_TIMEOUT = 30.0
 MEDIA_TIMEOUT = 120.0
 # PTB's default 20s write timeout isn't enough to push tens of MB to Telegram
 UPLOAD_TIMEOUTS = {"write_timeout": MEDIA_TIMEOUT, "read_timeout": MEDIA_TIMEOUT}
+# Longest flood-control wait worth sitting through before giving up on media
+MAX_FLOOD_WAIT = 30.0
 
 
 def extract_tweet_ref(message_text: str) -> tuple[str, str] | None:
@@ -267,6 +271,26 @@ async def reply_with_media(update: Update, tweet: dict, media_items: list[dict])
     return True
 
 
+def retry_after_seconds(e: RetryAfter) -> float:
+    retry_after = e.retry_after
+    if isinstance(retry_after, datetime.timedelta):
+        return retry_after.total_seconds()
+    return float(retry_after)
+
+
+async def reply_with_media_with_retry(update: Update, tweet: dict, media_items: list) -> bool:
+    """Send the media, waiting out a single Telegram flood-control response."""
+    try:
+        return await reply_with_media(update, tweet, media_items)
+    except RetryAfter as e:
+        wait = retry_after_seconds(e)
+        if wait > MAX_FLOOD_WAIT:
+            raise
+        logger.warning(f"[x_links] flood control hit, retrying media in {wait}s - {e}")
+        await asyncio.sleep(wait)
+        return await reply_with_media(update, tweet, media_items)
+
+
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     message_text = update.message.text
 
@@ -292,9 +316,12 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     media_items = ((tweet.get("media") or {}).get("all")) or []
 
     try:
-        if media_items and await reply_with_media(update, tweet, media_items):
+        if media_items and await reply_with_media_with_retry(update, tweet, media_items):
             logger.info(f"[x_links] replied with {len(media_items)} media item(s)")
             return
+    except RetryAfter as e:
+        # Still throttled after waiting once - the text fallback below will have to do
+        logger.warning(f"[x_links] flood control persisted, falling back to text - {e}")
     except (BadRequest, Forbidden) as e:
         if "not enough rights" not in str(e).lower():
             logger.error(f"[x_links] error replying with media - {e}")

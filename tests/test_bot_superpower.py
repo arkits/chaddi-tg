@@ -98,3 +98,31 @@ class TestSuperpower:
             assert "Time Since" in result
             assert "5 months" in result
             mock_util.pretty_time_delta.assert_called_once()
+
+    @patch("src.bot.handlers.superpower.dc")
+    @pytest.mark.anyio
+    async def test_handle_timeout_is_a_warning_not_an_error(self, mock_dc, mock_update):
+        """A Telegram timeout on reply is transient and shouldn't be reported as an error."""
+        from telegram.error import TimedOut
+
+        mock_update.message.reply_text.side_effect = TimedOut()
+
+        with patch("src.bot.handlers.superpower.logger") as mock_logger:
+            await superpower.handle(mock_update, MagicMock())
+
+        mock_logger.warning.assert_called_once()
+        mock_logger.error.assert_not_called()
+
+    @patch("src.bot.handlers.superpower.dc")
+    @pytest.mark.anyio
+    async def test_handle_bad_request_is_still_an_error(self, mock_dc, mock_update):
+        """BadRequest subclasses NetworkError, but it's a real bug and must stay an error."""
+        from telegram.error import BadRequest
+
+        mock_update.message.reply_text.side_effect = BadRequest("Message text is empty")
+
+        with patch("src.bot.handlers.superpower.logger") as mock_logger:
+            await superpower.handle(mock_update, MagicMock())
+
+        mock_logger.error.assert_called_once()
+        mock_logger.warning.assert_not_called()

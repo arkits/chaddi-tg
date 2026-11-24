@@ -213,7 +213,8 @@ async def handle_dice_rolls(dice_value, update, context):
             current_roll.save()
 
             # Award roller with prize
-            roller.rokda = roller.rokda + current_roll.prize
+            # prize is stored in a CharField, so it comes back from the DB as a str
+            roller.rokda = (roller.rokda or 0) + float(current_roll.prize or 0)
             roller.save()
 
             # Add roll effect to victims metadata

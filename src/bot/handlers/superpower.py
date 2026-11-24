@@ -3,6 +3,7 @@ from datetime import datetime
 import pytz
 from loguru import logger
 from telegram import Update
+from telegram.error import TimedOut
 from telegram.ext import ContextTypes
 
 from src.domain import dc, util
@@ -18,6 +19,9 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await update.message.reply_text(response)
 
+    except TimedOut as e:
+        # A transient blip reaching Telegram. Not NetworkError - BadRequest subclasses that
+        logger.warning("[superpower] timed out replying - e={}", e)
     except Exception as e:
         logger.error("Caught Exception in superpower.handle - e={}", e)
 

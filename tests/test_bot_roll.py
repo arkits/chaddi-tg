@@ -698,3 +698,38 @@ def test_get_random_bakchod_from_group_single_member():
         result = roll._get_random_bakchod_from_group("-1001234567890")
 
         assert result == mock_bakchod
+
+
+@pytest.mark.asyncio
+async def test_handle_dice_rolls_winrar_with_string_prize(mock_update, mock_context):
+    """Roll.prize is a CharField, so the DB hands it back as a str - it must still be paid out."""
+    with (
+        patch("src.bot.handlers.roll.dc"),
+        patch("src.bot.handlers.roll.roll_dao") as mock_roll_dao,
+        patch("src.bot.handlers.roll.bakchod_dao") as mock_bakchod_dao,
+        patch("src.bot.handlers.roll.util") as mock_util,
+        patch("src.bot.handlers.roll.logger") as mock_logger,
+        patch("src.bot.handlers.roll._generate_pretty_roll_description", return_value="desc"),
+    ):
+        from datetime import datetime, timedelta
+
+        mock_roll = MagicMock()
+        mock_roll.winrar = None
+        mock_roll.expiry = datetime.now() + timedelta(hours=1)
+        mock_roll.goal = "4"
+        mock_roll.prize = "650"
+        mock_roll.rule = "mute_user"
+        mock_roll.victim.metadata = {}
+        mock_roll_dao.get_roll_by_group_id.return_value = mock_roll
+
+        mock_roller = MagicMock()
+        mock_roller.metadata = {}
+        mock_roller.rokda = 100.0
+        mock_bakchod_dao.get_bakchod_from_update.return_value = mock_roller
+        mock_util.get_metadata_value.return_value = None
+
+        await roll.handle_dice_rolls(4, mock_update, mock_context)
+
+        assert mock_roller.rokda == 750.0
+        mock_logger.error.assert_not_called()
+        mock_update.message.reply_text.assert_awaited_once()

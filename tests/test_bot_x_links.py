@@ -413,3 +413,61 @@ class TestDownloadMedia:
         with patch("httpx.AsyncClient") as mock_client:
             mock_client.return_value.__aenter__.return_value = client
             assert await x_links.download_media("https://video/a.mp4") is None
+
+
+@pytest.mark.asyncio
+class TestFloodControl:
+    async def test_waits_out_flood_control_and_retries_media(self, mock_update, mock_context):
+        from telegram.error import RetryAfter
+
+        mock_update.message.text = "https://x.com/jack/status/20"
+        tweet = make_tweet(media={"all": [{"type": "photo", "url": "https://pbs/a.jpg"}]})
+        mock_update.message.reply_photo.side_effect = [RetryAfter(8), None]
+
+        with (
+            patch.object(x_links, "fetch_tweet", AsyncMock(return_value=tweet)),
+            patch.object(x_links, "download_media", AsyncMock(return_value=b"jpegbytes")),
+            patch.object(x_links.asyncio, "sleep", AsyncMock()) as mock_sleep,
+            patch.object(x_links, "logger") as mock_logger,
+        ):
+            await x_links.handle(mock_update, mock_context)
+
+        mock_sleep.assert_awaited_once_with(8.0)
+        assert mock_update.message.reply_photo.await_count == 2
+        mock_update.message.reply_text.assert_not_awaited()
+        mock_logger.error.assert_not_called()
+
+    async def test_falls_back_to_text_when_flood_control_persists(self, mock_update, mock_context):
+        from telegram.error import RetryAfter
+
+        mock_update.message.text = "https://x.com/jack/status/20"
+        tweet = make_tweet(media={"all": [{"type": "photo", "url": "https://pbs/a.jpg"}]})
+        mock_update.message.reply_photo.side_effect = RetryAfter(8)
+
+        with (
+            patch.object(x_links, "fetch_tweet", AsyncMock(return_value=tweet)),
+            patch.object(x_links, "download_media", AsyncMock(return_value=b"jpegbytes")),
+            patch.object(x_links.asyncio, "sleep", AsyncMock()),
+            patch.object(x_links, "logger") as mock_logger,
+        ):
+            await x_links.handle(mock_update, mock_context)
+
+        mock_update.message.reply_text.assert_awaited_once()
+        mock_logger.error.assert_not_called()
+
+    async def test_does_not_wait_out_a_long_flood_control(self, mock_update, mock_context):
+        from telegram.error import RetryAfter
+
+        mock_update.message.text = "https://x.com/jack/status/20"
+        tweet = make_tweet(media={"all": [{"type": "photo", "url": "https://pbs/a.jpg"}]})
+        mock_update.message.reply_photo.side_effect = RetryAfter(300)
+
+        with (
+            patch.object(x_links, "fetch_tweet", AsyncMock(return_value=tweet)),
+            patch.object(x_links, "download_media", AsyncMock(return_value=b"jpegbytes")),
+            patch.object(x_links.asyncio, "sleep", AsyncMock()) as mock_sleep,
+        ):
+            await x_links.handle(mock_update, mock_context)
+
+        mock_sleep.assert_not_awaited()
+        mock_update.message.reply_text.assert_awaited_once()
