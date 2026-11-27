@@ -584,3 +584,56 @@ async def test_all_tries_reply_route_only_without_mention(mock_update, mock_cont
         mention.return_value = False
         await defaults.all(mock_update, mock_context)
         reply.assert_awaited_once_with(mock_update, mock_context)
+
+
+@pytest.mark.asyncio
+async def test_route_messages_skips_group_bot_was_kicked_from(mock_update, mock_context):
+    """A Forbidden forward to one group is a warning and the remaining routes still run."""
+    from telegram.error import Forbidden
+
+    mock_bakchod = MagicMock()
+    mock_bakchod.metadata = {
+        "route-messages": [{"to_group": -1001111111111}, {"to_group": -1002222222222}]
+    }
+    mock_update.message.chat_id = -1001234567890
+    mock_context.bot.forward_message = AsyncMock(
+        side_effect=[Forbidden("Forbidden: bot was kicked from the supergroup chat"), None]
+    )
+
+    with patch("src.bot.handlers.defaults.logger") as mock_logger:
+        await defaults.handle_bakchod_metadata_effects(mock_update, mock_context, mock_bakchod)
+
+    assert mock_context.bot.forward_message.call_count == 2
+    mock_logger.warning.assert_called_once()
+    mock_logger.error.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_censored_cant_delete_logs_warning(mock_update, mock_context):
+    """Missing delete rights is a warning, not an error, and the user is told."""
+    from telegram.error import BadRequest
+
+    mock_bakchod = MagicMock()
+    mock_bakchod.metadata = {"censored": {"group_ids": [-1001234567890]}}
+    mock_context.bot.delete_message = AsyncMock(side_effect=BadRequest("Message can't be deleted"))
+    mock_context.bot.send_message = AsyncMock()
+
+    with patch("src.bot.handlers.defaults.logger") as mock_logger:
+        await defaults.handle_bakchod_metadata_effects(mock_update, mock_context, mock_bakchod)
+
+    mock_context.bot.send_message.assert_called_once()
+    mock_logger.error.assert_not_called()
+    mock_logger.warning.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_censored_other_delete_error_still_logs_error(mock_update, mock_context):
+    mock_bakchod = MagicMock()
+    mock_bakchod.metadata = {"censored": {"group_ids": [-1001234567890]}}
+    mock_context.bot.delete_message = AsyncMock(side_effect=Exception("boom"))
+    mock_context.bot.send_message = AsyncMock()
+
+    with patch("src.bot.handlers.defaults.logger") as mock_logger:
+        await defaults.handle_bakchod_metadata_effects(mock_update, mock_context, mock_bakchod)
+
+    mock_logger.error.assert_called_once()

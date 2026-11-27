@@ -142,3 +142,24 @@ class TestHandle:
 
         with patch("src.bot.handlers.antiwordle.dc"), patch("src.bot.handlers.antiwordle.logger"):
             await antiwordle.handle(update, context)
+
+
+@pytest.mark.anyio
+async def test_handle_delete_without_rights_logs_warning():
+    from telegram.error import BadRequest
+
+    update = MagicMock(spec=Update)
+    update.message = MagicMock(spec=Message)
+    update.message.text = "Wordle 123/6\n\n⬛️⬛️⬛️⬛️⬛️\n🟩🟩🟩🟩🟩"
+    update.message.delete = MagicMock(side_effect=BadRequest("Message can't be deleted"))
+    context = MagicMock(spec=ContextTypes.DEFAULT_TYPE)
+
+    with (
+        patch("src.bot.handlers.antiwordle.dc"),
+        patch("src.bot.handlers.antiwordle.logger") as mock_logger,
+        patch.object(antiwordle, "random_reply", return_value="test reply"),
+    ):
+        await antiwordle.handle(update, context)
+
+    mock_logger.warning.assert_called_once()
+    mock_logger.error.assert_not_called()

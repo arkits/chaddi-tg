@@ -8,6 +8,7 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from src.bot.handlers import mom_spacy, roll
+from src.bot.handlers.errors import is_cant_delete_error, is_cant_send_error
 from src.db import EMPTY_JSON, Bakchod, GroupMember, bakchod_dao, group_dao
 from src.domain import config, dc, rokda, util
 
@@ -81,11 +82,21 @@ async def handle_bakchod_metadata_effects(
 
                         continue
 
-                    await context.bot.forward_message(
-                        chat_id=route_message_props["to_group"],
-                        from_chat_id=update.message.chat_id,
-                        message_id=update.message.message_id,
-                    )
+                    try:
+                        await context.bot.forward_message(
+                            chat_id=route_message_props["to_group"],
+                            from_chat_id=update.message.chat_id,
+                            message_id=update.message.message_id,
+                        )
+                    except Exception as e:
+                        if not is_cant_send_error(e):
+                            raise
+                        # Bot was kicked from / muted in the target group - skip this route
+                        logger.warning(
+                            "[metadata] route-messages - can't forward to to_group={} - {}",
+                            route_message_props["to_group"],
+                            e,
+                        )
 
             if key == "censored":
                 censored_metadata = bakchod.metadata[key]
@@ -106,15 +117,28 @@ async def handle_bakchod_metadata_effects(
                             message_id=update.message.message_id,
                         )
                     except Exception as e:
-                        logger.error(
-                            "Caught Error in censoring Bakchod - {} \n {}",
-                            e,
-                            traceback.format_exc(),
-                        )
-                        await bot.send_message(
-                            chat_id=update.message.chat_id,
-                            text="Looks like I'm not able to delete messages... Please check the Group permissions!",
-                        )
+                        if not is_cant_delete_error(e):
+                            logger.error(
+                                "Caught Error in censoring Bakchod - {} \n {}",
+                                e,
+                                traceback.format_exc(),
+                            )
+                        else:
+                            # The bot lacks delete rights here - a group permissions issue
+                            logger.warning("[metadata] censoring - can't delete message - {}", e)
+
+                        try:
+                            await bot.send_message(
+                                chat_id=update.message.chat_id,
+                                text="Looks like I'm not able to delete messages... Please check the Group permissions!",
+                            )
+                        except Exception as send_error:
+                            if not is_cant_send_error(send_error):
+                                raise
+                            logger.warning(
+                                "[metadata] censoring - can't send message either - {}",
+                                send_error,
+                            )
 
                     return
 
@@ -139,7 +163,10 @@ async def handle_bakchod_metadata_effects(
                     return
 
     except Exception as e:
-        logger.error("Caught Exception in handle_bakchod_metadata_effects - e={}", e)
+        if is_cant_send_error(e):
+            logger.warning("[metadata] bot can't post in chat - e={}", e)
+        else:
+            logger.error("Caught Exception in handle_bakchod_metadata_effects - e={}", e)
 
     return
 

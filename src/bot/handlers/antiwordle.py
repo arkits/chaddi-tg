@@ -4,6 +4,7 @@ from loguru import logger
 from telegram import Update
 from telegram.ext import ContextTypes
 
+from src.bot.handlers.errors import is_cant_delete_error
 from src.domain import dc
 
 
@@ -22,7 +23,11 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE, log_to_dc=T
         try:
             await update.message.delete()
         except Exception as e:
-            logger.error("[antiwordle] caught error while deleting message={}", e)
+            if is_cant_delete_error(e):
+                # The bot isn't allowed to delete messages in this chat - expected
+                logger.warning("[antiwordle] no rights to delete message={}", e)
+            else:
+                logger.error("[antiwordle] caught error while deleting message={}", e)
 
     except Exception as e:
         logger.error("Caught Exception in antiworlde.handle - e={}", e)

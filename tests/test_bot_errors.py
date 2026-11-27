@@ -129,3 +129,18 @@ class TestPostHogErrorCapture:
             await errors.log_error(mock_update, context)
 
         mock_analytics.capture_exception.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "error, expected",
+    [
+        (BadRequest("Message can't be deleted"), True),
+        (BadRequest("Message to delete not found"), True),
+        (Forbidden("bot was kicked"), True),
+        (BadRequest("Chat not found"), False),
+        (ValueError("nope"), False),
+        (None, False),
+    ],
+)
+def test_is_cant_delete_error(error, expected):
+    assert errors.is_cant_delete_error(error) is expected

@@ -26,6 +26,23 @@ def is_cant_send_error(error: Exception | None) -> bool:
     return False
 
 
+# BadRequest messages Telegram returns when the bot can't delete a message
+# (it isn't an admin with delete rights, or the message is too old).
+CANT_DELETE_MESSAGES = (
+    "message can't be deleted",
+    "message to delete not found",
+)
+
+
+def is_cant_delete_error(error: Exception | None) -> bool:
+    if isinstance(error, Forbidden):
+        return True
+    if isinstance(error, BadRequest):
+        message = error.message.lower()
+        return any(m in message for m in CANT_DELETE_MESSAGES)
+    return False
+
+
 async def log_error(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update:
         return
